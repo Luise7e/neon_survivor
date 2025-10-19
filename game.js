@@ -177,7 +177,6 @@ if (isMobileDevice) {
     
     window.addEventListener('touchmove', (e) => {
         if (!input.joystick.active) return;
-        
         for (let touch of e.changedTouches) {
             if (touch.identifier === joystickTouchId) {
                 e.preventDefault();
@@ -208,24 +207,43 @@ if (isMobileDevice) {
         const deltaY = touch.clientY - input.joystick.centerY;
         const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 50);
         const angle = Math.atan2(deltaY, deltaX);
-        
         input.joystick.x = Math.cos(angle) * distance / 50;
         input.joystick.y = Math.sin(angle) * distance / 50;
-        
         joystickStick.style.left = `calc(50% + ${Math.cos(angle) * distance}px)`;
         joystickStick.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
     }
     
-    // Shoot Button (Auto-aim)
-    const shootBtn = document.getElementById('shootBtn');
-    shootBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        input.touch.shoot = true;
-    });
-    
-    shootBtn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        input.touch.shoot = false;
+    // Disparo tocando cualquier punto de la pantalla (excepto joystick y botón de habilidad)
+    window.addEventListener('touchstart', (e) => {
+        for (let touch of e.changedTouches) {
+            // Ignorar si el toque es en el joystick o el botón de habilidad
+            const target = touch.target;
+            if (
+                target.closest &&
+                (target.closest('#joystickContainer') || target.closest('#abilityBtn'))
+            ) {
+                continue;
+            }
+            // Disparar hacia el punto tocado
+            if (gameState.isPlaying) {
+                const tapX = touch.clientX;
+                const tapY = touch.clientY;
+                const angle = Math.atan2(tapY - player.y, tapX - player.x);
+                player.angle = angle;
+                bullets.push({
+                    x: player.x,
+                    y: player.y,
+                    vx: Math.cos(angle) * 14,
+                    vy: Math.sin(angle) * 14,
+                    radius: 7,
+                    damage: 35,
+                    color: '#00ffff',
+                    trail: [],
+                    glow: true
+                });
+                player.lastShootTime = Date.now();
+            }
+        }
     });
     
     // Ability Button
@@ -578,30 +596,8 @@ function update() {
     player.y = Math.max(player.radius, Math.min(screenHeight - player.radius, player.y));
 
     // SHOOTING
-    if (isMobileDevice) {
-        if (input.touch.shoot && now - player.lastShootTime > 120) {
-            const nearest = findNearestEnemy();
-            if (nearest) {
-                const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
-                player.angle = angle;
-                
-                bullets.push({
-                    x: player.x,
-                    y: player.y,
-                    vx: Math.cos(angle) * 14,
-                    vy: Math.sin(angle) * 14,
-                    radius: 7,
-                    damage: 35,
-                    color: '#00ffff',
-                    trail: [],
-                    glow: true
-                });
-                player.lastShootTime = now;
-            }
-        }
-    } else {
+    if (!isMobileDevice) {
         player.angle = Math.atan2(player.aimY - player.y, player.aimX - player.x);
-        
         if (input.mouse.leftDown && now - player.lastShootTime > 90) {
             bullets.push({
                 x: player.x,
