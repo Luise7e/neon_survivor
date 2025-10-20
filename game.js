@@ -278,16 +278,23 @@ function updateControlVisibility() {
     const actionButtons = document.getElementById('actionButtons');
     const abilityBtnSmall = document.getElementById('abilityBtnSmall');
 
+    console.log('🎮 Control Mode:', controlMode);
+    console.log('🕹️ Shoot Joystick:', shootJoystickContainer ? 'Found' : 'NOT FOUND');
+    console.log('🔘 Action Buttons:', actionButtons ? 'Found' : 'NOT FOUND');
+    console.log('⚡ Small Ability Btn:', abilityBtnSmall ? 'Found' : 'NOT FOUND');
+
     if (controlMode === 'joystick') {
         // Dual joystick mode
         if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
         if (actionButtons) actionButtons.style.display = 'none';
         if (abilityBtnSmall) abilityBtnSmall.style.display = 'flex';
+        console.log('✅ Dual Joystick Mode Activated');
     } else {
         // Tap mode
         if (shootJoystickContainer) shootJoystickContainer.style.display = 'none';
         if (actionButtons) actionButtons.style.display = 'flex';
         if (abilityBtnSmall) abilityBtnSmall.style.display = 'none';
+        console.log('✅ Tap to Shoot Mode Activated');
     }
 }
 
@@ -879,6 +886,11 @@ function showNotification(text) {
 
 function showWaveCountdown(callback) {
     gameState.isCountdown = true;
+    
+    // Limpiar cualquier enemigo residual que pueda quedar
+    enemies = [];
+    bullets = bullets.filter(b => !b.fromBoss); // Limpiar balas de jefes
+    
     const countdownEl = document.getElementById('waveCountdown');
     const countdownNumber = document.getElementById('countdownNumber');
     const countdownTitle = document.getElementById('countdownTitle');
@@ -1013,6 +1025,58 @@ function findNearestEnemy() {
     }
 
     return nearest;
+}
+
+// Update player movement only (for countdown mode)
+function updatePlayerMovement() {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // MOVE PLAYER
+    if (isMobileDevice) {
+        if (input.joystick.active) {
+            player.x += input.joystick.x * player.speed;
+            player.y += input.joystick.y * player.speed;
+        }
+    } else {
+        if (player.moving) {
+            const dx = player.targetX - player.x;
+            const dy = player.targetY - player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > 8) {
+                player.x += (dx / dist) * player.speed;
+                player.y += (dy / dist) * player.speed;
+            } else {
+                player.moving = false;
+            }
+        }
+    }
+
+    player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
+    player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
+}
+
+// Update ability pickups only (for countdown mode)
+function updateAbilityPickups() {
+    abilityPickups = abilityPickups.filter(pickup => {
+        const dx = player.x - pickup.x;
+        const dy = player.y - pickup.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < pickup.radius + player.radius) {
+            collectedAbility = pickup.ability;
+            updateAbilityButton();
+            showNotification(`${pickup.ability.icon} ${pickup.ability.name} - ${isMobileDevice ? 'Tap Ability' : 'Press SPACE'}`);
+            return false;
+        }
+
+        pickup.rotation += 0.06;
+        pickup.pulse += 0.1;
+        pickup.life -= 0.014;
+
+        return pickup.life > 0;
+    });
 }
 
 function update() {
@@ -1592,11 +1656,18 @@ function render() {
 // ===================================
 
 function gameLoop() {
-    if (!gameState.isPaused && !gameState.isCountdown) {
-        update();
+    if (!gameState.isPaused) {
+        if (gameState.isCountdown) {
+            // Durante countdown: permitir movimiento del jugador y recoger items
+            updatePlayerMovement();
+            updateAbilityPickups();
+        } else {
+            // Juego normal
+            update();
+        }
         render();
     } else {
-        // Solo renderiza el frame actual para mostrar el overlay de pausa o countdown
+        // Solo renderiza el frame actual para mostrar el overlay de pausa
         render();
     }
 
