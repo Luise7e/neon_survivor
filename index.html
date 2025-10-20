@@ -286,6 +286,82 @@
             display: flex;
         }
 
+        /* Shoot Joystick (Right Side) */
+        .shoot-joystick-container {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 120px;
+            height: 120px;
+            pointer-events: none;
+        }
+
+        .shoot-joystick-container .joystick-base {
+            background: radial-gradient(circle at center, rgba(255, 0, 255, 0.12) 0%, rgba(255, 0, 255, 0.03) 100%);
+            border: 2px solid rgba(255, 0, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.2), inset 0 0 15px rgba(255, 0, 255, 0.08);
+        }
+
+        .shoot-joystick-container .joystick-stick {
+            background: linear-gradient(135deg, #ff00ff 0%, #ff0088 100%);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .shoot-joystick-container .joystick-stick.active {
+            box-shadow: 0 0 30px rgba(255, 0, 255, 1), 0 4px 15px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Ability Button Small (for dual joystick mode) */
+        .ability-btn-small {
+            position: absolute;
+            bottom: 165px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.9) 0%, rgba(138, 0, 230, 0.9) 100%);
+            border: 3px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.7), 0 5px 15px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: absolute;
+            pointer-events: all;
+        }
+
+        .ability-btn-small.inactive {
+            opacity: 0.3;
+            background: linear-gradient(135deg, rgba(120, 120, 120, 0.6) 0%, rgba(80, 80, 80, 0.6) 100%);
+        }
+
+        .ability-btn-small:active {
+            transform: scale(0.9);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 1), 0 2px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        .ability-btn-small .cooldown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .ability-btn-small .cooldown-overlay.active {
+            display: flex;
+        }
+
         /* =========================
            HUD - RESPONSIVE (SINGLE ROW FULL WIDTH)
         ========================= */
@@ -609,6 +685,96 @@
             0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
             50% { transform: translate(-50%, -50%) scale(1.3) rotate(5deg); opacity: 1; }
             100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0; }
+        }
+
+        /* =========================
+           WAVE COUNTDOWN
+        ========================= */
+        .wave-countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5000;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .countdown-title {
+            font-size: clamp(32px, 6vw, 60px);
+            font-weight: 900;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #00ffff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-flow 3s ease infinite;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        .countdown-number {
+            font-size: clamp(120px, 25vw, 250px);
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow:
+                0 0 20px #00ffff,
+                0 0 40px #00ffff,
+                0 0 80px #00ffff,
+                0 0 120px #ff00ff,
+                0 0 160px #ff00ff;
+            animation: countdown-pulse 1s ease-in-out;
+            line-height: 1;
+        }
+
+        .countdown-subtitle {
+            font-size: clamp(20px, 4vw, 36px);
+            font-weight: 700;
+            color: #ff00ff;
+            text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+            margin-top: 20px;
+            animation: pulse-glow 1s ease-in-out infinite;
+        }
+
+        @keyframes countdown-pulse {
+            0% {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2) rotate(10deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                opacity: 0.7;
+                text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+            }
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 30px #ff00ff, 0 0 60px #ff00ff, 0 0 90px #ff00ff;
+            }
+        }
+
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @media (max-width: 768px) {
+            .countdown-title {
+                margin-bottom: 10px;
+            }
+            .countdown-subtitle {
+                margin-top: 10px;
+            }
         }
 
         /* =========================
@@ -1085,6 +1251,143 @@
             transform: scale(1.1);
         }
 
+        /* Settings Menu */
+        .settings-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a000a 0%, #000000 100%);
+            z-index: 10002;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .settings-title {
+            font-size: clamp(28px, 6vw, 48px);
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff00ff, #ff0088);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .close-settings-btn {
+            background: rgba(255, 0, 0, 0.8);
+            border: none;
+            color: #fff;
+            font-size: clamp(20px, 4vw, 28px);
+            width: clamp(40px, 8vw, 50px);
+            height: clamp(40px, 8vw, 50px);
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 900;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-settings-btn:hover {
+            background: rgba(255, 0, 0, 1);
+            transform: scale(1.1);
+        }
+
+        .settings-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .setting-section {
+            background: rgba(255, 0, 255, 0.1);
+            border: 2px solid rgba(255, 0, 255, 0.3);
+            border-radius: 20px;
+            padding: clamp(20px, 4vw, 30px);
+            margin-bottom: 30px;
+        }
+
+        .setting-label {
+            font-size: clamp(18px, 3.5vw, 24px);
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .setting-description {
+            font-size: clamp(13px, 2.5vw, 16px);
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 25px;
+        }
+
+        .control-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .control-option {
+            position: relative;
+        }
+
+        .control-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .control-option label {
+            display: block;
+            background: rgba(0, 0, 0, 0.5);
+            border: 3px solid rgba(255, 0, 255, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .control-option input[type="radio"]:checked + label {
+            background: rgba(255, 0, 255, 0.2);
+            border-color: #ff00ff;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+        }
+
+        .control-option label:hover {
+            transform: translateY(-5px);
+            border-color: #00ffff;
+        }
+
+        .option-icon {
+            font-size: clamp(40px, 8vw, 60px);
+            margin-bottom: 15px;
+        }
+
+        .option-title {
+            font-size: clamp(16px, 3vw, 20px);
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .option-desc {
+            font-size: clamp(12px, 2.2vw, 14px);
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.4;
+        }
+
         .stats-tabs {
             display: flex;
             gap: 10px;
@@ -1241,7 +1544,7 @@
     <div class="start-menu" id="startMenu">
         <div class="menu-logo">NEON SURVIVOR</div>
         <div class="menu-subtitle">Battle Royale Arena</div>
-        
+
         <!-- Google Sign-In (cuando NO está logueado) -->
         <div id="loginContainer">
             <button class="google-signin-btn" id="googleSignInBtn">
@@ -1265,6 +1568,39 @@
                 <button class="btn-start" id="startGameBtn">START GAME</button>
                 <button class="btn-level-select" id="levelSelectBtn">SELECT LEVEL</button>
                 <button class="btn-level-select" id="statsBtn" style="background: linear-gradient(135deg, #00ffff, #0088ff);">STATS & RANKING</button>
+                <button class="btn-level-select" id="settingsBtn" style="background: linear-gradient(135deg, #ff00ff, #ff0088);">⚙️ SETTINGS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Menu -->
+    <div class="settings-menu" id="settingsMenu" style="display:none;">
+        <div class="settings-header">
+            <div class="settings-title">⚙️ Settings</div>
+            <button class="close-settings-btn" id="closeSettingsBtn">×</button>
+        </div>
+        <div class="settings-content">
+            <div class="setting-section">
+                <div class="setting-label">Mobile Control Mode</div>
+                <div class="setting-description">Choose your preferred control scheme for mobile</div>
+                <div class="control-options">
+                    <div class="control-option" data-mode="tap">
+                        <input type="radio" name="controlMode" id="tapMode" value="tap">
+                        <label for="tapMode">
+                            <div class="option-icon">👆</div>
+                            <div class="option-title">Tap to Shoot</div>
+                            <div class="option-desc">Joystick to move + Tap button to shoot</div>
+                        </label>
+                    </div>
+                    <div class="control-option" data-mode="joystick">
+                        <input type="radio" name="controlMode" id="joystickMode" value="joystick" checked>
+                        <label for="joystickMode">
+                            <div class="option-icon">🎮</div>
+                            <div class="option-title">Dual Joystick</div>
+                            <div class="option-desc">Left joystick to move + Right joystick to aim & auto-shoot</div>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1421,14 +1757,20 @@
         <!-- Pause Button -->
         <button class="pause-btn-mobile" id="pauseBtnMobile"></button>
 
-        <!-- Joystick -->
+        <!-- Move Joystick (Left) -->
         <div class="joystick-container" id="joystickContainer">
             <div class="joystick-base" id="joystickBase"></div>
             <div class="joystick-stick" id="joystickStick"></div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons">
+        <!-- Shoot Joystick (Right) - Only visible in dual joystick mode -->
+        <div class="shoot-joystick-container" id="shootJoystickContainer" style="display:none;">
+            <div class="joystick-base" id="shootJoystickBase"></div>
+            <div class="joystick-stick" id="shootJoystickStick"></div>
+        </div>
+
+        <!-- Action Buttons - For tap mode -->
+        <div class="action-buttons" id="actionButtons">
             <button class="action-btn inactive" id="abilityBtn">
                 ⚡
                 <span class="btn-label">ABILITY</span>
@@ -1437,6 +1779,14 @@
                 </div>
             </button>
         </div>
+
+        <!-- Ability Button Small - For dual joystick mode -->
+        <button class="ability-btn-small inactive" id="abilityBtnSmall" style="display:none;">
+            ⚡
+            <div class="cooldown-overlay">
+                <span class="cooldown-text">0</span>
+            </div>
+        </button>
     </div>
 
 
@@ -1445,6 +1795,13 @@
 
     <!-- Wave Indicator -->
     <div class="wave-indicator" id="waveIndicator"></div>
+
+    <!-- Wave Countdown -->
+    <div class="wave-countdown" id="waveCountdown" style="display:none;">
+        <div class="countdown-title" id="countdownTitle">WAVE 1</div>
+        <div class="countdown-number" id="countdownNumber">5</div>
+        <div class="countdown-subtitle">GET READY!</div>
+    </div>
 
     <!-- Pause Overlay -->
     <div class="game-over" id="pauseOverlay" style="display:none; z-index:9500; background:rgba(0,0,0,0.97);">
@@ -1585,12 +1942,12 @@
     function renderLevelSelector() {
       levelGrid.innerHTML = '';
       const maxLevel = Math.max(10, maxLevelReached); // Mínimo 10 niveles, máximo el último alcanzado
-      
+
       for (let i = 1; i <= maxLevel; i++) {
         const btn = document.createElement('button');
         btn.className = 'level-btn';
         btn.textContent = i;
-        
+
         if (i <= maxLevelReached) {
           btn.onclick = () => {
             startGame(i);
@@ -1600,7 +1957,7 @@
           btn.classList.add('locked');
           btn.textContent = '🔒';
         }
-        
+
         levelGrid.appendChild(btn);
       }
     }
@@ -1610,12 +1967,12 @@
       gameStartTime = Date.now(); // Registrar inicio de partida
       startMenu.classList.add('hidden');
       loadingScreen.style.display = 'flex';
-      
+
       // Establecer wave inicial en el gameState
       if (window.gameState) {
         window.gameState.wave = startLevel;
       }
-      
+
       // Simular carga y luego iniciar
       setTimeout(() => {
         loadingScreen.style.display = 'none';
@@ -1637,7 +1994,7 @@
     // Guardar partida/score (llama a esta función al terminar una partida)
     function guardarPartida(score, wave, kills) {
         if (!currentUser) return;
-        
+
         const partidaData = {
             score: score,
             wave: wave,
@@ -1653,7 +2010,7 @@
             .collection("partidas").add(partidaData)
             .then(() => {
                 console.log('✅ Partida guardada correctamente');
-                
+
                 // Actualizar máximo nivel alcanzado si es mayor
                 if (wave > maxLevelReached) {
                     maxLevelReached = wave;
@@ -1704,6 +2061,55 @@
         statsPage.classList.remove('active');
     };
 
+    // ===================================
+    // SETTINGS MENU
+    // ===================================
+    const settingsMenu = document.getElementById('settingsMenu');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const controlModeRadios = document.querySelectorAll('input[name="controlMode"]');
+
+    // Load saved settings
+    function loadSettings() {
+        const savedMode = localStorage.getItem('controlMode') || 'joystick';
+        document.querySelector(`input[value="${savedMode}"]`).checked = true;
+        applyControlMode(savedMode);
+    }
+
+    // Apply control mode
+    function applyControlMode(mode) {
+        if (typeof window.setControlMode === 'function') {
+            window.setControlMode(mode);
+        }
+    }
+
+    // Open settings
+    settingsBtn.onclick = function() {
+        settingsMenu.style.display = 'block';
+        loadSettings();
+    };
+
+    // Close settings
+    closeSettingsBtn.onclick = function() {
+        settingsMenu.style.display = 'none';
+    };
+
+    // Save control mode
+    controlModeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const mode = this.value;
+            localStorage.setItem('controlMode', mode);
+            applyControlMode(mode);
+        });
+    });
+
+    // Load settings on page load
+    loadSettings();
+
+    // ===================================
+    // STATS & RANKING
+    // ===================================
+
     // Tabs
     tabBtns.forEach(btn => {
         btn.onclick = function() {
@@ -1745,9 +2151,26 @@
 
     // Cargar ranking según tab
     function loadRanking(tab) {
-        const [period, metric] = tab.split('-');
-        const tableId = tab + 'Table';
-        const bodyId = tab + 'Body';
+        // Mapear tabs a IDs correctos
+        const tabMapping = {
+            'daily-score': { tableId: 'dailyScoreTable', bodyId: 'dailyScoreBody', period: 'daily' },
+            'monthly-score': { tableId: 'monthlyScoreTable', bodyId: 'monthlyScoreBody', period: 'monthly' },
+            'alltime-score': { tableId: 'alltimeScoreTable', bodyId: 'alltimeScoreBody', period: 'alltime' }
+        };
+
+        const mapping = tabMapping[tab];
+        if (!mapping) {
+            console.error('Tab desconocido:', tab);
+            return;
+        }
+
+        const { tableId, bodyId, period } = mapping;
+        const loadingDiv = document.querySelector(`#${tab} .loading-stats`);
+        const table = document.getElementById(tableId);
+
+        // Mostrar loading
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        if (table) table.style.display = 'none';
 
         let query = db.collection("ranking");
         const now = new Date();
@@ -1808,7 +2231,27 @@
                     displayResults = allResults.slice(userRank - 10, userRank + 11);
                 }
 
+                // Ocultar loading y mostrar tabla
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                if (table) table.style.display = 'table';
+
                 renderRankingTable(displayResults, bodyId, tableId, allResults);
+            })
+            .catch(error => {
+                console.error('Error cargando ranking:', error);
+                if (loadingDiv) {
+                    loadingDiv.innerHTML = `
+                        <div style="color: #ff4757; text-align: center; padding: 20px;">
+                            <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ Index Required</div>
+                            <div style="font-size: 0.9em;">Firebase needs a composite index for this query.</div>
+                            <a href="${error.message.match(/https:\/\/[^\s]+/)}" target="_blank"
+                               style="display: inline-block; margin-top: 10px; color: #00d4ff; text-decoration: none;
+                                      background: rgba(0,212,255,0.1); padding: 8px 16px; border-radius: 8px;">
+                                Create Index
+                            </a>
+                        </div>
+                    `;
+                }
             });
     }
 
@@ -1816,6 +2259,12 @@
     function renderRankingTable(results, bodyId, tableId, allResults) {
         const tbody = document.getElementById(bodyId);
         const table = document.getElementById(tableId);
+
+        if (!tbody || !table) {
+            console.error('No se encontraron elementos:', { bodyId, tableId });
+            return;
+        }
+
         tbody.innerHTML = '';
 
         if (results.length === 0) {

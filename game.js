@@ -118,6 +118,7 @@ const gameState = {
     isPlaying: false,
     isGameOver: false,
     isPaused: false,
+    isCountdown: false,
     wave: 1,
     score: 0,
     kills: 0,
@@ -138,7 +139,7 @@ const player = {
     radius: isMobileDevice ? 20 : 18,
     health: 100,
     maxHealth: 100,
-    speed: isMobileDevice ? 6 : 5,
+    speed: isMobileDevice ? 4 : 3,
     color: '#00ffff',
     angle: 0,
     aimX: 0,
@@ -249,11 +250,46 @@ const input = {
         centerX: 0,
         centerY: 0
     },
+    shootJoystick: {
+        active: false,
+        x: 0,
+        y: 0,
+        angle: 0,
+        centerX: 0,
+        centerY: 0
+    },
     touch: {
         shoot: false,
         ability: false
     }
 };
+
+// Control Mode Configuration
+let controlMode = localStorage.getItem('controlMode') || 'joystick'; // 'tap' or 'joystick'
+
+// Function to set control mode (called from settings)
+window.setControlMode = function(mode) {
+    controlMode = mode;
+    updateControlVisibility();
+};
+
+function updateControlVisibility() {
+    const shootJoystickContainer = document.getElementById('shootJoystickContainer');
+    const actionButtons = document.getElementById('actionButtons');
+    const abilityBtnSmall = document.getElementById('abilityBtnSmall');
+
+    if (controlMode === 'joystick') {
+        // Dual joystick mode
+        if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
+        if (actionButtons) actionButtons.style.display = 'none';
+        if (abilityBtnSmall) abilityBtnSmall.style.display = 'flex';
+    } else {
+        // Tap mode
+        if (shootJoystickContainer) shootJoystickContainer.style.display = 'none';
+        if (actionButtons) actionButtons.style.display = 'flex';
+        if (abilityBtnSmall) abilityBtnSmall.style.display = 'none';
+    }
+}
 
 // ===================================
 // MOBILE CONTROLS - WILD RIFT STYLE
@@ -335,8 +371,92 @@ if (isMobileDevice) {
         joystickStick.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
     }
 
+    // ===================================
+    // SHOOT JOYSTICK (Right Side) - Dual Joystick Mode
+    // ===================================
+    const shootJoystickBase = document.getElementById('shootJoystickBase');
+    const shootJoystickStick = document.getElementById('shootJoystickStick');
+    let shootJoystickTouchId = null;
+
+    if (shootJoystickBase) {
+        shootJoystickBase.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.changedTouches[0];
+            shootJoystickTouchId = touch.identifier;
+            const rect = shootJoystickBase.getBoundingClientRect();
+            input.shootJoystick.centerX = rect.left + rect.width / 2;
+            input.shootJoystick.centerY = rect.top + rect.height / 2;
+            input.shootJoystick.active = true;
+            shootJoystickStick.classList.add('active');
+            handleShootJoystickMove(touch);
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!input.shootJoystick.active) return;
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === shootJoystickTouchId) {
+                    e.preventDefault();
+                    handleShootJoystickMove(touch);
+                    break;
+                }
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', (e) => {
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === shootJoystickTouchId) {
+                    e.preventDefault();
+                    input.shootJoystick.active = false;
+                    input.shootJoystick.x = 0;
+                    input.shootJoystick.y = 0;
+                    shootJoystickStick.style.left = '50%';
+                    shootJoystickStick.style.top = '50%';
+                    shootJoystickStick.classList.remove('active');
+                    shootJoystickTouchId = null;
+                    break;
+                }
+            }
+        });
+
+        document.addEventListener('touchcancel', (e) => {
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === shootJoystickTouchId) {
+                    input.shootJoystick.active = false;
+                    input.shootJoystick.x = 0;
+                    input.shootJoystick.y = 0;
+                    shootJoystickStick.style.left = '50%';
+                    shootJoystickStick.style.top = '50%';
+                    shootJoystickStick.classList.remove('active');
+                    shootJoystickTouchId = null;
+                    break;
+                }
+            }
+        });
+    }
+
+    function handleShootJoystickMove(touch) {
+        const deltaX = touch.clientX - input.shootJoystick.centerX;
+        const deltaY = touch.clientY - input.shootJoystick.centerY;
+        const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 50);
+        const angle = Math.atan2(deltaY, deltaX);
+        
+        input.shootJoystick.x = Math.cos(angle) * distance / 50;
+        input.shootJoystick.y = Math.sin(angle) * distance / 50;
+        input.shootJoystick.angle = angle;
+        
+        shootJoystickStick.style.left = `calc(50% + ${Math.cos(angle) * distance}px)`;
+        shootJoystickStick.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
+    }
+
+    // ===================================
+    // TAP TO SHOOT MODE (Original)
+    // ===================================
     // Disparo tocando cualquier punto de la pantalla (excepto joystick, botón de pausa y botón de habilidad)
     window.addEventListener('touchstart', (e) => {
+        // Solo funciona en modo tap
+        if (controlMode !== 'tap') return;
+
         for (let touch of e.changedTouches) {
             // Ignorar si el toque es en los controles
             const target = touch.target;
@@ -349,7 +469,7 @@ if (isMobileDevice) {
                 continue;
             }
             // Disparar hacia el punto tocado
-            if (gameState.isPlaying && !gameState.isPaused) {
+            if (gameState.isPlaying && !gameState.isPaused && !gameState.isCountdown) {
                 const tapX = touch.clientX;
                 const tapY = touch.clientY;
                 const angle = Math.atan2(tapY - player.y, tapX - player.x);
@@ -372,7 +492,8 @@ if (isMobileDevice) {
             }
         }
     });
-    // Ability Button
+    
+    // Ability Button (Large - Tap Mode)
     const abilityBtn = document.getElementById('abilityBtn');
     abilityBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
@@ -382,10 +503,25 @@ if (isMobileDevice) {
         }
     });
 
+    // Ability Button (Small - Dual Joystick Mode)
+    const abilityBtnSmall = document.getElementById('abilityBtnSmall');
+    if (abilityBtnSmall) {
+        abilityBtnSmall.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initAudio();
+            if (collectedAbility && gameState.isPlaying) {
+                useAbility();
+            }
+        });
+    }
+
     // Inicializar audio en primer touch
     window.addEventListener('touchstart', () => {
         initAudio();
     }, { once: true });
+
+    // Apply control mode visibility on load
+    updateControlVisibility();
 
     // ...fin controles móviles...
 }
@@ -639,7 +775,7 @@ function spawnEnemy() {
     const baseRadius = isMobileDevice ? 20 : 18;
     const radius = baseRadius * enemyType.sizeMultiplier;
     const baseHealth = 55 + gameState.wave * 15;
-    const baseSpeed = (1.2 + gameState.wave * 0.09) * gameState.difficultyMultiplier;
+    const baseSpeed = (0.5 + gameState.wave * 0.09) * gameState.difficultyMultiplier;
 
     const enemy = {
         x: position.x,
@@ -741,6 +877,40 @@ function showNotification(text) {
     }, 2200);
 }
 
+function showWaveCountdown(callback) {
+    gameState.isCountdown = true;
+    const countdownEl = document.getElementById('waveCountdown');
+    const countdownNumber = document.getElementById('countdownNumber');
+    const countdownTitle = document.getElementById('countdownTitle');
+
+    const isBossWave = gameState.wave % 5 === 0;
+    countdownTitle.innerHTML = isBossWave ?
+        `⚡ BOSS WAVE ${gameState.wave} ⚡` :
+        `WAVE ${gameState.wave}`;
+
+    countdownEl.style.display = 'block';
+
+    let count = 5;
+    countdownNumber.textContent = count;
+
+    const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            countdownNumber.textContent = count;
+            // Reiniciar animación
+            countdownNumber.style.animation = 'none';
+            setTimeout(() => {
+                countdownNumber.style.animation = 'countdown-pulse 1s ease-in-out';
+            }, 10);
+        } else {
+            clearInterval(interval);
+            countdownEl.style.display = 'none';
+            gameState.isCountdown = false;
+            if (callback) callback();
+        }
+    }, 1000);
+}
+
 function nextWave() {
     gameState.wave++;
     gameState.enemiesPerWave = Math.floor(gameState.enemiesPerWave * 1.30);
@@ -754,36 +924,45 @@ function nextWave() {
         const numBosses = Math.floor(gameState.wave / 10) + 1;
         gameState.enemiesToSpawn = 0; // No regular enemies in boss wave
         gameState.totalEnemiesInWave = numBosses;
-
-        // Spawnear jefes inmediatamente
-        for (let i = 0; i < numBosses; i++) {
-            setTimeout(() => spawnBoss(), i * 2000);
-        }
-
-        // Spawnear habilidades aleatorias en waves de jefe
-        const numAbilities = 3 + Math.floor(gameState.wave / 10);
-        for (let i = 0; i < numAbilities; i++) {
-            setTimeout(() => {
-                const x = Math.random() * (window.innerWidth - 100) + 50;
-                const y = Math.random() * (window.innerHeight - gameAreaTop - 100) + gameAreaTop + 50;
-                spawnAbilityPickup(x, y);
-            }, i * 3000 + 2000);
-        }
     } else {
         gameState.totalEnemiesInWave = gameState.enemiesToSpawn;
     }
 
-    const indicator = document.getElementById('waveIndicator');
-    indicator.innerHTML = isBossWave ?
-        `<div>⚡ BOSS WAVE ${gameState.wave} ⚡</div>` :
-        `<div>WAVE ${gameState.wave}</div>`;
-    indicator.style.display = 'block';
-
-    setTimeout(() => {
-        indicator.style.display = 'none';
-    }, 2700);
-
     updateHUD();
+
+    // Mostrar cuenta regresiva antes de iniciar la wave
+    showWaveCountdown(() => {
+        // Después de la cuenta regresiva, iniciar la wave
+        if (isBossWave) {
+            const numBosses = Math.floor(gameState.wave / 10) + 1;
+
+            // Spawnear jefes
+            for (let i = 0; i < numBosses; i++) {
+                setTimeout(() => spawnBoss(), i * 2000);
+            }
+
+            // Spawnear habilidades aleatorias en waves de jefe
+            const numAbilities = 3 + Math.floor(gameState.wave / 10);
+            for (let i = 0; i < numAbilities; i++) {
+                setTimeout(() => {
+                    const x = Math.random() * (window.innerWidth - 100) + 50;
+                    const y = Math.random() * (window.innerHeight - gameAreaTop - 100) + gameAreaTop + 50;
+                    spawnAbilityPickup(x, y);
+                }, i * 3000 + 2000);
+            }
+        }
+
+        // Mostrar indicador de wave brevemente
+        const indicator = document.getElementById('waveIndicator');
+        indicator.innerHTML = isBossWave ?
+            `<div>⚡ BOSS WAVE ${gameState.wave} ⚡</div>` :
+            `<div>WAVE ${gameState.wave}</div>`;
+        indicator.style.display = 'block';
+
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 2000);
+    });
 }
 
 function updateHUD() {
@@ -869,6 +1048,7 @@ function update() {
 
     // SHOOTING
     if (!isMobileDevice) {
+        // PC: Mouse shooting
         player.angle = Math.atan2(player.aimY - player.y, player.aimX - player.x);
         if (input.mouse.leftDown && now - player.lastShootTime > 90) {
             bullets.push({
@@ -884,17 +1064,39 @@ function update() {
             });
             player.lastShootTime = now;
         }
+    } else {
+        // Mobile: Dual Joystick Mode - Auto shoot while aiming
+        if (controlMode === 'joystick' && input.shootJoystick.active) {
+            player.angle = input.shootJoystick.angle;
+            
+            // Auto-shoot while joystick is active
+            if (now - player.lastShootTime > 120) {
+                bullets.push({
+                    x: player.x,
+                    y: player.y,
+                    vx: Math.cos(player.angle) * 14,
+                    vy: Math.sin(player.angle) * 14,
+                    radius: 5.25,
+                    damage: 35,
+                    color: '#00ffff',
+                    trail: [],
+                    glow: true
+                });
+                player.lastShootTime = now;
+            }
+        }
+        // Tap mode shooting is handled in touchstart event
     }
 
-    // Spawn enemies (skip in boss wave)
+    // Spawn enemies (skip in boss wave and countdown)
     const isBossWave = gameState.wave % 5 === 0;
-    if (!isBossWave && gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate) {
+    if (!gameState.isCountdown && !isBossWave && gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate) {
         spawnEnemy();
         gameState.enemiesToSpawn--;
         gameState.lastEnemySpawn = now;
     }
 
-    if (enemies.length === 0 && gameState.enemiesToSpawn === 0) {
+    if (!gameState.isCountdown && enemies.length === 0 && gameState.enemiesToSpawn === 0) {
         nextWave();
     }
 
@@ -1390,16 +1592,16 @@ function render() {
 // ===================================
 
 function gameLoop() {
-    if (!gameState.isPaused) {
+    if (!gameState.isPaused && !gameState.isCountdown) {
         update();
         render();
     } else {
-        // Solo renderiza el frame actual para mostrar el overlay de pausa
+        // Solo renderiza el frame actual para mostrar el overlay de pausa o countdown
         render();
     }
 
     // Actualizar contador de enemigos en tiempo real (restantes/total)
-    if (gameState.isPlaying) {
+    if (gameState.isPlaying && !gameState.isCountdown) {
         const remainingEnemies = enemies.length + gameState.enemiesToSpawn;
         document.getElementById('enemiesDisplay').textContent = `${remainingEnemies}/${gameState.totalEnemiesInWave}`;
     }
@@ -1417,7 +1619,7 @@ window.startGameFromMenu = function(startLevel) {
     gameState.enemiesPerWave = Math.floor(5 * Math.pow(2.25, startLevel - 1));
     gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
     gameState.totalEnemiesInWave = gameState.enemiesToSpawn;
-    
+
     document.getElementById('gameHUD').classList.add('active');
     gameState.isPlaying = true;
     gameState.lastEnemySpawn = Date.now();
