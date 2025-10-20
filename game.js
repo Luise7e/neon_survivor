@@ -83,8 +83,33 @@ if (!isMobileDevice) {
         return false;
     });
 
+    // PC Controls: Left click = shoot, Right click = move
     canvas.addEventListener('mousedown', (e) => {
-        e.preventDefault();
+        if (gameState.isPaused || gameState.isGameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left);
+        const mouseY = (e.clientY - rect.top);
+        if (e.button === 0) { // Left click: shoot
+            input.mouse.x = mouseX;
+            input.mouse.y = mouseY;
+            input.mouse.leftDown = true;
+            player.aimX = mouseX;
+            player.aimY = mouseY;
+            // Trigger shoot logic (if implemented)
+            playerShoot(mouseX, mouseY);
+        } else if (e.button === 2) { // Right click: move
+            input.mouse.x = mouseX;
+            input.mouse.y = mouseY;
+            input.mouse.rightDown = true;
+            player.targetX = mouseX;
+            player.targetY = mouseY;
+            player.moving = true;
+        }
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+        if (e.button === 0) input.mouse.leftDown = false;
+        if (e.button === 2) input.mouse.rightDown = false;
     });
 }
 
@@ -122,6 +147,13 @@ const player = {
     lastShootTime: 0,
     moving: false
 };
+
+// PC shooting logic stub
+function playerShoot(x, y) {
+    // Implement shooting logic here if not present
+    // Example: create a bullet towards (x, y)
+    // ...existing code...
+}
 
 // Límites del área de juego (HUD height)
 var gameAreaTop = 0;
@@ -573,14 +605,14 @@ const ENEMY_TYPES = {
 function selectEnemyType() {
     const rand = Math.random();
     let cumulative = 0;
-    
+
     for (const [key, type] of Object.entries(ENEMY_TYPES)) {
         cumulative += type.spawnChance;
         if (rand <= cumulative) {
             return { key, ...type };
         }
     }
-    
+
     return { key: 'BASIC', ...ENEMY_TYPES.BASIC };
 }
 
@@ -596,14 +628,14 @@ function getSpawnPosition() {
         case 2: x = Math.random() * screenWidth; y = screenHeight + 40; break;
         case 3: x = -40; y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop); break;
     }
-    
+
     return { x, y };
 }
 
 function spawnEnemy() {
     const enemyType = selectEnemyType();
     const position = getSpawnPosition();
-    
+
     const baseRadius = isMobileDevice ? 20 : 18;
     const radius = baseRadius * enemyType.sizeMultiplier;
     const baseHealth = 55 + gameState.wave * 15;
@@ -632,7 +664,7 @@ let bosses = [];
 function spawnBoss() {
     const position = getSpawnPosition();
     const bossesInWave = Math.floor(gameState.wave / 10) + 1;
-    
+
     const baseRadius = isMobileDevice ? 45 : 40;
     const radius = baseRadius + (gameState.wave * 2);
     const baseHealth = 500 + gameState.wave * 150;
@@ -646,12 +678,12 @@ function spawnBoss() {
         maxHealth: baseHealth,
         speed: baseSpeed,
         color: '#8800ff', // Violeta
-        damage: 25 + gameState.wave * 5,
+        damage: 5 + gameState.wave * 5,
         type: 'BOSS',
         isBoss: true,
         shootCooldown: 0,
         lastShootTime: 0,
-        shootRate: 1500 - (gameState.wave * 50),
+        shootRate: 3000 - (gameState.wave * 50),
         collectedAbility: null,
         abilityDropChance: 1.0,
         aimX: 0,
@@ -660,24 +692,24 @@ function spawnBoss() {
 
     bosses.push(boss);
     enemies.push(boss);
-    
+
     showNotification(`⚠️ BOSS WAVE ${gameState.wave} ⚠️`);
 }
 
 function handleExplosion(x, y, radius) {
     const explosionRadius = radius * 2;
-    
+
     enemies.forEach(enemy => {
         const dx = enemy.x - x;
         const dy = enemy.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (dist < explosionRadius && dist > 0) {
             enemy.health -= enemy.maxHealth * 0.10;
             createParticles(enemy.x, enemy.y, 15, '#ffff00');
         }
     });
-    
+
     createExplosion(x, y, explosionRadius);
 }
 
@@ -711,22 +743,23 @@ function showNotification(text) {
 
 function nextWave() {
     gameState.wave++;
-    gameState.enemiesPerWave = Math.floor(gameState.enemiesPerWave * 2.25);
+    gameState.enemiesPerWave = Math.floor(gameState.enemiesPerWave * 1.30);
     gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
     gameState.enemySpawnRate = Math.max(350, 1000 - gameState.wave * 45);
 
     // Wave de jefe (múltiplos de 5)
     const isBossWave = gameState.wave % 5 === 0;
-    
+
     if (isBossWave) {
         const numBosses = Math.floor(gameState.wave / 10) + 1;
-        gameState.totalEnemiesInWave = gameState.enemiesToSpawn + numBosses;
-        
+        gameState.enemiesToSpawn = 0; // No regular enemies in boss wave
+        gameState.totalEnemiesInWave = numBosses;
+
         // Spawnear jefes inmediatamente
         for (let i = 0; i < numBosses; i++) {
             setTimeout(() => spawnBoss(), i * 2000);
         }
-        
+
         // Spawnear habilidades aleatorias en waves de jefe
         const numAbilities = 3 + Math.floor(gameState.wave / 10);
         for (let i = 0; i < numAbilities; i++) {
@@ -741,8 +774,8 @@ function nextWave() {
     }
 
     const indicator = document.getElementById('waveIndicator');
-    indicator.innerHTML = isBossWave ? 
-        `<div>⚡ BOSS WAVE ${gameState.wave} ⚡</div>` : 
+    indicator.innerHTML = isBossWave ?
+        `<div>⚡ BOSS WAVE ${gameState.wave} ⚡</div>` :
         `<div>WAVE ${gameState.wave}</div>`;
     indicator.style.display = 'block';
 
@@ -848,8 +881,9 @@ function update() {
         }
     }
 
-    // Spawn enemies
-    if (gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate) {
+    // Spawn enemies (skip in boss wave)
+    const isBossWave = gameState.wave % 5 === 0;
+    if (!isBossWave && gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate) {
         spawnEnemy();
         gameState.enemiesToSpawn--;
         gameState.lastEnemySpawn = now;
@@ -874,7 +908,7 @@ function update() {
         if (enemy.isBoss) {
             enemy.aimX = player.x;
             enemy.aimY = player.y;
-            
+
             // Disparo del jefe
             if (now - enemy.lastShootTime > enemy.shootRate) {
                 const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
@@ -892,11 +926,11 @@ function update() {
                 });
                 enemy.lastShootTime = now;
             }
-            
+
             // Jefe recoge habilidades
             abilityPickups.forEach((pickup, index) => {
                 const pickupDist = Math.sqrt(
-                    Math.pow(enemy.x - pickup.x, 2) + 
+                    Math.pow(enemy.x - pickup.x, 2) +
                     Math.pow(enemy.y - pickup.y, 2)
                 );
                 if (pickupDist < enemy.radius + pickup.radius) {
@@ -904,7 +938,7 @@ function update() {
                     abilityPickups.splice(index, 1);
                 }
             });
-            
+
             // Jefe usa habilidades inteligentemente
             if (enemy.collectedAbility && enemy.health < enemy.maxHealth * 0.5) {
                 if (enemy.collectedAbility.id === 'heal') {
@@ -968,13 +1002,13 @@ function update() {
         }
 
         let hit = false;
-        
+
         // Balas del jefe dañan al jugador
         if (bullet.fromBoss) {
             const dx = bullet.x - player.x;
             const dy = bullet.y - player.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (dist < player.radius + bullet.radius) {
                 player.health -= bullet.damage;
                 hit = true;
@@ -982,7 +1016,7 @@ function update() {
                 playDamageSound();
                 vibrateDevice(50);
                 updateHUD();
-                
+
                 if (player.health <= 0) {
                     gameOver();
                 }
@@ -1009,7 +1043,7 @@ function update() {
     enemies = enemies.filter(enemy => {
         if (enemy.health <= 0) {
             gameState.kills++;
-            
+
             // Score según tipo de enemigo
             let scoreBonus = 100;
             if (enemy.isBoss) {
@@ -1027,7 +1061,7 @@ function update() {
             } else if (enemy.type === 'EXPLOSIVE') {
                 scoreBonus = 150;
             }
-            
+
             gameState.score += scoreBonus * gameState.wave;
             createParticles(enemy.x, enemy.y, isMobileDevice ? 25 : 35, enemy.color);
 
@@ -1247,7 +1281,7 @@ function render() {
             ctx.fill();
             ctx.globalAlpha = 1;
         }
-        
+
         if (enemy.isBoss) {
             // Anillo giratorio para jefes
             const rotation = Date.now() * 0.002;
@@ -1262,7 +1296,7 @@ function render() {
             ctx.arc(enemy.x, enemy.y, enemy.radius + 15, rotation + Math.PI, rotation + Math.PI * 2);
             ctx.stroke();
         }
-        
+
         // Cuerpo del enemigo
         ctx.shadowColor = enemy.color;
         ctx.shadowBlur = enemy.isBoss ? qualitySettings.shadowBlur * 3 : qualitySettings.shadowBlur * 1.5;
@@ -1270,7 +1304,7 @@ function render() {
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Indicador de tipo en el centro
         if (enemy.type === 'FAST') {
             ctx.shadowBlur = 0;
