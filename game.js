@@ -447,11 +447,11 @@ if (isMobileDevice) {
         const deltaY = touch.clientY - input.shootJoystick.centerY;
         const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 50);
         const angle = Math.atan2(deltaY, deltaX);
-        
+
         input.shootJoystick.x = Math.cos(angle) * distance / 50;
         input.shootJoystick.y = Math.sin(angle) * distance / 50;
         input.shootJoystick.angle = angle;
-        
+
         shootJoystickStick.style.left = `calc(50% + ${Math.cos(angle) * distance}px)`;
         shootJoystickStick.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
     }
@@ -499,7 +499,7 @@ if (isMobileDevice) {
             }
         }
     });
-    
+
     // Ability Button (Large - Tap Mode)
     const abilityBtn = document.getElementById('abilityBtn');
     abilityBtn.addEventListener('touchstart', (e) => {
@@ -886,11 +886,11 @@ function showNotification(text) {
 
 function showWaveCountdown(callback) {
     gameState.isCountdown = true;
-    
+
     // Limpiar cualquier enemigo residual que pueda quedar
     enemies = [];
     bullets = bullets.filter(b => !b.fromBoss); // Limpiar balas de jefes
-    
+
     const countdownEl = document.getElementById('waveCountdown');
     const countdownNumber = document.getElementById('countdownNumber');
     const countdownTitle = document.getElementById('countdownTitle');
@@ -933,6 +933,8 @@ function nextWave() {
     const isBossWave = gameState.wave % 5 === 0;
 
     if (isBossWave) {
+        // Limpiar cualquier enemigo residual antes de spawnear bosses
+        enemies = [];
         const numBosses = Math.floor(gameState.wave / 10) + 1;
         gameState.enemiesToSpawn = 0; // No regular enemies in boss wave
         gameState.totalEnemiesInWave = numBosses;
@@ -1000,9 +1002,10 @@ function gameOver() {
     document.getElementById('finalScore').textContent = gameState.score.toLocaleString();
     document.getElementById('gameOver').classList.add('active');
 
-    // Guardar partida en Firestore
-    if (window.guardarPartida && typeof window.guardarPartida === 'function') {
+    // Guardar partida solo una vez
+    if (!gameState.partidaGuardada && window.guardarPartida && typeof window.guardarPartida === 'function') {
         window.guardarPartida(gameState.score, gameState.wave, gameState.kills);
+        gameState.partidaGuardada = true;
     }
 }
 
@@ -1079,6 +1082,44 @@ function updateAbilityPickups() {
     });
 }
 
+// Update only visual effects and pickups during countdown
+function updateVisualsDuringCountdown() {
+    // Update ability pickups (sin recoger por enemigos)
+    abilityPickups = abilityPickups.filter(pickup => {
+        pickup.rotation += 0.06;
+        pickup.pulse += 0.1;
+        pickup.life -= 0.014;
+        return pickup.life > 0;
+    });
+
+    // Update particles
+    particles = particles.filter(p => {
+        if (p.type === 'lightning') {
+            p.life -= 0.05;
+            return p.life > 0;
+        } else if (p.type === 'ring') {
+            p.radius = p.maxRadius * (1 - p.life);
+            p.life -= 0.02;
+            return p.life > 0;
+        } else if (p.type === 'explosion') {
+            p.radius = p.maxRadius * (1 - p.life);
+            p.life -= 0.015;
+            return p.life > 0;
+        } else {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.96;
+            p.vy *= 0.96;
+            p.life -= 0.018;
+            return p.life > 0;
+        }
+    });
+
+    if (particles.length > qualitySettings.maxParticles) {
+        particles = particles.slice(-qualitySettings.maxParticles);
+    }
+}
+
 function update() {
     if (!gameState.isPlaying || gameState.isGameOver || gameState.isPaused) return;
 
@@ -1132,7 +1173,7 @@ function update() {
         // Mobile: Dual Joystick Mode - Auto shoot while aiming
         if (controlMode === 'joystick' && input.shootJoystick.active) {
             player.angle = input.shootJoystick.angle;
-            
+
             // Auto-shoot while joystick is active
             if (now - player.lastShootTime > 120) {
                 bullets.push({
@@ -1660,9 +1701,9 @@ function gameLoop() {
         if (gameState.isCountdown) {
             // Durante countdown: permitir movimiento del jugador y recoger items
             updatePlayerMovement();
-            updateAbilityPickups();
+            updateVisualsDuringCountdown();
         } else {
-            // Juego normal
+            updateVisualsDuringCountdown(); // Animaciones y efectos
             update();
         }
         render();

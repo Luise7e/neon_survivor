@@ -1392,8 +1392,23 @@
             display: flex;
             gap: 10px;
             margin-bottom: 30px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             justify-content: center;
+            overflow-x: auto;
+        }
+
+        .menu-btn {
+            background: rgba(255, 0, 255, 0.2);
+            border: 2px solid #ff00ff;
+            color: #fff;
+            padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 30px);
+            font-size: clamp(12px, 2.5vw, 16px);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 25px;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
         }
 
         .tab-btn {
@@ -1562,13 +1577,13 @@
         <div id="userMenuContainer" style="display:none;">
             <div class="user-info">
                 <img id="userAvatar" class="user-avatar" src="" alt="User">
-                <div class="user-name" id="userName"></div>
+                <div class="user-name" id="userName" style="text-transform: uppercase;"></div>
             </div>
             <div class="menu-buttons">
-                <button class="btn-start" id="startGameBtn">START GAME</button>
-                <button class="btn-level-select" id="levelSelectBtn">SELECT LEVEL</button>
-                <button class="btn-level-select" id="statsBtn" style="background: linear-gradient(135deg, #00ffff, #0088ff);">STATS & RANKING</button>
-                <button class="btn-level-select" id="settingsBtn" style="background: linear-gradient(135deg, #ff00ff, #ff0088);">⚙️ SETTINGS</button>
+                <button class="menu-btn" id="startGameBtn">START GAME</button>
+                <button class="menu-btn" id="levelSelectBtn">SELECT LEVEL</button>
+                <button class="menu-btn" id="statsBtn">STATS & RANKING</button>
+                <button class="menu-btn" id="settingsBtn">SETTINGS</button>
             </div>
         </div>
     </div>
@@ -1576,7 +1591,7 @@
     <!-- Settings Menu -->
     <div class="settings-menu" id="settingsMenu" style="display:none;">
         <div class="settings-header">
-            <div class="settings-title">⚙️ Settings</div>
+            <div class="settings-title">Settings</div>
             <button class="close-settings-btn" id="closeSettingsBtn">×</button>
         </div>
         <div class="settings-content">
@@ -1617,6 +1632,12 @@
             <div class="stats-title">Stats & Ranking</div>
             <button class="close-stats-btn" id="closeStatsBtn">×</button>
         </div>
+                <!-- Tabs -->
+        <div class="stats-tabs">
+            <button class="tab-btn active" data-tab="daily-score" data-period="daily">Daily</button>
+            <button class="tab-btn" data-tab="monthly-score" data-period="monthly">Monthly</button>
+            <button class="tab-btn" data-tab="alltime-score" data-period="alltime">All-Time</button>
+        </div>
 
         <!-- Mis Estadísticas -->
         <div class="ranking-section">
@@ -1639,14 +1660,10 @@
                     <div class="stat-box-label">Total Kills</div>
                 </div>
             </div>
+            <div class="loading-stats" id="myStatsLoading" style="display:none;">Loading...</div>
         </div>
 
-        <!-- Tabs -->
-        <div class="stats-tabs">
-            <button class="tab-btn active" data-tab="daily-score">Daily Score</button>
-            <button class="tab-btn" data-tab="monthly-score">Monthly Score</button>
-            <button class="tab-btn" data-tab="alltime-score">All-Time Score</button>
-        </div>
+
 
         <!-- Daily Score -->
         <div class="stats-content active" id="daily-score">
@@ -1806,8 +1823,9 @@
     <!-- Pause Overlay -->
     <div class="game-over" id="pauseOverlay" style="display:none; z-index:9500; background:rgba(0,0,0,0.97);">
         <h1 style="font-size:70px; background:linear-gradient(45deg,#00ffff,#ff00ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:0 0 50px #00ffff; margin-bottom:30px; animation:title-glow 2s ease-in-out infinite;">PAUSA</h1>
-        <div style="margin-bottom:40px;">
+        <div style="margin-bottom:40px; display: flex; flex-direction: column; gap: 18px; align-items: center;">
             <button class="btn-neon" id="resumeBtn" style="font-size:22px; padding:18px 50px; border-radius:40px;">▶ REANUDAR</button>
+            <button class="btn-neon" id="abortBtn" style="font-size:20px; padding:14px 44px; border-radius:40px; background: linear-gradient(135deg, #ff0055, #ff00ff); color: #fff;">END GAME</button>
         </div>
     </div>
 
@@ -1963,24 +1981,21 @@
     }
 
     // Iniciar juego desde un nivel específico
-    function startGame(startLevel) {
-      gameStartTime = Date.now(); // Registrar inicio de partida
-      startMenu.classList.add('hidden');
-      loadingScreen.style.display = 'flex';
+        function startGame(startLevel) {
+            gameStartTime = Date.now(); // Registrar inicio de partida
+            startMenu.classList.add('hidden');
+            // loadingScreen.style.display = 'flex'; // Ya no se muestra loadingScreen en cada partida
 
-      // Establecer wave inicial en el gameState
-      if (window.gameState) {
-        window.gameState.wave = startLevel;
-      }
+            // Establecer wave inicial en el gameState
+            if (window.gameState) {
+                window.gameState.wave = startLevel;
+            }
 
-      // Simular carga y luego iniciar
-      setTimeout(() => {
-        loadingScreen.style.display = 'none';
-        if (window.startGameFromMenu) {
-          window.startGameFromMenu(startLevel);
+            // Iniciar el juego inmediatamente (sin mostrar loadingScreen)
+            if (window.startGameFromMenu) {
+                window.startGameFromMenu(startLevel);
+            }
         }
-      }, 2000);
-    }
 
     // Guardar datos extra del usuario (llama a esta función cuando tengas los datos)
     function guardarDatosExtra(edad, sexo, region, pais, continente) {
@@ -1992,7 +2007,7 @@
     }
 
     // Guardar partida/score (llama a esta función al terminar una partida)
-    function guardarPartida(score, wave, kills) {
+    function guardarPartida(score, wave, kills, endType = 'FINISHED') {
         if (!currentUser) return;
 
         const partidaData = {
@@ -2002,7 +2017,8 @@
             fecha: firebase.firestore.Timestamp.now(),
             duracion: Date.now() - gameStartTime, // Duración en milisegundos
             userId: currentUser.uid,
-            userName: currentUser.displayName || 'Anonymous'
+            userName: currentUser.displayName || 'Anonymous',
+            endType: endType // 'FINISHED' o 'ABORTED'
         };
 
         // Guardar en colección de usuario
@@ -2038,7 +2054,7 @@
     window.guardarPartida = guardarPartida;
 
     // Variable para rastrear el inicio de partida
-    let gameStartTime = Date.now();
+    let gameStartTime = null;
 
     // ===================================
     // STATS & RANKING PAGE
@@ -2047,13 +2063,25 @@
     const statsPage = document.getElementById('statsPage');
     const statsBtn = document.getElementById('statsBtn');
     const closeStatsBtn = document.getElementById('closeStatsBtn');
-    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabBtns = document.querySelectorAll('.stats-tabs .tab-btn');
 
     // Abrir página de stats
     statsBtn.onclick = function() {
         statsPage.classList.add('active');
         loadMyStats();
         loadRanking('daily-score');
+        // --- LIMPIEZA Y PAUSA DEL JUEGO ---
+        if (window.gameState) {
+            window.gameState.isPlaying = false;
+            window.gameState.isPaused = false;
+            window.gameState.isGameOver = false;
+        }
+        if (window.enemies) window.enemies = [];
+        if (window.bullets) window.bullets = [];
+        if (window.particles) window.particles = [];
+        if (window.audioContext && window.audioContext.state === 'running') {
+            window.audioContext.suspend();
+        }
     };
 
     // Cerrar página de stats
@@ -2114,40 +2142,59 @@
     tabBtns.forEach(btn => {
         btn.onclick = function() {
             const tab = this.dataset.tab;
+            const period = this.dataset.period;
             tabBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             document.querySelectorAll('.stats-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tab).classList.add('active');
             loadRanking(tab);
+            loadMyStats(period);
         };
     });
 
     // Cargar mis estadísticas
     function loadMyStats() {
+        // Accept period as argument, default to 'daily'
+        let period = arguments.length > 0 ? arguments[0] : 'daily';
         if (!currentUser) return;
+        const loadingDiv = document.getElementById('myStatsLoading');
+        loadingDiv.style.display = 'block';
+        document.getElementById('myStats').style.opacity = 0.5;
 
-        db.collection("usuarios").doc(currentUser.uid).collection("partidas")
-            .get()
-            .then(snapshot => {
-                let totalGames = 0;
-                let bestScore = 0;
-                let bestWave = 0;
-                let totalKills = 0;
+        let query = db.collection("ranking").where("userId", "==", currentUser.uid);
+        const now = new Date();
+        if (period === 'daily') {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            query = query.where("fecha", ">=", firebase.firestore.Timestamp.fromDate(startOfDay));
+        } else if (period === 'monthly') {
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+            query = query.where("fecha", ">=", firebase.firestore.Timestamp.fromDate(startOfMonth));
+        }
 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    totalGames++;
-                    if (data.score > bestScore) bestScore = data.score;
-                    if (data.wave > bestWave) bestWave = data.wave;
-                    totalKills += data.kills || 0;
-                });
+        query.get().then(snapshot => {
+            let totalGames = 0;
+            let bestScore = 0;
+            let bestWave = 0;
+            let totalKills = 0;
 
-                document.getElementById('totalGames').textContent = totalGames;
-                document.getElementById('bestScore').textContent = bestScore.toLocaleString();
-                document.getElementById('bestWave').textContent = bestWave;
-                document.getElementById('totalKills').textContent = totalKills.toLocaleString();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                totalGames++;
+                if (data.score > bestScore) bestScore = data.score;
+                if (data.wave > bestWave) bestWave = data.wave;
+                totalKills += data.kills || 0;
             });
+
+            document.getElementById('totalGames').textContent = totalGames;
+            document.getElementById('bestScore').textContent = bestScore.toLocaleString();
+            document.getElementById('bestWave').textContent = bestWave;
+            document.getElementById('totalKills').textContent = totalKills.toLocaleString();
+        }).finally(() => {
+            loadingDiv.style.display = 'none';
+            document.getElementById('myStats').style.opacity = 1;
+        });
     }
+    // My Stats filter buttons event removed; unified with tabBtns
 
     // Cargar ranking según tab
     function loadRanking(tab) {
@@ -2310,9 +2357,10 @@
         }
 
         // PAUSE BUTTON LOGIC
-        const pauseBtnMobile = document.getElementById('pauseBtnMobile');
-        const pauseOverlay = document.getElementById('pauseOverlay');
-        const resumeBtn = document.getElementById('resumeBtn');
+    const pauseBtnMobile = document.getElementById('pauseBtnMobile');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const abortBtn = document.getElementById('abortBtn');
 
         function togglePause() {
             if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
@@ -2332,11 +2380,31 @@
             pauseBtnMobile.addEventListener('click', togglePause);
         }
 
+
         resumeBtn.addEventListener('click', () => {
             if (window.gameState && window.gameState.isPaused) {
                 window.gameState.isPaused = false;
                 pauseOverlay.style.display = 'none';
                 document.getElementById('gameHUD').style.opacity = '1';
+            }
+        });
+
+        // Botón abandonar partida
+        abortBtn.addEventListener('click', () => {
+            if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
+                // Guardar la partida como ABORTED
+                if (typeof window.guardarPartida === 'function') {
+                    window.guardarPartida(window.gameState.score, window.gameState.wave, window.gameState.kills, 'ABORTED');
+                }
+                // Marcar la partida como terminada y volver al menú principal
+                window.gameState.isGameOver = true;
+                window.gameState.isPlaying = false;
+                pauseOverlay.style.display = 'none';
+                document.getElementById('gameHUD').style.opacity = '1';
+                // Mostrar menú principal
+                if (typeof startMenu !== 'undefined') {
+                    startMenu.classList.remove('hidden');
+                }
             }
         });
 
