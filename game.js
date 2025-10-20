@@ -808,6 +808,11 @@ function gameOver() {
     document.getElementById('finalKills').textContent = gameState.kills;
     document.getElementById('finalScore').textContent = gameState.score.toLocaleString();
     document.getElementById('gameOver').classList.add('active');
+
+    // Guardar partida en Firestore
+    if (window.guardarPartida && typeof window.guardarPartida === 'function') {
+        window.guardarPartida(gameState.score, gameState.wave, gameState.kills);
+    }
 }
 
 // ===================================
@@ -1405,6 +1410,36 @@ function gameLoop() {
 // ===================================
 // START GAME
 // ===================================
+
+// Función para iniciar el juego desde el menú con un nivel específico
+window.startGameFromMenu = function(startLevel) {
+    gameState.wave = startLevel - 1; // Se ajusta porque nextWave() incrementa
+    gameState.enemiesPerWave = Math.floor(5 * Math.pow(2.25, startLevel - 1));
+    gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
+    gameState.totalEnemiesInWave = gameState.enemiesToSpawn;
+    
+    document.getElementById('gameHUD').classList.add('active');
+    gameState.isPlaying = true;
+    gameState.lastEnemySpawn = Date.now();
+    player.lastShootTime = Date.now();
+    updateGameAreaLimits();
+
+    // Reposicionar jugador en el centro del área de juego válida
+    player.x = window.innerWidth / 2;
+    player.y = (window.innerHeight + gameAreaTop) / 2;
+    player.targetX = player.x;
+    player.targetY = player.y;
+
+    updateHUD();
+    nextWave(); // Inicia la primera wave
+    gameLoop();
+
+    console.log('🎮 Game Started!');
+    console.log('Device:', isMobileDevice ? '📱 Mobile' : '🖥️ PC');
+    console.log('Controls:', isMobileDevice ? 'Joystick + Touch' : 'MOBA (Right-click move, Left-click shoot)');
+    console.log('Quality:', qualitySettings);
+    console.log('Game Area Top:', gameAreaTop);
+};
 
 setTimeout(() => {
     document.getElementById('loadingScreen').style.display = 'none';

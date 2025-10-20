@@ -766,7 +766,7 @@
         }
 
         .menu-logo {
-            font-size: 72px;
+            font-size: clamp(36px, 8vw, 72px);
             font-weight: 900;
             background: linear-gradient(135deg, #ff00ff, #00ffff, #ff00ff);
             -webkit-background-clip: text;
@@ -775,34 +775,40 @@
             text-shadow: 0 0 80px rgba(255, 0, 255, 0.8);
             margin-bottom: 20px;
             animation: title-glow 3s ease-in-out infinite;
-            letter-spacing: 4px;
+            letter-spacing: clamp(2px, 0.5vw, 4px);
+            text-align: center;
+            padding: 0 20px;
         }
 
         .menu-subtitle {
-            font-size: 20px;
+            font-size: clamp(14px, 3vw, 20px);
             color: #00ffff;
-            margin-bottom: 60px;
+            margin-bottom: clamp(30px, 6vw, 60px);
             text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: clamp(2px, 0.4vw, 3px);
             text-shadow: 0 0 20px #00ffff;
+            text-align: center;
+            padding: 0 20px;
         }
 
         /* Google Sign-In Button (Modern Design) */
         .google-signin-btn {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 12px;
             background: #fff;
             color: #3c4043;
             border: none;
             padding: 12px 24px;
-            font-size: 16px;
+            font-size: clamp(14px, 2.5vw, 16px);
             font-weight: 600;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', 'Orbitron', sans-serif;
             border-radius: 4px;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 30px rgba(66, 133, 244, 0.5);
             transition: all 0.3s ease;
+            max-width: 90%;
         }
 
         .google-signin-btn:hover {
@@ -817,6 +823,7 @@
         .google-icon {
             width: 20px;
             height: 20px;
+            flex-shrink: 0;
         }
 
         /* User Menu */
@@ -825,25 +832,36 @@
             flex-direction: column;
             align-items: center;
             gap: 20px;
+            width: 100%;
+            max-width: 500px;
+            padding: 0 20px;
         }
 
         .user-info {
             display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 15px;
             margin-bottom: 30px;
+            text-align: center;
+        }
+
+        @media (min-width: 480px) {
+            .user-info {
+                flex-direction: row;
+            }
         }
 
         .user-avatar {
-            width: 64px;
-            height: 64px;
+            width: clamp(48px, 12vw, 64px);
+            height: clamp(48px, 12vw, 64px);
             border-radius: 50%;
             border: 3px solid #00ffff;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
         }
 
         .user-name {
-            font-size: 24px;
+            font-size: clamp(18px, 4vw, 24px);
             color: #fff;
             text-shadow: 0 0 20px #ff00ff;
             font-weight: 700;
@@ -854,13 +872,15 @@
             flex-direction: column;
             gap: 15px;
             margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
         }
 
         .btn-start {
             background: linear-gradient(135deg, #00ff00, #00ffff);
             border: none;
-            padding: 18px 60px;
-            font-size: 22px;
+            padding: clamp(14px, 3vw, 18px) clamp(40px, 8vw, 60px);
+            font-size: clamp(18px, 3.5vw, 22px);
             font-weight: 900;
             color: #000;
             cursor: pointer;
@@ -869,11 +889,12 @@
             box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
             transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: clamp(2px, 0.4vw, 3px);
+            width: 100%;
         }
 
         .btn-start:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
             box-shadow: 0 0 60px rgba(0, 255, 0, 1);
         }
 
@@ -884,8 +905,8 @@
         .btn-level-select {
             background: linear-gradient(135deg, #ff00ff, #8800ff);
             border: none;
-            padding: 15px 50px;
-            font-size: 18px;
+            padding: clamp(12px, 2.5vw, 15px) clamp(35px, 7vw, 50px);
+            font-size: clamp(16px, 3vw, 18px);
             font-weight: 700;
             color: #fff;
             cursor: pointer;
@@ -894,7 +915,8 @@
             box-shadow: 0 0 30px rgba(255, 0, 255, 0.6);
             transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: clamp(1px, 0.3vw, 2px);
+            width: 100%;
         }
 
         .btn-level-select:hover {
@@ -915,6 +937,7 @@
             justify-content: center;
             z-index: 10001;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .level-selector.active {
@@ -923,21 +946,30 @@
 
         .level-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 15px;
-            max-width: 600px;
-            padding: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: clamp(10px, 2vw, 15px);
+            max-width: min(90vw, 600px);
+            width: 100%;
+            padding: clamp(20px, 5vw, 40px);
             background: rgba(20, 0, 40, 0.9);
             border-radius: 20px;
             border: 2px solid rgba(255, 0, 255, 0.5);
             box-shadow: 0 0 50px rgba(255, 0, 255, 0.5);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 768px) {
+            .level-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
         }
 
         .level-btn {
             background: linear-gradient(135deg, #1a0033, #330066);
             border: 2px solid #ff00ff;
-            padding: 20px;
-            font-size: 20px;
+            padding: clamp(15px, 3vw, 20px);
+            font-size: clamp(16px, 3vw, 20px);
             font-weight: 900;
             color: #fff;
             cursor: pointer;
@@ -946,6 +978,10 @@
             box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
             transition: all 0.2s ease;
             text-transform: uppercase;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .level-btn:hover {
@@ -966,23 +1002,237 @@
 
         .close-level-selector {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: clamp(10px, 2vw, 20px);
+            right: clamp(10px, 2vw, 20px);
             background: rgba(255, 0, 0, 0.8);
             border: none;
             color: #fff;
-            font-size: 32px;
-            width: 50px;
-            height: 50px;
+            font-size: clamp(24px, 5vw, 32px);
+            width: clamp(40px, 8vw, 50px);
+            height: clamp(40px, 8vw, 50px);
             border-radius: 50%;
             cursor: pointer;
             font-weight: 900;
             box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
         }
 
         .close-level-selector:hover {
             background: rgba(255, 0, 0, 1);
             transform: scale(1.1);
+        }
+
+        /* Stats & Ranking Page */
+        .stats-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #0a001a 0%, #000000 100%);
+            display: none;
+            flex-direction: column;
+            z-index: 10001;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .stats-page.active {
+            display: flex;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stats-title {
+            font-size: clamp(24px, 5vw, 42px);
+            font-weight: 900;
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .close-stats-btn {
+            background: rgba(255, 0, 0, 0.8);
+            border: none;
+            color: #fff;
+            font-size: clamp(20px, 4vw, 28px);
+            width: clamp(40px, 8vw, 50px);
+            height: clamp(40px, 8vw, 50px);
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 900;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-stats-btn:hover {
+            background: rgba(255, 0, 0, 1);
+            transform: scale(1.1);
+        }
+
+        .stats-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            background: rgba(255, 0, 255, 0.2);
+            border: 2px solid #ff00ff;
+            color: #fff;
+            padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 30px);
+            font-size: clamp(12px, 2.5vw, 16px);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 25px;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+            color: #000;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+        }
+
+        .tab-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .stats-content {
+            display: none;
+        }
+
+        .stats-content.active {
+            display: block;
+        }
+
+        .ranking-section {
+            background: rgba(20, 0, 40, 0.6);
+            border: 2px solid rgba(255, 0, 255, 0.4);
+            border-radius: 15px;
+            padding: clamp(15px, 3vw, 25px);
+            margin-bottom: 25px;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
+        }
+
+        .section-title {
+            font-size: clamp(18px, 3.5vw, 24px);
+            color: #00ffff;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00ffff;
+            font-weight: 700;
+        }
+
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ranking-table th {
+            background: rgba(255, 0, 255, 0.3);
+            color: #fff;
+            padding: clamp(8px, 2vw, 12px);
+            text-align: left;
+            font-size: clamp(12px, 2vw, 14px);
+            text-transform: uppercase;
+            border-bottom: 2px solid #ff00ff;
+        }
+
+        .ranking-table td {
+            padding: clamp(8px, 2vw, 12px);
+            color: #fff;
+            font-size: clamp(11px, 1.8vw, 14px);
+            border-bottom: 1px solid rgba(255, 0, 255, 0.2);
+        }
+
+        .ranking-table tr:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .ranking-table tr.current-user {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+        }
+
+        .rank-number {
+            font-weight: 900;
+            color: #00ffff;
+            font-size: clamp(14px, 2.5vw, 18px);
+        }
+
+        .rank-gold {
+            color: #ffd700;
+        }
+
+        .rank-silver {
+            color: #c0c0c0;
+        }
+
+        .rank-bronze {
+            color: #cd7f32;
+        }
+
+        .my-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+            border: 2px solid rgba(255, 0, 255, 0.5);
+            border-radius: 15px;
+            padding: clamp(15px, 3vw, 20px);
+            text-align: center;
+        }
+
+        .stat-box-value {
+            font-size: clamp(24px, 5vw, 36px);
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+        }
+
+        .stat-box-label {
+            font-size: clamp(10px, 2vw, 12px);
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .loading-stats {
+            text-align: center;
+            color: #00ffff;
+            font-size: clamp(16px, 3vw, 20px);
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .ranking-table th:nth-child(4),
+            .ranking-table td:nth-child(4) {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -1012,8 +1262,9 @@
                 <div class="user-name" id="userName"></div>
             </div>
             <div class="menu-buttons">
-                <button class="btn-start" id="startGameBtn">▶ START GAME</button>
-                <button class="btn-level-select" id="levelSelectBtn">🎯 SELECT LEVEL</button>
+                <button class="btn-start" id="startGameBtn">START GAME</button>
+                <button class="btn-level-select" id="levelSelectBtn">SELECT LEVEL</button>
+                <button class="btn-level-select" id="statsBtn" style="background: linear-gradient(135deg, #00ffff, #0088ff);">STATS & RANKING</button>
             </div>
         </div>
     </div>
@@ -1022,6 +1273,102 @@
     <div class="level-selector" id="levelSelector">
         <button class="close-level-selector" id="closeLevelSelector">×</button>
         <div class="level-grid" id="levelGrid"></div>
+    </div>
+
+    <!-- Stats & Ranking Page -->
+    <div class="stats-page" id="statsPage">
+        <div class="stats-header">
+            <div class="stats-title">Stats & Ranking</div>
+            <button class="close-stats-btn" id="closeStatsBtn">×</button>
+        </div>
+
+        <!-- Mis Estadísticas -->
+        <div class="ranking-section">
+            <div class="section-title">My Stats</div>
+            <div class="my-stats" id="myStats">
+                <div class="stat-box">
+                    <div class="stat-box-value" id="totalGames">-</div>
+                    <div class="stat-box-label">Total Games</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="bestScore">-</div>
+                    <div class="stat-box-label">Best Score</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="bestWave">-</div>
+                    <div class="stat-box-label">Max Wave</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" id="totalKills">-</div>
+                    <div class="stat-box-label">Total Kills</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="stats-tabs">
+            <button class="tab-btn active" data-tab="daily-score">Daily Score</button>
+            <button class="tab-btn" data-tab="monthly-score">Monthly Score</button>
+            <button class="tab-btn" data-tab="alltime-score">All-Time Score</button>
+        </div>
+
+        <!-- Daily Score -->
+        <div class="stats-content active" id="daily-score">
+            <div class="ranking-section">
+                <div class="section-title">Best Score Today</div>
+                <div class="loading-stats">Loading...</div>
+                <table class="ranking-table" id="dailyScoreTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Score</th>
+                            <th>Wave</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyScoreBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Monthly Score -->
+        <div class="stats-content" id="monthly-score">
+            <div class="ranking-section">
+                <div class="section-title">Best Score (Last 30 Days)</div>
+                <div class="loading-stats">Loading...</div>
+                <table class="ranking-table" id="monthlyScoreTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Score</th>
+                            <th>Wave</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyScoreBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- All-Time Score -->
+        <div class="stats-content" id="alltime-score">
+            <div class="ranking-section">
+                <div class="section-title">All-Time Best Score</div>
+                <div class="loading-stats">Loading...</div>
+                <table class="ranking-table" id="alltimeScoreTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Score</th>
+                            <th>Wave</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alltimeScoreBody"></tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <!-- Loading Screen -->
@@ -1260,6 +1607,7 @@
 
     // Iniciar juego desde un nivel específico
     function startGame(startLevel) {
+      gameStartTime = Date.now(); // Registrar inicio de partida
       startMenu.classList.add('hidden');
       loadingScreen.style.display = 'flex';
       
@@ -1289,24 +1637,214 @@
     // Guardar partida/score (llama a esta función al terminar una partida)
     function guardarPartida(score, wave, kills) {
         if (!currentUser) return;
+        
+        const partidaData = {
+            score: score,
+            wave: wave,
+            kills: kills,
+            fecha: firebase.firestore.Timestamp.now(),
+            duracion: Date.now() - gameStartTime, // Duración en milisegundos
+            userId: currentUser.uid,
+            userName: currentUser.displayName || 'Anonymous'
+        };
+
+        // Guardar en colección de usuario
         db.collection("usuarios").doc(currentUser.uid)
-            .collection("partidas").add({
-                score, wave, kills,
-                fecha: firebase.firestore.Timestamp.now()
+            .collection("partidas").add(partidaData)
+            .then(() => {
+                console.log('✅ Partida guardada correctamente');
+                
+                // Actualizar máximo nivel alcanzado si es mayor
+                if (wave > maxLevelReached) {
+                    maxLevelReached = wave;
+                    db.collection("usuarios").doc(currentUser.uid).set({
+                        maxLevelReached: wave,
+                        ultimaConexion: firebase.firestore.Timestamp.now()
+                    }, { merge: true });
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error guardando partida:', error);
+            });
+
+        // Guardar en colección global de ranking
+        db.collection("ranking").add(partidaData)
+            .then(() => {
+                console.log('✅ Partida añadida al ranking global');
+            })
+            .catch(error => {
+                console.error('❌ Error guardando en ranking global:', error);
             });
     }
 
-    // Ejemplo: para rankings globales
-    function mostrarTop10() {
-        db.collectionGroup("partidas")
-            .orderBy("score", "desc")
-            .limit(10)
+    // Hacer la función global para que game.js pueda llamarla
+    window.guardarPartida = guardarPartida;
+
+    // Variable para rastrear el inicio de partida
+    let gameStartTime = Date.now();
+
+    // ===================================
+    // STATS & RANKING PAGE
+    // ===================================
+
+    const statsPage = document.getElementById('statsPage');
+    const statsBtn = document.getElementById('statsBtn');
+    const closeStatsBtn = document.getElementById('closeStatsBtn');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+
+    // Abrir página de stats
+    statsBtn.onclick = function() {
+        statsPage.classList.add('active');
+        loadMyStats();
+        loadRanking('daily-score');
+    };
+
+    // Cerrar página de stats
+    closeStatsBtn.onclick = function() {
+        statsPage.classList.remove('active');
+    };
+
+    // Tabs
+    tabBtns.forEach(btn => {
+        btn.onclick = function() {
+            const tab = this.dataset.tab;
+            tabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.stats-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            loadRanking(tab);
+        };
+    });
+
+    // Cargar mis estadísticas
+    function loadMyStats() {
+        if (!currentUser) return;
+
+        db.collection("usuarios").doc(currentUser.uid).collection("partidas")
             .get()
             .then(snapshot => {
-                let ranking = [];
-                snapshot.forEach(doc => ranking.push(doc.data()));
-                console.log('TOP 10:', ranking);
+                let totalGames = 0;
+                let bestScore = 0;
+                let bestWave = 0;
+                let totalKills = 0;
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    totalGames++;
+                    if (data.score > bestScore) bestScore = data.score;
+                    if (data.wave > bestWave) bestWave = data.wave;
+                    totalKills += data.kills || 0;
+                });
+
+                document.getElementById('totalGames').textContent = totalGames;
+                document.getElementById('bestScore').textContent = bestScore.toLocaleString();
+                document.getElementById('bestWave').textContent = bestWave;
+                document.getElementById('totalKills').textContent = totalKills.toLocaleString();
             });
+    }
+
+    // Cargar ranking según tab
+    function loadRanking(tab) {
+        const [period, metric] = tab.split('-');
+        const tableId = tab + 'Table';
+        const bodyId = tab + 'Body';
+
+        let query = db.collection("ranking");
+        const now = new Date();
+
+        // Filtro por periodo y ordenar por score
+        if (period === 'daily') {
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            query = query.where('fecha', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
+                         .orderBy('fecha', 'desc')
+                         .orderBy('score', 'desc');
+        } else if (period === 'monthly') {
+            const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            query = query.where('fecha', '>=', firebase.firestore.Timestamp.fromDate(last30Days))
+                         .orderBy('fecha', 'desc')
+                         .orderBy('score', 'desc');
+        } else {
+            // All-time: solo ordenar por score
+            query = query.orderBy('score', 'desc');
+        }
+
+        // Obtener ranking completo
+        query.limit(200).get()
+            .then(snapshot => {
+                const allResults = [];
+                const userScores = {};
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const userId = data.userId;
+
+                    // Solo guardar la mejor partida de cada usuario (por score)
+                    if (!userScores[userId] || data.score > userScores[userId].score) {
+                        userScores[userId] = data;
+                    }
+                });
+
+                // Convertir a array y ordenar por score
+                for (let userId in userScores) {
+                    allResults.push(userScores[userId]);
+                }
+                allResults.sort((a, b) => b.score - a.score);
+
+                // Encontrar posición del usuario actual
+                let userRank = -1;
+                if (currentUser) {
+                    userRank = allResults.findIndex(r => r.userId === currentUser.uid);
+                }
+
+                // Determinar qué resultados mostrar (10 arriba, usuario, 10 abajo)
+                let displayResults = [];
+                if (userRank === -1 || allResults.length <= 21) {
+                    displayResults = allResults.slice(0, 21);
+                } else if (userRank < 10) {
+                    displayResults = allResults.slice(0, 21);
+                } else if (userRank > allResults.length - 11) {
+                    displayResults = allResults.slice(-21);
+                } else {
+                    displayResults = allResults.slice(userRank - 10, userRank + 11);
+                }
+
+                renderRankingTable(displayResults, bodyId, tableId, allResults);
+            });
+    }
+
+    // Renderizar tabla de ranking
+    function renderRankingTable(results, bodyId, tableId, allResults) {
+        const tbody = document.getElementById(bodyId);
+        const table = document.getElementById(tableId);
+        tbody.innerHTML = '';
+
+        if (results.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No data available</td></tr>';
+        } else {
+            results.forEach((data, index) => {
+                const actualRank = allResults.findIndex(r => r.userId === data.userId) + 1;
+                const row = document.createElement('tr');
+                if (currentUser && data.userId === currentUser.uid) {
+                    row.classList.add('current-user');
+                }
+
+                let rankClass = '';
+                if (actualRank === 1) rankClass = 'rank-gold';
+                else if (actualRank === 2) rankClass = 'rank-silver';
+                else if (actualRank === 3) rankClass = 'rank-bronze';
+
+                row.innerHTML = `
+                    <td><span class="rank-number ${rankClass}">#${actualRank}</span></td>
+                    <td>${data.userName || 'Anonymous'}</td>
+                    <td>${data.score.toLocaleString()}</td>
+                    <td>${data.wave}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        table.style.display = 'table';
+        table.previousElementSibling.style.display = 'none'; // Hide loading
     }
     </script>
     <script>
