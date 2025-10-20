@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@600;700&display=swap');
-        
+
         * {
             margin: 0;
             padding: 0;
@@ -101,14 +101,14 @@
             display: block;
         }
 
-        /* Joystick Container */
+        /* Joystick Container - FIXED TOUCH AREA */
         .joystick-container {
             position: absolute;
-            bottom: 40px;
-            left: 40px;
-            width: 160px;
-            height: 160px;
-            pointer-events: all;
+            bottom: 30px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+            pointer-events: none; /* El contenedor no captura eventos */
         }
 
         .joystick-base {
@@ -116,28 +116,81 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 255, 0.05) 100%);
-            border: 3px solid rgba(0, 255, 255, 0.4);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.12) 0%, rgba(0, 255, 255, 0.03) 100%);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.08);
+            pointer-events: all; /* Solo la base captura eventos */
+            touch-action: none;
         }
 
         .joystick-stick {
             position: absolute;
-            width: 70px;
-            height: 70px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%);
-            border: 3px solid #ffffff;
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.8), 0 5px 15px rgba(0, 0, 0, 0.5);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            transition: all 0.1s ease;
+            transition: all 0.05s ease-out;
+            pointer-events: none; /* El stick no interfiere */
         }
 
         .joystick-stick.active {
             transform: translate(-50%, -50%) scale(1.1);
-            box-shadow: 0 0 40px rgba(0, 255, 255, 1), 0 5px 20px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 1), 0 4px 15px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Pause Button - NEON STYLE */
+        .pause-btn-mobile {
+            position: absolute;
+            bottom: 165px;
+            left: 30px;
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(10, 10, 40, 0.9) 0%, rgba(40, 0, 60, 0.9) 100%);
+            border: 2px solid;
+            border-image: linear-gradient(135deg, #00ffff, #ff00ff) 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            pointer-events: all;
+            backdrop-filter: blur(10px);
+        }
+
+        .pause-btn-mobile::before,
+        .pause-btn-mobile::after {
+            content: '';
+            position: absolute;
+            width: 5px;
+            height: 20px;
+            background: linear-gradient(180deg, #00ffff, #ff00ff);
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+
+        .pause-btn-mobile::before {
+            left: 14px;
+        }
+
+        .pause-btn-mobile::after {
+            right: 14px;
+        }
+
+        .pause-btn-mobile:active {
+            transform: scale(0.9);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8), inset 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .pause-btn-mobile:active::before,
+        .pause-btn-mobile:active::after {
+            box-shadow: 0 0 15px rgba(0, 255, 255, 1);
         }
 
         /* Action Buttons */
@@ -166,6 +219,11 @@
             cursor: pointer;
             transition: all 0.1s ease;
             position: relative;
+        }
+
+        .action-btn.inactive {
+            opacity: 0.3;
+            background: linear-gradient(135deg, rgba(120, 120, 120, 0.6) 0%, rgba(80, 80, 80, 0.6) 100%);
         }
 
         .action-btn:active {
@@ -208,18 +266,20 @@
         }
 
         /* =========================
-           HUD - RESPONSIVE
+           HUD - RESPONSIVE (SINGLE ROW)
         ========================= */
         .hud {
             position: fixed;
-            top: 15px;
-            left: 15px;
-            right: 15px;
+            top: 8px;
+            left: 8px;
+            right: 8px;
             z-index: 1000;
             pointer-events: none;
             display: none;
-            flex-wrap: wrap;
-            gap: 10px;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 6px;
+            justify-content: space-between;
         }
 
         .hud.active {
@@ -227,77 +287,91 @@
         }
 
         .hud-panel {
-            background: linear-gradient(135deg, rgba(10, 10, 40, 0.95) 0%, rgba(20, 0, 40, 0.95) 100%);
-            border: 2px solid;
+            background: linear-gradient(135deg, rgba(10, 10, 40, 0.85) 0%, rgba(20, 0, 40, 0.85) 100%);
+            border: 1px solid;
             border-image: linear-gradient(135deg, #00ffff, #ff00ff) 1;
-            border-radius: 12px;
-            padding: 12px 18px;
-            backdrop-filter: blur(15px);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(255, 0, 255, 0.1);
-            flex: 0 1 auto;
-            min-width: 100px;
+            border-radius: 8px;
+            padding: 6px 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(255, 0, 255, 0.05);
+            flex: 0 0 auto;
+            min-width: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hud-panel.health-panel {
+            flex: 1 1 auto;
+            max-width: 140px;
         }
 
         @media (max-width: 768px) {
             .hud {
-                top: 10px;
-                left: 10px;
-                right: 10px;
+                top: 5px;
+                left: 5px;
+                right: 5px;
+                gap: 4px;
             }
-            
+
             .hud-panel {
-                padding: 8px 12px;
-                min-width: 80px;
+                padding: 4px 8px;
+                border-radius: 6px;
+            }
+
+            .hud-panel.health-panel {
+                max-width: 110px;
             }
         }
 
         .hud-label {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 4px;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
             font-family: 'Rajdhani', sans-serif;
+            white-space: nowrap;
         }
 
         @media (max-width: 768px) {
             .hud-label {
-                font-size: 8px;
-                letter-spacing: 1px;
+                font-size: 7px;
+                letter-spacing: 0.5px;
             }
         }
 
         .hud-value {
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 900;
             background: linear-gradient(90deg, #00ffff, #ff00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
             font-family: 'Orbitron', sans-serif;
+            line-height: 1;
         }
 
         @media (max-width: 768px) {
             .hud-value {
-                font-size: 18px;
+                font-size: 14px;
             }
         }
 
         .health-bar-container {
-            width: 180px;
-            height: 16px;
+            width: 100%;
+            height: 10px;
             background: rgba(0, 0, 0, 0.6);
-            border-radius: 10px;
+            border-radius: 5px;
             overflow: hidden;
-            margin-top: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-top: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         @media (max-width: 768px) {
             .health-bar-container {
-                width: 120px;
-                height: 12px;
+                height: 8px;
             }
         }
 
@@ -306,7 +380,7 @@
             background: linear-gradient(90deg, #ff0055, #ff00ff, #8800ff);
             background-size: 200% 100%;
             transition: width 0.3s ease;
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
             animation: health-glow 2s ease-in-out infinite;
         }
 
@@ -653,43 +727,48 @@
         </div>
     </div>
 
-    <!-- HUD -->
+
+    <!-- HUD - SINGLE ROW -->
     <div class="hud" id="gameHUD">
         <div class="hud-panel">
             <div class="hud-label">WAVE</div>
             <div class="hud-value" id="waveDisplay">1</div>
         </div>
-        
-        <div class="hud-panel">
-            <div class="hud-label">HEALTH</div>
+        <div class="hud-panel health-panel">
+            <div class="hud-label">HP</div>
             <div class="hud-value" id="healthText">100</div>
             <div class="health-bar-container">
                 <div class="health-bar" id="healthBar" style="width: 100%;"></div>
             </div>
         </div>
-        
-        <div class="hud-panel">
-            <div class="hud-label">SCORE</div>
-            <div class="hud-value" id="scoreDisplay">0</div>
-        </div>
-
         <div class="hud-panel">
             <div class="hud-label">KILLS</div>
             <div class="hud-value" id="killsDisplay">0</div>
+        </div>
+        <div class="hud-panel">
+            <div class="hud-label">HOSTILES</div>
+            <div class="hud-value" id="hostilesDisplay">0</div>
+        </div>
+        <div class="hud-panel">
+            <div class="hud-label">SCORE</div>
+            <div class="hud-value" id="scoreDisplay">0</div>
         </div>
     </div>
 
     <!-- Mobile Controls -->
     <div class="mobile-controls" id="mobileControls">
+        <!-- Pause Button -->
+        <button class="pause-btn-mobile" id="pauseBtnMobile"></button>
+        
         <!-- Joystick -->
         <div class="joystick-container" id="joystickContainer">
-            <div class="joystick-base"></div>
+            <div class="joystick-base" id="joystickBase"></div>
             <div class="joystick-stick" id="joystickStick"></div>
         </div>
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <button class="action-btn" id="abilityBtn">
+            <button class="action-btn inactive" id="abilityBtn">
                 ⚡
                 <span class="btn-label">ABILITY</span>
                 <div class="cooldown-overlay">
@@ -699,11 +778,20 @@
         </div>
     </div>
 
+
     <!-- Notification -->
     <div class="notification" id="notification"></div>
 
     <!-- Wave Indicator -->
     <div class="wave-indicator" id="waveIndicator"></div>
+
+    <!-- Pause Overlay -->
+    <div class="game-over" id="pauseOverlay" style="display:none; z-index:9500; background:rgba(0,0,0,0.97);">
+        <h1 style="font-size:70px; background:linear-gradient(45deg,#00ffff,#ff00ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:0 0 50px #00ffff; margin-bottom:30px; animation:title-glow 2s ease-in-out infinite;">PAUSA</h1>
+        <div style="margin-bottom:40px;">
+            <button class="btn-neon" id="resumeBtn" style="font-size:22px; padding:18px 50px; border-radius:40px;">▶️ REANUDAR</button>
+        </div>
+    </div>
 
     <!-- Game Over Screen -->
     <div class="game-over" id="gameOver">
@@ -740,17 +828,53 @@
     <script>
         // Custom cursor initialization (PC only)
         const isMobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
         if (!isMobileCheck) {
             document.body.classList.add('desktop');
             const cursor = document.getElementById('customCursor');
             cursor.classList.add('active');
-            
             document.addEventListener('mousemove', (e) => {
                 cursor.style.left = e.clientX + 'px';
                 cursor.style.top = e.clientY + 'px';
             });
         }
+
+        // PAUSE BUTTON LOGIC
+        const pauseBtnMobile = document.getElementById('pauseBtnMobile');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const resumeBtn = document.getElementById('resumeBtn');
+
+        function togglePause() {
+            if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
+                if (!window.gameState.isPaused) {
+                    window.gameState.isPaused = true;
+                    pauseOverlay.style.display = 'flex';
+                    document.getElementById('gameHUD').style.opacity = '0.3';
+                } else {
+                    window.gameState.isPaused = false;
+                    pauseOverlay.style.display = 'none';
+                    document.getElementById('gameHUD').style.opacity = '1';
+                }
+            }
+        }
+
+        if (pauseBtnMobile) {
+            pauseBtnMobile.addEventListener('click', togglePause);
+        }
+
+        resumeBtn.addEventListener('click', () => {
+            if (window.gameState && window.gameState.isPaused) {
+                window.gameState.isPaused = false;
+                pauseOverlay.style.display = 'none';
+                document.getElementById('gameHUD').style.opacity = '1';
+            }
+        });
+
+        // ESC key toggles pause
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                togglePause();
+            }
+        });
     </script>
 </body>
 </html>

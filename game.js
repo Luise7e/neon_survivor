@@ -127,6 +127,66 @@ let bullets = [];
 let abilityPickups = [];
 let particles = [];
 let collectedAbility = null;
+let lastHealthDamageTime = 0; // Para controlar el sonido de daño
+
+// Expose gameState globally for pause button logic
+window.gameState = gameState;
+
+// Audio Context para efectos de sonido
+let audioContext;
+let hasInteracted = false;
+
+function initAudio() {
+    if (!audioContext && !hasInteracted) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        hasInteracted = true;
+    }
+}
+
+// Sonido de daño al jugador (synth retro-futurista)
+function playDamageSound() {
+    if (!audioContext) return;
+    
+    const now = audioContext.currentTime;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(150, now);
+    oscillator.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+    
+    gainNode.gain.setValueAtTime(0.3, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.start(now);
+    oscillator.stop(now + 0.2);
+}
+
+// Vibración en móvil
+function vibrateDevice(duration = 100) {
+    if (navigator.vibrate) {
+        navigator.vibrate(duration);
+    }
+}
+
+// Actualizar icono del botón de habilidad en móvil
+function updateAbilityButton() {
+    if (!isMobileDevice) return;
+    
+    const abilityBtn = document.getElementById('abilityBtn');
+    if (!abilityBtn) return;
+    
+    if (collectedAbility) {
+        abilityBtn.textContent = collectedAbility.icon;
+        abilityBtn.classList.remove('inactive');
+    } else {
+        abilityBtn.textContent = '⚡';
+        abilityBtn.classList.add('inactive');
+    }
+}
 
 // Input Handling
 const input = {
@@ -158,24 +218,25 @@ if (isMobileDevice) {
     document.getElementById('mobileControls').classList.add('active');
     document.querySelector('.platform-specific.mobile').classList.add('active');
 
-    // Joystick
-    const joystickContainer = document.getElementById('joystickContainer');
+    // Joystick - FIXED: Solo la base captura eventos
+    const joystickBase = document.getElementById('joystickBase');
     const joystickStick = document.getElementById('joystickStick');
     let joystickTouchId = null;
 
-    joystickContainer.addEventListener('touchstart', (e) => {
+    joystickBase.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const touch = e.changedTouches[0];
         joystickTouchId = touch.identifier;
-        const rect = joystickContainer.getBoundingClientRect();
+        const rect = joystickBase.getBoundingClientRect();
         input.joystick.centerX = rect.left + rect.width / 2;
         input.joystick.centerY = rect.top + rect.height / 2;
         input.joystick.active = true;
         joystickStick.classList.add('active');
         handleJoystickMove(touch);
-    });
+    }, { passive: false });
 
-    window.addEventListener('touchmove', (e) => {
+    document.addEventListener('touchmove', (e) => {
         if (!input.joystick.active) return;
         for (let touch of e.changedTouches) {
             if (touch.identifier === joystickTouchId) {
@@ -186,10 +247,25 @@ if (isMobileDevice) {
         }
     }, { passive: false });
 
-    window.addEventListener('touchend', (e) => {
+    document.addEventListener('touchend', (e) => {
         for (let touch of e.changedTouches) {
             if (touch.identifier === joystickTouchId) {
                 e.preventDefault();
+                input.joystick.active = false;
+                input.joystick.x = 0;
+                input.joystick.y = 0;
+                joystickStick.style.left = '50%';
+                joystickStick.style.top = '50%';
+                joystickStick.classList.remove('active');
+                joystickTouchId = null;
+                break;
+            }
+        }
+    });
+
+    document.addEventListener('touchcancel', (e) => {
+        for (let touch of e.changedTouches) {
+            if (touch.identifier === joystickTouchId) {
                 input.joystick.active = false;
                 input.joystick.x = 0;
                 input.joystick.y = 0;
@@ -252,10 +328,17 @@ if (isMobileDevice) {
     const abilityBtn = document.getElementById('abilityBtn');
     abilityBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        initAudio(); // Inicializar audio en primera interacción
         if (collectedAbility && gameState.isPlaying) {
             useAbility();
         }
     });
+
+    // Inicializar audio en primer touch
+    window.addEventListener('touchstart', () => {
+        initAudio();
+    }, { once: true });
+
     // ...fin controles móviles...
 }
 
@@ -357,6 +440,7 @@ function useAbility() {
     collectedAbility.execute();
     showNotification(`${collectedAbility.icon} ${collectedAbility.name}!`);
     collectedAbility = null;
+    updateAbilityButton();
 }
 
 // ===================================
@@ -490,6 +574,7 @@ function updateHUD() {
     document.getElementById('waveDisplay').textContent = gameState.wave;
     document.getElementById('scoreDisplay').textContent = gameState.score.toLocaleString();
     document.getElementById('killsDisplay').textContent = gameState.kills;
+    document.getElementById('hostilesDisplay').textContent = enemies.length;
 
     const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
     document.getElementById('healthBar').style.width = healthPercent + '%';
@@ -528,7 +613,7 @@ function findNearestEnemy() {
 }
 
 function update() {
-    if (!gameState.isPlaying || gameState.isGameOver) return;
+    if (!gameState.isPlaying || gameState.isGameOver || gameState.isPaused) return;
 
     const now = Date.now();
     const screenWidth = window.innerWidth;
@@ -599,8 +684,21 @@ function update() {
             enemy.y += (dy / dist) * enemy.speed;
         }
 
+        // Colisión con el jugador - DAÑO CON FEEDBACK
         if (dist < enemy.radius + player.radius) {
+            const currentTime = Date.now();
+            const oldHealth = player.health;
             player.health -= enemy.damage * 0.012;
+            
+            // Reproducir sonido y vibración solo si ha pasado tiempo suficiente
+            if (currentTime - lastHealthDamageTime > 200 && player.health < oldHealth) {
+                playDamageSound();
+                vibrateDevice(50);
+                lastHealthDamageTime = currentTime;
+            }
+            
+            updateHUD(); // Actualizar barra de vida inmediatamente
+            
             if (player.health <= 0) {
                 gameOver();
             }
@@ -661,6 +759,7 @@ function update() {
 
         if (dist < pickup.radius + player.radius) {
             collectedAbility = pickup.ability;
+            updateAbilityButton();
             showNotification(`${pickup.ability.icon} ${pickup.ability.name} - ${isMobileDevice ? 'Tap Ability' : 'Press SPACE'}`);
             return false;
         }
@@ -894,8 +993,19 @@ function render() {
 // ===================================
 
 function gameLoop() {
-    update();
-    render();
+    if (!gameState.isPaused) {
+        update();
+        render();
+    } else {
+        // Solo renderiza el frame actual para mostrar el overlay de pausa
+        render();
+    }
+    
+    // Actualizar contador de enemigos hostiles en tiempo real
+    if (gameState.isPlaying) {
+        document.getElementById('hostilesDisplay').textContent = enemies.length;
+    }
+    
     requestAnimationFrame(gameLoop);
 }
 
