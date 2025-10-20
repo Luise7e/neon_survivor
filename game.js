@@ -70,6 +70,7 @@ function resizeCanvas() {
     canvas.style.width = window.innerWidth + 'px';
     canvas.style.height = window.innerHeight + 'px';
     ctx.scale(dpr, dpr);
+    updateGameAreaLimits(); // Actualizar límites del área de juego
 }
 
 resizeCanvas();
@@ -97,6 +98,7 @@ const gameState = {
     kills: 0,
     enemiesPerWave: 5,
     enemiesToSpawn: 5,
+    totalEnemiesInWave: 5, // Total para mostrar en HUD
     lastEnemySpawn: 0,
     enemySpawnRate: 1000,
     difficultyMultiplier: 1
@@ -120,6 +122,18 @@ const player = {
     lastShootTime: 0,
     moving: false
 };
+
+// Límites del área de juego (HUD height)
+var gameAreaTop = 0;
+
+function updateGameAreaLimits() {
+    const hudElement = document.getElementById('gameHUD');
+    if (hudElement) {
+        gameAreaTop = hudElement.offsetHeight;
+    } else {
+        gameAreaTop = isMobileDevice ? 50 : 60; // Fallback
+    }
+}
 
 // Arrays
 let enemies = [];
@@ -146,21 +160,21 @@ function initAudio() {
 // Sonido de daño al jugador (synth retro-futurista)
 function playDamageSound() {
     if (!audioContext) return;
-    
+
     const now = audioContext.currentTime;
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
+
     oscillator.type = 'sawtooth';
     oscillator.frequency.setValueAtTime(150, now);
     oscillator.frequency.exponentialRampToValueAtTime(50, now + 0.2);
-    
+
     gainNode.gain.setValueAtTime(0.3, now);
     gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
+
     oscillator.start(now);
     oscillator.stop(now + 0.2);
 }
@@ -175,10 +189,10 @@ function vibrateDevice(duration = 100) {
 // Actualizar icono del botón de habilidad en móvil
 function updateAbilityButton() {
     if (!isMobileDevice) return;
-    
+
     const abilityBtn = document.getElementById('abilityBtn');
     if (!abilityBtn) return;
-    
+
     if (collectedAbility) {
         abilityBtn.textContent = collectedAbility.icon;
         abilityBtn.classList.remove('inactive');
@@ -289,19 +303,21 @@ if (isMobileDevice) {
         joystickStick.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
     }
 
-    // Disparo tocando cualquier punto de la pantalla (excepto joystick y botón de habilidad)
+    // Disparo tocando cualquier punto de la pantalla (excepto joystick, botón de pausa y botón de habilidad)
     window.addEventListener('touchstart', (e) => {
         for (let touch of e.changedTouches) {
-            // Ignorar si el toque es en el joystick o el botón de habilidad
+            // Ignorar si el toque es en los controles
             const target = touch.target;
             if (
                 target.closest &&
-                (target.closest('#joystickContainer') || target.closest('#abilityBtn'))
+                (target.closest('#joystickContainer') ||
+                 target.closest('#abilityBtn') ||
+                 target.closest('#pauseBtnMobile'))
             ) {
                 continue;
             }
             // Disparar hacia el punto tocado
-            if (gameState.isPlaying) {
+            if (gameState.isPlaying && !gameState.isPaused) {
                 const tapX = touch.clientX;
                 const tapY = touch.clientY;
                 const angle = Math.atan2(tapY - player.y, tapX - player.x);
@@ -313,7 +329,7 @@ if (isMobileDevice) {
                         y: player.y,
                         vx: Math.cos(angle) * 14,
                         vy: Math.sin(angle) * 14,
-                        radius: 7,
+                        radius: 5.25,
                         damage: 35,
                         color: '#00ffff',
                         trail: [],
@@ -359,7 +375,7 @@ const ABILITIES = {
                     y: player.y,
                     vx: Math.cos(angle) * 12,
                     vy: Math.sin(angle) * 12,
-                    radius: 14,
+                    radius: 10.5,
                     damage: 70,
                     color: '#ff4400',
                     trail: [],
@@ -503,38 +519,178 @@ function createExplosion(x, y, radius) {
 // GAME FUNCTIONS
 // ===================================
 
-function spawnEnemy() {
+// Tipos de enemigos
+const ENEMY_TYPES = {
+    BASIC: {
+        name: 'Basic',
+        color: '#ff00ff', // Magenta
+        sizeMultiplier: 1,
+        speedMultiplier: 1,
+        healthMultiplier: 1,
+        spawnChance: 0.50,
+        abilityDropChance: 0.05
+    },
+    FAST: {
+        name: 'Fast',
+        color: '#00ffff', // Cian
+        sizeMultiplier: 0.5,
+        speedMultiplier: 1.15,
+        healthMultiplier: 0.5,
+        spawnChance: 0.15,
+        abilityDropChance: 0.10
+    },
+    HEAVY: {
+        name: 'Heavy',
+        color: '#ff8800', // Naranja
+        sizeMultiplier: 1.25,
+        speedMultiplier: 0.85,
+        healthMultiplier: 1.25,
+        spawnChance: 0.15,
+        abilityDropChance: 0.10
+    },
+    SUPERHEAVY: {
+        name: 'SuperHeavy',
+        color: '#ff0055', // Rojo-Rosa
+        sizeMultiplier: 1.35,
+        speedMultiplier: 0.75,
+        healthMultiplier: 1.35,
+        spawnChance: 0.10,
+        abilityDropChance: 0.13
+    },
+    EXPLOSIVE: {
+        name: 'Explosive',
+        color: '#ffff00', // Amarillo
+        sizeMultiplier: 1,
+        speedMultiplier: 1,
+        healthMultiplier: 1,
+        spawnChance: 0.10,
+        abilityDropChance: 0.05,
+        explosive: true
+    }
+};
+
+// Seleccionar tipo de enemigo basado en probabilidades
+function selectEnemyType() {
+    const rand = Math.random();
+    let cumulative = 0;
+    
+    for (const [key, type] of Object.entries(ENEMY_TYPES)) {
+        cumulative += type.spawnChance;
+        if (rand <= cumulative) {
+            return { key, ...type };
+        }
+    }
+    
+    return { key: 'BASIC', ...ENEMY_TYPES.BASIC };
+}
+
+function getSpawnPosition() {
     const side = Math.floor(Math.random() * 4);
     let x, y;
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
 
     switch(side) {
-        case 0: x = Math.random() * window.innerWidth; y = -40; break;
-        case 1: x = window.innerWidth + 40; y = Math.random() * window.innerHeight; break;
-        case 2: x = Math.random() * window.innerWidth; y = window.innerHeight + 40; break;
-        case 3: x = -40; y = Math.random() * window.innerHeight; break;
+        case 0: x = Math.random() * screenWidth; y = gameAreaTop - 40; break;
+        case 1: x = screenWidth + 40; y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop); break;
+        case 2: x = Math.random() * screenWidth; y = screenHeight + 40; break;
+        case 3: x = -40; y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop); break;
     }
+    
+    return { x, y };
+}
 
-    const radius = isMobileDevice ? 20 : 17 + Math.random() * 6;
+function spawnEnemy() {
+    const enemyType = selectEnemyType();
+    const position = getSpawnPosition();
+    
+    const baseRadius = isMobileDevice ? 20 : 18;
+    const radius = baseRadius * enemyType.sizeMultiplier;
+    const baseHealth = 55 + gameState.wave * 15;
+    const baseSpeed = (1.2 + gameState.wave * 0.09) * gameState.difficultyMultiplier;
 
-    enemies.push({
-        x: x,
-        y: y,
+    const enemy = {
+        x: position.x,
+        y: position.y,
         radius: radius,
-        health: 55 + gameState.wave * 15,
-        maxHealth: 55 + gameState.wave * 15,
-        speed: (1.2 + gameState.wave * 0.09) * gameState.difficultyMultiplier,
-        color: `hsl(${Math.random() * 60 + 270}, 100%, ${50 + Math.random() * 15}%)`,
-        damage: 12 + gameState.wave * 3
+        health: baseHealth * enemyType.healthMultiplier,
+        maxHealth: baseHealth * enemyType.healthMultiplier,
+        speed: baseSpeed * enemyType.speedMultiplier,
+        color: enemyType.color,
+        damage: 12 + gameState.wave * 3,
+        type: enemyType.key,
+        abilityDropChance: enemyType.abilityDropChance,
+        explosive: enemyType.explosive || false
+    };
+
+    enemies.push(enemy);
+}
+
+// Jefes finales
+let bosses = [];
+
+function spawnBoss() {
+    const position = getSpawnPosition();
+    const bossesInWave = Math.floor(gameState.wave / 10) + 1;
+    
+    const baseRadius = isMobileDevice ? 45 : 40;
+    const radius = baseRadius + (gameState.wave * 2);
+    const baseHealth = 500 + gameState.wave * 150;
+    const baseSpeed = (0.8 + gameState.wave * 0.03) * gameState.difficultyMultiplier;
+
+    const boss = {
+        x: position.x,
+        y: position.y,
+        radius: radius,
+        health: baseHealth,
+        maxHealth: baseHealth,
+        speed: baseSpeed,
+        color: '#8800ff', // Violeta
+        damage: 25 + gameState.wave * 5,
+        type: 'BOSS',
+        isBoss: true,
+        shootCooldown: 0,
+        lastShootTime: 0,
+        shootRate: 1500 - (gameState.wave * 50),
+        collectedAbility: null,
+        abilityDropChance: 1.0,
+        aimX: 0,
+        aimY: 0
+    };
+
+    bosses.push(boss);
+    enemies.push(boss);
+    
+    showNotification(`⚠️ BOSS WAVE ${gameState.wave} ⚠️`);
+}
+
+function handleExplosion(x, y, radius) {
+    const explosionRadius = radius * 2;
+    
+    enemies.forEach(enemy => {
+        const dx = enemy.x - x;
+        const dy = enemy.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < explosionRadius && dist > 0) {
+            enemy.health -= enemy.maxHealth * 0.10;
+            createParticles(enemy.x, enemy.y, 15, '#ffff00');
+        }
     });
+    
+    createExplosion(x, y, explosionRadius);
 }
 
 function spawnAbilityPickup(x, y) {
     const abilities = Object.values(ABILITIES);
     const ability = abilities[Math.floor(Math.random() * abilities.length)];
 
+    // Asegurar que el pickup aparece dentro del área de juego válida
+    const clampedY = Math.max(gameAreaTop + 30, Math.min(window.innerHeight - 30, y));
+
     abilityPickups.push({
         x: x,
-        y: y,
+        y: clampedY,
         radius: isMobileDevice ? 28 : 24,
         ability: ability,
         rotation: 0,
@@ -559,8 +715,35 @@ function nextWave() {
     gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
     gameState.enemySpawnRate = Math.max(350, 1000 - gameState.wave * 45);
 
+    // Wave de jefe (múltiplos de 5)
+    const isBossWave = gameState.wave % 5 === 0;
+    
+    if (isBossWave) {
+        const numBosses = Math.floor(gameState.wave / 10) + 1;
+        gameState.totalEnemiesInWave = gameState.enemiesToSpawn + numBosses;
+        
+        // Spawnear jefes inmediatamente
+        for (let i = 0; i < numBosses; i++) {
+            setTimeout(() => spawnBoss(), i * 2000);
+        }
+        
+        // Spawnear habilidades aleatorias en waves de jefe
+        const numAbilities = 3 + Math.floor(gameState.wave / 10);
+        for (let i = 0; i < numAbilities; i++) {
+            setTimeout(() => {
+                const x = Math.random() * (window.innerWidth - 100) + 50;
+                const y = Math.random() * (window.innerHeight - gameAreaTop - 100) + gameAreaTop + 50;
+                spawnAbilityPickup(x, y);
+            }, i * 3000 + 2000);
+        }
+    } else {
+        gameState.totalEnemiesInWave = gameState.enemiesToSpawn;
+    }
+
     const indicator = document.getElementById('waveIndicator');
-    indicator.innerHTML = `<div>WAVE ${gameState.wave}</div>`;
+    indicator.innerHTML = isBossWave ? 
+        `<div>⚡ BOSS WAVE ${gameState.wave} ⚡</div>` : 
+        `<div>WAVE ${gameState.wave}</div>`;
     indicator.style.display = 'block';
 
     setTimeout(() => {
@@ -574,7 +757,10 @@ function updateHUD() {
     document.getElementById('waveDisplay').textContent = gameState.wave;
     document.getElementById('scoreDisplay').textContent = gameState.score.toLocaleString();
     document.getElementById('killsDisplay').textContent = gameState.kills;
-    document.getElementById('hostilesDisplay').textContent = enemies.length;
+
+    // Mostrar enemigos restantes/total
+    const remainingEnemies = enemies.length + gameState.enemiesToSpawn;
+    document.getElementById('enemiesDisplay').textContent = `${remainingEnemies}/${gameState.totalEnemiesInWave}`;
 
     const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
     document.getElementById('healthBar').style.width = healthPercent + '%';
@@ -641,7 +827,7 @@ function update() {
     }
 
     player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
-    player.y = Math.max(player.radius, Math.min(screenHeight - player.radius, player.y));
+    player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
 
     // SHOOTING
     if (!isMobileDevice) {
@@ -652,7 +838,7 @@ function update() {
                 y: player.y,
                 vx: Math.cos(player.angle) * 14,
                 vy: Math.sin(player.angle) * 14,
-                radius: 6,
+                radius: 4.5,
                 damage: 35,
                 color: '#00ffff',
                 trail: [],
@@ -684,21 +870,84 @@ function update() {
             enemy.y += (dy / dist) * enemy.speed;
         }
 
+        // Comportamiento de jefes
+        if (enemy.isBoss) {
+            enemy.aimX = player.x;
+            enemy.aimY = player.y;
+            
+            // Disparo del jefe
+            if (now - enemy.lastShootTime > enemy.shootRate) {
+                const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                bullets.push({
+                    x: enemy.x,
+                    y: enemy.y,
+                    vx: Math.cos(angle) * 10,
+                    vy: Math.sin(angle) * 10,
+                    radius: 8,
+                    damage: 20 + gameState.wave * 2,
+                    color: '#8800ff',
+                    trail: [],
+                    glow: true,
+                    fromBoss: true
+                });
+                enemy.lastShootTime = now;
+            }
+            
+            // Jefe recoge habilidades
+            abilityPickups.forEach((pickup, index) => {
+                const pickupDist = Math.sqrt(
+                    Math.pow(enemy.x - pickup.x, 2) + 
+                    Math.pow(enemy.y - pickup.y, 2)
+                );
+                if (pickupDist < enemy.radius + pickup.radius) {
+                    enemy.collectedAbility = pickup.ability;
+                    abilityPickups.splice(index, 1);
+                }
+            });
+            
+            // Jefe usa habilidades inteligentemente
+            if (enemy.collectedAbility && enemy.health < enemy.maxHealth * 0.5) {
+                if (enemy.collectedAbility.id === 'heal') {
+                    enemy.health = Math.min(enemy.maxHealth, enemy.health + 100);
+                    createParticles(enemy.x, enemy.y, 40, '#ff00ff');
+                    enemy.collectedAbility = null;
+                } else if (enemy.collectedAbility.id === 'fireball') {
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (Math.PI * 2 / 6) * i;
+                        bullets.push({
+                            x: enemy.x,
+                            y: enemy.y,
+                            vx: Math.cos(angle) * 11,
+                            vy: Math.sin(angle) * 11,
+                            radius: 12,
+                            damage: 60,
+                            color: '#ff4400',
+                            trail: [],
+                            glow: true,
+                            fromBoss: true
+                        });
+                    }
+                    createParticles(enemy.x, enemy.y, 35, '#ff4400');
+                    enemy.collectedAbility = null;
+                }
+            }
+        }
+
         // Colisión con el jugador - DAÑO CON FEEDBACK
         if (dist < enemy.radius + player.radius) {
             const currentTime = Date.now();
             const oldHealth = player.health;
             player.health -= enemy.damage * 0.012;
-            
+
             // Reproducir sonido y vibración solo si ha pasado tiempo suficiente
             if (currentTime - lastHealthDamageTime > 200 && player.health < oldHealth) {
                 playDamageSound();
                 vibrateDevice(50);
                 lastHealthDamageTime = currentTime;
             }
-            
+
             updateHUD(); // Actualizar barra de vida inmediatamente
-            
+
             if (player.health <= 0) {
                 gameOver();
             }
@@ -719,17 +968,39 @@ function update() {
         }
 
         let hit = false;
-        enemies.forEach(enemy => {
-            const dx = bullet.x - enemy.x;
-            const dy = bullet.y - enemy.y;
+        
+        // Balas del jefe dañan al jugador
+        if (bullet.fromBoss) {
+            const dx = bullet.x - player.x;
+            const dy = bullet.y - player.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < enemy.radius + bullet.radius) {
-                enemy.health -= bullet.damage;
+            
+            if (dist < player.radius + bullet.radius) {
+                player.health -= bullet.damage;
                 hit = true;
-                createParticles(enemy.x, enemy.y, 10, bullet.color);
+                createParticles(player.x, player.y, 15, bullet.color);
+                playDamageSound();
+                vibrateDevice(50);
+                updateHUD();
+                
+                if (player.health <= 0) {
+                    gameOver();
+                }
             }
-        });
+        } else {
+            // Balas del jugador dañan enemigos
+            enemies.forEach(enemy => {
+                const dx = bullet.x - enemy.x;
+                const dy = bullet.y - enemy.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < enemy.radius + bullet.radius) {
+                    enemy.health -= bullet.damage;
+                    hit = true;
+                    createParticles(enemy.x, enemy.y, 10, bullet.color);
+                }
+            });
+        }
 
         return !hit;
     });
@@ -738,10 +1009,35 @@ function update() {
     enemies = enemies.filter(enemy => {
         if (enemy.health <= 0) {
             gameState.kills++;
-            gameState.score += 100 * gameState.wave;
+            
+            // Score según tipo de enemigo
+            let scoreBonus = 100;
+            if (enemy.isBoss) {
+                scoreBonus = 1000 * gameState.wave;
+                showNotification('🏆 BOSS DEFEATED! 🏆');
+                // Eliminar de array de jefes
+                const bossIndex = bosses.indexOf(enemy);
+                if (bossIndex > -1) bosses.splice(bossIndex, 1);
+            } else if (enemy.type === 'SUPERHEAVY') {
+                scoreBonus = 250;
+            } else if (enemy.type === 'HEAVY') {
+                scoreBonus = 180;
+            } else if (enemy.type === 'FAST') {
+                scoreBonus = 120;
+            } else if (enemy.type === 'EXPLOSIVE') {
+                scoreBonus = 150;
+            }
+            
+            gameState.score += scoreBonus * gameState.wave;
             createParticles(enemy.x, enemy.y, isMobileDevice ? 25 : 35, enemy.color);
 
-            if (Math.random() < 0.22) {
+            // Explosión si es explosivo
+            if (enemy.explosive) {
+                handleExplosion(enemy.x, enemy.y, enemy.radius);
+            }
+
+            // Drop de habilidad según tipo
+            if (Math.random() < enemy.abilityDropChance) {
                 spawnAbilityPickup(enemy.x, enemy.y);
             }
 
@@ -817,17 +1113,23 @@ function render() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, screenWidth, screenHeight);
 
-    // Grid
+    // Overlay oscuro sobre área del HUD para delimitar zona de juego
+    if (gameAreaTop > 0) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, screenWidth, gameAreaTop);
+    }
+
+    // Grid (solo en área de juego)
     ctx.strokeStyle = 'rgba(0, 255, 255, 0.04)';
     ctx.lineWidth = 1;
     const gridSize = isMobileDevice ? 70 : 55;
     for (let x = 0; x < screenWidth; x += gridSize) {
         ctx.beginPath();
-        ctx.moveTo(x, 0);
+        ctx.moveTo(x, gameAreaTop);
         ctx.lineTo(x, screenHeight);
         ctx.stroke();
     }
-    for (let y = 0; y < screenHeight; y += gridSize) {
+    for (let y = gameAreaTop; y < screenHeight; y += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(screenWidth, y);
@@ -932,23 +1234,79 @@ function render() {
 
     // Render enemies
     enemies.forEach(enemy => {
+        // Efectos especiales según tipo
+        if (enemy.explosive) {
+            // Pulso para explosivos
+            const pulseSize = Math.sin(Date.now() * 0.008) * 3;
+            ctx.shadowColor = enemy.color;
+            ctx.shadowBlur = qualitySettings.shadowBlur * 2.5;
+            ctx.fillStyle = enemy.color;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, enemy.radius + pulseSize + 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+        
+        if (enemy.isBoss) {
+            // Anillo giratorio para jefes
+            const rotation = Date.now() * 0.002;
+            ctx.strokeStyle = enemy.color;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = enemy.color;
+            ctx.shadowBlur = qualitySettings.shadowBlur * 3;
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, enemy.radius + 15, rotation, rotation + Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, enemy.radius + 15, rotation + Math.PI, rotation + Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        // Cuerpo del enemigo
         ctx.shadowColor = enemy.color;
-        ctx.shadowBlur = qualitySettings.shadowBlur * 1.5;
+        ctx.shadowBlur = enemy.isBoss ? qualitySettings.shadowBlur * 3 : qualitySettings.shadowBlur * 1.5;
         ctx.fillStyle = enemy.color;
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Indicador de tipo en el centro
+        if (enemy.type === 'FAST') {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${enemy.radius * 0.8}px Orbitron`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('»', enemy.x, enemy.y);
+        } else if (enemy.explosive) {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#000000';
+            ctx.font = `bold ${enemy.radius * 0.7}px Orbitron`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💥', enemy.x, enemy.y);
+        } else if (enemy.isBoss) {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${enemy.radius * 0.4}px Orbitron`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('👑', enemy.x, enemy.y);
+        }
 
         // Health bar
         const healthPercent = enemy.health / enemy.maxHealth;
         ctx.shadowBlur = 0;
+        const barHeight = enemy.isBoss ? 10 : 6;
+        const barOffset = enemy.isBoss ? 20 : 14;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - 14, enemy.radius * 2, 6);
+        ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - barOffset, enemy.radius * 2, barHeight);
         const healthColor = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
         ctx.fillStyle = healthColor;
         ctx.shadowColor = healthColor;
         ctx.shadowBlur = 8;
-        ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - 14, enemy.radius * 2 * healthPercent, 6);
+        ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - barOffset, enemy.radius * 2 * healthPercent, barHeight);
         ctx.shadowBlur = 0;
     });
 
@@ -1000,12 +1358,13 @@ function gameLoop() {
         // Solo renderiza el frame actual para mostrar el overlay de pausa
         render();
     }
-    
-    // Actualizar contador de enemigos hostiles en tiempo real
+
+    // Actualizar contador de enemigos en tiempo real (restantes/total)
     if (gameState.isPlaying) {
-        document.getElementById('hostilesDisplay').textContent = enemies.length;
+        const remainingEnemies = enemies.length + gameState.enemiesToSpawn;
+        document.getElementById('enemiesDisplay').textContent = `${remainingEnemies}/${gameState.totalEnemiesInWave}`;
     }
-    
+
     requestAnimationFrame(gameLoop);
 }
 
@@ -1019,12 +1378,22 @@ setTimeout(() => {
     gameState.isPlaying = true;
     gameState.lastEnemySpawn = Date.now();
     player.lastShootTime = Date.now();
+    gameState.totalEnemiesInWave = gameState.enemiesToSpawn; // Inicializar total
+    updateGameAreaLimits(); // Actualizar límites del área de juego
+
+    // Reposicionar jugador en el centro del área de juego válida
+    player.x = window.innerWidth / 2;
+    player.y = (window.innerHeight + gameAreaTop) / 2;
+    player.targetX = player.x;
+    player.targetY = player.y;
+
     updateHUD();
 
     console.log('🎮 Game Started!');
     console.log('Device:', isMobileDevice ? '📱 Mobile/Tablet' : '🖥️ PC');
     console.log('Controls:', isMobileDevice ? 'Wild Rift Style' : 'MOBA (Right-click move, Left-click shoot)');
     console.log('Quality:', qualitySettings);
+    console.log('Game Area Top:', gameAreaTop);
 }, 3000);
 
 gameLoop();

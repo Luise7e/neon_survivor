@@ -266,20 +266,25 @@
         }
 
         /* =========================
-           HUD - RESPONSIVE (SINGLE ROW)
+           HUD - RESPONSIVE (SINGLE ROW FULL WIDTH)
         ========================= */
         .hud {
             position: fixed;
-            top: 8px;
-            left: 8px;
-            right: 8px;
+            top: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
             pointer-events: none;
             display: none;
             flex-direction: row;
             flex-wrap: nowrap;
-            gap: 6px;
+            gap: 0;
             justify-content: space-between;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 80%, transparent 100%);
+            padding: 8px 10px;
+            border-bottom: 2px solid;
+            border-image: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff) 1;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 -10px 30px rgba(0, 0, 0, 0.5);
         }
 
         .hud.active {
@@ -287,48 +292,46 @@
         }
 
         .hud-panel {
-            background: linear-gradient(135deg, rgba(10, 10, 40, 0.85) 0%, rgba(20, 0, 40, 0.85) 100%);
+            background: linear-gradient(135deg, rgba(10, 10, 40, 0.7) 0%, rgba(20, 0, 40, 0.7) 100%);
             border: 1px solid;
             border-image: linear-gradient(135deg, #00ffff, #ff00ff) 1;
-            border-radius: 8px;
-            padding: 6px 10px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(255, 0, 255, 0.05);
-            flex: 0 0 auto;
+            border-radius: 6px;
+            padding: 5px 10px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.15), inset 0 0 8px rgba(255, 0, 255, 0.05);
+            flex: 1 1 auto;
             min-width: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
         .hud-panel.health-panel {
-            flex: 1 1 auto;
-            max-width: 140px;
+            flex: 1.5 1 auto;
+            max-width: 160px;
         }
 
         @media (max-width: 768px) {
             .hud {
-                top: 5px;
-                left: 5px;
-                right: 5px;
-                gap: 4px;
+                padding: 6px 8px;
             }
 
             .hud-panel {
-                padding: 4px 8px;
-                border-radius: 6px;
+                padding: 4px 6px;
+                border-radius: 4px;
             }
 
             .hud-panel.health-panel {
-                max-width: 110px;
+                max-width: 120px;
             }
         }
 
         .hud-label {
-            font-size: 8px;
+            font-size: 7px;
             color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             margin-bottom: 2px;
             font-family: 'Rajdhani', sans-serif;
             white-space: nowrap;
@@ -336,42 +339,42 @@
 
         @media (max-width: 768px) {
             .hud-label {
-                font-size: 7px;
-                letter-spacing: 0.5px;
+                font-size: 6px;
+                letter-spacing: 0.3px;
             }
         }
 
         .hud-value {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 900;
             background: linear-gradient(90deg, #00ffff, #ff00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
             font-family: 'Orbitron', sans-serif;
-            line-height: 1;
+            line-height: 1.1;
         }
 
         @media (max-width: 768px) {
             .hud-value {
-                font-size: 14px;
+                font-size: 12px;
             }
         }
 
         .health-bar-container {
             width: 100%;
-            height: 10px;
+            height: 8px;
             background: rgba(0, 0, 0, 0.6);
-            border-radius: 5px;
+            border-radius: 4px;
             overflow: hidden;
-            margin-top: 4px;
+            margin-top: 3px;
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         @media (max-width: 768px) {
             .health-bar-container {
-                height: 8px;
+                height: 6px;
             }
         }
 
@@ -380,13 +383,25 @@
             background: linear-gradient(90deg, #ff0055, #ff00ff, #8800ff);
             background-size: 200% 100%;
             transition: width 0.3s ease;
-            box-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+            box-shadow: 0 0 8px rgba(255, 0, 255, 0.6);
             animation: health-glow 2s ease-in-out infinite;
         }
 
         @keyframes health-glow {
             0%, 100% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
+        }
+
+        /* Game area constraint */
+        #gameCanvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            background: radial-gradient(circle at 50% 50%, #0f0f2e 0%, #000000 100%);
         }
 
         /* =========================
@@ -728,7 +743,7 @@
     </div>
 
 
-    <!-- HUD - SINGLE ROW -->
+    <!-- HUD - FULL WIDTH TOP BAR -->
     <div class="hud" id="gameHUD">
         <div class="hud-panel">
             <div class="hud-label">WAVE</div>
@@ -746,8 +761,8 @@
             <div class="hud-value" id="killsDisplay">0</div>
         </div>
         <div class="hud-panel">
-            <div class="hud-label">HOSTILES</div>
-            <div class="hud-value" id="hostilesDisplay">0</div>
+            <div class="hud-label">ENEMIES</div>
+            <div class="hud-value" id="enemiesDisplay">0/0</div>
         </div>
         <div class="hud-panel">
             <div class="hud-label">SCORE</div>
@@ -759,7 +774,7 @@
     <div class="mobile-controls" id="mobileControls">
         <!-- Pause Button -->
         <button class="pause-btn-mobile" id="pauseBtnMobile"></button>
-        
+
         <!-- Joystick -->
         <div class="joystick-container" id="joystickContainer">
             <div class="joystick-base" id="joystickBase"></div>
@@ -789,7 +804,7 @@
     <div class="game-over" id="pauseOverlay" style="display:none; z-index:9500; background:rgba(0,0,0,0.97);">
         <h1 style="font-size:70px; background:linear-gradient(45deg,#00ffff,#ff00ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:0 0 50px #00ffff; margin-bottom:30px; animation:title-glow 2s ease-in-out infinite;">PAUSA</h1>
         <div style="margin-bottom:40px;">
-            <button class="btn-neon" id="resumeBtn" style="font-size:22px; padding:18px 50px; border-radius:40px;">▶️ REANUDAR</button>
+            <button class="btn-neon" id="resumeBtn" style="font-size:22px; padding:18px 50px; border-radius:40px;">▶ REANUDAR</button>
         </div>
     </div>
 
