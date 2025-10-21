@@ -10,23 +10,23 @@ const DeviceDetector = {
     isTablet: false,
     isTouch: false,
     pixelRatio: 1,
-    
+
     detect() {
         this.isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         this.isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobile))/i.test(navigator.userAgent);
         this.pixelRatio = window.devicePixelRatio || 1;
-        
+
         console.log('🎮 Device Detection:', {
             mobile: this.isMobile,
             tablet: this.isTablet,
             touch: this.isTouch,
             pixelRatio: this.pixelRatio
         });
-        
+
         return this.isMobile || this.isTablet || this.isTouch;
     },
-    
+
     getQualitySettings() {
         if (this.isMobile && !this.isTablet) {
             return {
@@ -81,7 +81,7 @@ if (!isMobileDevice) {
         e.preventDefault();
         return false;
     });
-    
+
     canvas.addEventListener('mousedown', (e) => {
         e.preventDefault();
     });
@@ -157,12 +157,12 @@ if (isMobileDevice) {
     console.log('📱 Initializing Wild Rift controls...');
     document.getElementById('mobileControls').classList.add('active');
     document.querySelector('.platform-specific.mobile').classList.add('active');
-    
+
     // Joystick
     const joystickContainer = document.getElementById('joystickContainer');
     const joystickStick = document.getElementById('joystickStick');
     let joystickTouchId = null;
-    
+
     joystickContainer.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const touch = e.changedTouches[0];
@@ -174,7 +174,7 @@ if (isMobileDevice) {
         joystickStick.classList.add('active');
         handleJoystickMove(touch);
     });
-    
+
     window.addEventListener('touchmove', (e) => {
         if (!input.joystick.active) return;
         for (let touch of e.changedTouches) {
@@ -185,7 +185,7 @@ if (isMobileDevice) {
             }
         }
     }, { passive: false });
-    
+
     window.addEventListener('touchend', (e) => {
         for (let touch of e.changedTouches) {
             if (touch.identifier === joystickTouchId) {
@@ -201,7 +201,7 @@ if (isMobileDevice) {
             }
         }
     });
-    
+
     function handleJoystickMove(touch) {
         const deltaX = touch.clientX - input.joystick.centerX;
         const deltaY = touch.clientY - input.joystick.centerY;
@@ -212,7 +212,7 @@ if (isMobileDevice) {
         joystickStick.style.left = `calc(50% + ${Math.cos(angle) * distance}px)`;
         joystickStick.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
     }
-    
+
     // Disparo tocando cualquier punto de la pantalla (excepto joystick y botón de habilidad)
     window.addEventListener('touchstart', (e) => {
         for (let touch of e.changedTouches) {
@@ -230,22 +230,24 @@ if (isMobileDevice) {
                 const tapY = touch.clientY;
                 const angle = Math.atan2(tapY - player.y, tapX - player.x);
                 player.angle = angle;
-                bullets.push({
-                    x: player.x,
-                    y: player.y,
-                    vx: Math.cos(angle) * 14,
-                    vy: Math.sin(angle) * 14,
-                    radius: 7,
-                    damage: 35,
-                    color: '#00ffff',
-                    trail: [],
-                    glow: true
-                });
-                player.lastShootTime = Date.now();
+                // Control de cadencia de disparo
+                if (Date.now() - player.lastShootTime > 120) {
+                    bullets.push({
+                        x: player.x,
+                        y: player.y,
+                        vx: Math.cos(angle) * 14,
+                        vy: Math.sin(angle) * 14,
+                        radius: 7,
+                        damage: 35,
+                        color: '#00ffff',
+                        trail: [],
+                        glow: true
+                    });
+                    player.lastShootTime = Date.now();
+                }
             }
         }
     });
-    
     // Ability Button
     const abilityBtn = document.getElementById('abilityBtn');
     abilityBtn.addEventListener('touchstart', (e) => {
@@ -254,46 +256,7 @@ if (isMobileDevice) {
             useAbility();
         }
     });
-    
-} else {
-    // PC CONTROLS - MOBA
-    console.log('🖱️ Initializing MOBA controls...');
-    document.querySelector('.platform-specific.pc').classList.add('active');
-    
-    window.addEventListener('mousemove', (e) => {
-        input.mouse.x = e.clientX;
-        input.mouse.y = e.clientY;
-        player.aimX = e.clientX;
-        player.aimY = e.clientY;
-    });
-    
-    window.addEventListener('mousedown', (e) => {
-        if (e.button === 0) {
-            e.preventDefault();
-            input.mouse.leftDown = true;
-        } else if (e.button === 2) {
-            e.preventDefault();
-            input.mouse.rightDown = true;
-            player.targetX = e.clientX;
-            player.targetY = e.clientY;
-            player.moving = true;
-        }
-    });
-    
-    window.addEventListener('mouseup', (e) => {
-        if (e.button === 0) {
-            input.mouse.leftDown = false;
-        } else if (e.button === 2) {
-            input.mouse.rightDown = false;
-        }
-    });
-    
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && collectedAbility && gameState.isPlaying) {
-            e.preventDefault();
-            useAbility();
-        }
-    });
+    // ...fin controles móviles...
 }
 
 // ===================================
@@ -390,7 +353,7 @@ const ABILITIES = {
 
 function useAbility() {
     if (!collectedAbility) return;
-    
+
     collectedAbility.execute();
     showNotification(`${collectedAbility.icon} ${collectedAbility.name}!`);
     collectedAbility = null;
@@ -459,16 +422,16 @@ function createExplosion(x, y, radius) {
 function spawnEnemy() {
     const side = Math.floor(Math.random() * 4);
     let x, y;
-    
+
     switch(side) {
         case 0: x = Math.random() * window.innerWidth; y = -40; break;
         case 1: x = window.innerWidth + 40; y = Math.random() * window.innerHeight; break;
         case 2: x = Math.random() * window.innerWidth; y = window.innerHeight + 40; break;
         case 3: x = -40; y = Math.random() * window.innerHeight; break;
     }
-    
+
     const radius = isMobileDevice ? 20 : 17 + Math.random() * 6;
-    
+
     enemies.push({
         x: x,
         y: y,
@@ -484,7 +447,7 @@ function spawnEnemy() {
 function spawnAbilityPickup(x, y) {
     const abilities = Object.values(ABILITIES);
     const ability = abilities[Math.floor(Math.random() * abilities.length)];
-    
+
     abilityPickups.push({
         x: x,
         y: y,
@@ -500,7 +463,7 @@ function showNotification(text) {
     const notif = document.getElementById('notification');
     notif.textContent = text;
     notif.style.display = 'block';
-    
+
     setTimeout(() => {
         notif.style.display = 'none';
     }, 2200);
@@ -511,15 +474,15 @@ function nextWave() {
     gameState.enemiesPerWave = Math.floor(gameState.enemiesPerWave * 2.25);
     gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
     gameState.enemySpawnRate = Math.max(350, 1000 - gameState.wave * 45);
-    
+
     const indicator = document.getElementById('waveIndicator');
     indicator.innerHTML = `<div>WAVE ${gameState.wave}</div>`;
     indicator.style.display = 'block';
-    
+
     setTimeout(() => {
         indicator.style.display = 'none';
     }, 2700);
-    
+
     updateHUD();
 }
 
@@ -527,7 +490,7 @@ function updateHUD() {
     document.getElementById('waveDisplay').textContent = gameState.wave;
     document.getElementById('scoreDisplay').textContent = gameState.score.toLocaleString();
     document.getElementById('killsDisplay').textContent = gameState.kills;
-    
+
     const healthPercent = Math.max(0, (player.health / player.maxHealth) * 100);
     document.getElementById('healthBar').style.width = healthPercent + '%';
     document.getElementById('healthText').textContent = Math.max(0, Math.floor(player.health));
@@ -536,7 +499,7 @@ function updateHUD() {
 function gameOver() {
     gameState.isGameOver = true;
     gameState.isPlaying = false;
-    
+
     document.getElementById('finalWave').textContent = gameState.wave;
     document.getElementById('finalKills').textContent = gameState.kills;
     document.getElementById('finalScore').textContent = gameState.score.toLocaleString();
@@ -549,10 +512,10 @@ function gameOver() {
 
 function findNearestEnemy() {
     if (enemies.length === 0) return null;
-    
+
     let nearest = enemies[0];
     let minDist = Math.hypot(nearest.x - player.x, nearest.y - player.y);
-    
+
     for (let i = 1; i < enemies.length; i++) {
         const dist = Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y);
         if (dist < minDist) {
@@ -560,7 +523,7 @@ function findNearestEnemy() {
             nearest = enemies[i];
         }
     }
-    
+
     return nearest;
 }
 
@@ -582,7 +545,7 @@ function update() {
             const dx = player.targetX - player.x;
             const dy = player.targetY - player.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (dist > 8) {
                 player.x += (dx / dist) * player.speed;
                 player.y += (dy / dist) * player.speed;
@@ -630,12 +593,12 @@ function update() {
         const dx = player.x - enemy.x;
         const dy = player.y - enemy.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (dist > 0) {
             enemy.x += (dx / dist) * enemy.speed;
             enemy.y += (dy / dist) * enemy.speed;
         }
-        
+
         if (dist < enemy.radius + player.radius) {
             player.health -= enemy.damage * 0.012;
             if (player.health <= 0) {
@@ -648,28 +611,28 @@ function update() {
     bullets = bullets.filter(bullet => {
         bullet.x += bullet.vx;
         bullet.y += bullet.vy;
-        
+
         bullet.trail.push({ x: bullet.x, y: bullet.y });
         if (bullet.trail.length > qualitySettings.trailLength) bullet.trail.shift();
-        
-        if (bullet.x < -50 || bullet.x > screenWidth + 50 || 
+
+        if (bullet.x < -50 || bullet.x > screenWidth + 50 ||
             bullet.y < -50 || bullet.y > screenHeight + 50) {
             return false;
         }
-        
+
         let hit = false;
         enemies.forEach(enemy => {
             const dx = bullet.x - enemy.x;
             const dy = bullet.y - enemy.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (dist < enemy.radius + bullet.radius) {
                 enemy.health -= bullet.damage;
                 hit = true;
                 createParticles(enemy.x, enemy.y, 10, bullet.color);
             }
         });
-        
+
         return !hit;
     });
 
@@ -679,11 +642,11 @@ function update() {
             gameState.kills++;
             gameState.score += 100 * gameState.wave;
             createParticles(enemy.x, enemy.y, isMobileDevice ? 25 : 35, enemy.color);
-            
+
             if (Math.random() < 0.22) {
                 spawnAbilityPickup(enemy.x, enemy.y);
             }
-            
+
             updateHUD();
             return false;
         }
@@ -695,17 +658,17 @@ function update() {
         const dx = player.x - pickup.x;
         const dy = player.y - pickup.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (dist < pickup.radius + player.radius) {
             collectedAbility = pickup.ability;
             showNotification(`${pickup.ability.icon} ${pickup.ability.name} - ${isMobileDevice ? 'Tap Ability' : 'Press SPACE'}`);
             return false;
         }
-        
+
         pickup.rotation += 0.06;
         pickup.pulse += 0.1;
         pickup.life -= 0.014;
-        
+
         return pickup.life > 0;
     });
 
@@ -731,7 +694,7 @@ function update() {
             return p.life > 0;
         }
     });
-    
+
     if (particles.length > qualitySettings.maxParticles) {
         particles = particles.slice(-qualitySettings.maxParticles);
     }
@@ -828,7 +791,7 @@ function render() {
         ctx.save();
         ctx.translate(pickup.x, pickup.y);
         ctx.rotate(pickup.rotation);
-        
+
         const pulseSize = Math.sin(pickup.pulse) * 5;
         ctx.shadowColor = '#ff00ff';
         ctx.shadowBlur = qualitySettings.shadowBlur * 2;
@@ -836,7 +799,7 @@ function render() {
         ctx.beginPath();
         ctx.arc(0, 0, pickup.radius + 10 + pulseSize, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.font = `bold ${isMobileDevice ? 40 : 35}px Orbitron`;
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
@@ -857,7 +820,7 @@ function render() {
             ctx.arc(point.x, point.y, bullet.radius * alpha, 0, Math.PI * 2);
             ctx.fill();
         });
-        
+
         ctx.globalAlpha = 1;
         ctx.shadowColor = bullet.color;
         ctx.shadowBlur = qualitySettings.shadowBlur * 1.2;
@@ -876,7 +839,7 @@ function render() {
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Health bar
         const healthPercent = enemy.health / enemy.maxHealth;
         ctx.shadowBlur = 0;
@@ -897,7 +860,7 @@ function render() {
     ctx.beginPath();
     ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Player direction indicator
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 4;
@@ -947,7 +910,7 @@ setTimeout(() => {
     gameState.lastEnemySpawn = Date.now();
     player.lastShootTime = Date.now();
     updateHUD();
-    
+
     console.log('🎮 Game Started!');
     console.log('Device:', isMobileDevice ? '📱 Mobile/Tablet' : '🖥️ PC');
     console.log('Controls:', isMobileDevice ? 'Wild Rift Style' : 'MOBA (Right-click move, Left-click shoot)');
