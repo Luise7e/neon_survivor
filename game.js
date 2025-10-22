@@ -4,6 +4,84 @@
 // Mobile: Wild Rift style (Landscape)
 // ===================================
 
+// ===================================
+// ADMOB INTEGRATION (AdMob Plus)
+// ===================================
+let admobReady = false;
+let lastBossWaveCompleted = 0;
+let interstitialAd = null;
+
+// Inicializar AdMob cuando el dispositivo esté listo
+document.addEventListener('deviceready', async function() {
+    if (window.admob) {
+        console.log('📱 AdMob Plus Plugin Ready');
+
+        try {
+            // Inicializar AdMob Plus
+            await window.admob.start();
+
+            // Crear el anuncio intersticial
+            interstitialAd = new window.admob.InterstitialAd({
+                //real cambiar en prod adUnitId: 'ca-app-pub-4698386674302808/7423787962'
+                adUnitId: 'ca-app-pub-3940256099942544/1033173712'
+            });
+
+            // Cargar el primer anuncio
+            await interstitialAd.load();
+
+            admobReady = true;
+            console.log('✅ AdMob Plus Configured and Interstitial Loaded');
+
+            // Escuchar cuando el anuncio se cierre para cargar el siguiente
+            document.addEventListener('admob.interstitial.dismiss', async () => {
+                console.log('📺 Interstitial ad dismissed, loading next one...');
+                await interstitialAd.load();
+            });
+
+        } catch (error) {
+            console.error('❌ Error initializing AdMob Plus:', error);
+        }
+    } else {
+        console.log('⚠️ AdMob Plus plugin not found - running in web mode');
+    }
+}, false);
+
+// Función para determinar si se debe mostrar anuncio en este wave
+function shouldShowAdForWave(wave) {
+    // Anuncios en niveles específicos: 5, 7, 10
+    if (wave === 5 || wave === 7 || wave === 10) {
+        return true;
+    }
+    
+    // Después del nivel 10: cada 2 niveles O después de boss (múltiplos de 5)
+    if (wave > 10) {
+        // Boss waves (múltiplos de 5)
+        if (wave % 5 === 0) {
+            return true;
+        }
+        // Cada 2 niveles (11, 13, 14, 16, 17, 19, etc.)
+        if ((wave - 10) % 2 === 1) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Función para mostrar anuncio intersticial
+async function showInterstitialAd() {
+    if (admobReady && interstitialAd) {
+        try {
+            console.log('📺 Showing AdMob Interstitial Ad...');
+            await interstitialAd.show();
+        } catch (error) {
+            console.error('❌ Error showing interstitial ad:', error);
+        }
+    } else {
+        console.log('⚠️ AdMob not ready or not available');
+    }
+}
+
 // Device Detection
 const DeviceDetector = {
     isMobile: false,
@@ -1202,10 +1280,24 @@ function update() {
     }
 
     if (!gameState.isCountdown && enemies.length === 0 && gameState.enemiesToSpawn === 0) {
-        nextWave();
-    }
-
-    // Update enemies
+        // Verificar si debemos mostrar anuncio en este nivel
+        const shouldShowAd = shouldShowAdForWave(gameState.wave);
+        
+        if (shouldShowAd && gameState.wave !== lastBossWaveCompleted) {
+            console.log(`🎉 Wave ${gameState.wave} completed! Showing ad...`);
+            lastBossWaveCompleted = gameState.wave;
+            
+            // Mostrar anuncio intersticial
+            showInterstitialAd();
+            
+            // Pequeña pausa antes de continuar a la siguiente wave
+            setTimeout(() => {
+                nextWave();
+            }, 500);
+        } else {
+            nextWave();
+        }
+    }    // Update enemies
     enemies.forEach(enemy => {
         const dx = player.x - enemy.x;
         const dy = player.y - enemy.y;
