@@ -268,7 +268,7 @@ const playerStats = {
         baseValue: isMobileDevice ? 4 : 3,
         currentValue: isMobileDevice ? 4 : 3,
         increment: 0.05, // 5% por nivel
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Move faster on the arena"
     },
     fireRate: {
@@ -276,7 +276,7 @@ const playerStats = {
         baseValue: 150, // ms entre disparos
         currentValue: 150,
         increment: -0.05, // -5% (reduce cooldown)
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Shoot more frequently"
     },
     resilience: {
@@ -284,7 +284,7 @@ const playerStats = {
         baseValue: 1.0, // Multiplicador de daño recibido (1.0 = 100%)
         currentValue: 1.0,
         increment: -0.05, // -5% daño recibido
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Take less damage from enemies"
     },
     bulletDamage: {
@@ -292,7 +292,7 @@ const playerStats = {
         baseValue: 10,
         currentValue: 10,
         increment: 0.05, // +5% daño
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Your shots deal more damage"
     },
     maxHealth: {
@@ -300,7 +300,7 @@ const playerStats = {
         baseValue: 100,
         currentValue: 100,
         increment: 0.05, // +5% salud máxima
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Increases your maximum HP"
     },
     pickupMagnet: {
@@ -308,7 +308,7 @@ const playerStats = {
         baseValue: 50, // Radio de recolección
         currentValue: 50,
         increment: 0.05, // +5% radio
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Increases range to collect pickups"
     },
     criticalChance: {
@@ -316,7 +316,7 @@ const playerStats = {
         baseValue: 0, // 0% inicial
         currentValue: 0,
         increment: 0.02, // +2% por nivel (no es 5% porque sería muy fuerte)
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Chance to deal double damage"
     },
     regeneration: {
@@ -324,7 +324,7 @@ const playerStats = {
         baseValue: 0, // HP/segundo
         currentValue: 0,
         increment: 0.5, // +0.5 HP/s por nivel (valor fijo, no porcentaje)
-        cost: function() { return 10 * (this.level + 1); },
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Recover health per second"
     }
 };
@@ -428,6 +428,17 @@ function updateAbilityButton() {
         abilityBtn.textContent = '⚡';
         abilityBtn.classList.add('inactive');
     }
+
+    // Add event listener for ability button
+    const abilityHandler = (e) => {
+        e.preventDefault();
+        initAudio();
+        if (collectedAbility && gameState.isPlaying) {
+            useAbility();
+        }
+    };
+    abilityBtn.addEventListener('touchstart', abilityHandler);
+    abilityBtn.addEventListener('click', abilityHandler);
 }
 
 // Input Handling
@@ -626,13 +637,15 @@ if (isMobileDevice) {
     // Ability Button (Small - Dual Joystick Mode)
     const abilityBtnSmall = document.getElementById('abilityBtnSmall');
     if (abilityBtnSmall) {
-        abilityBtnSmall.addEventListener('touchstart', (e) => {
+        const abilityHandler = (e) => {
             e.preventDefault();
             initAudio();
             if (collectedAbility && gameState.isPlaying) {
                 useAbility();
             }
-        });
+        };
+        abilityBtnSmall.addEventListener('touchstart', abilityHandler);
+        abilityBtnSmall.addEventListener('click', abilityHandler);
     }
 
     // Inicializar audio en primer touch
@@ -2174,9 +2187,45 @@ window.startGameFromMenu = function(startLevel) {
     nextWave(); // Inicia la primera wave
     gameLoop();
 
+    // Ensure both joysticks are visible on mobile
+    if (isMobileDevice) {
+        const shootJoystickContainer = document.getElementById('shootJoystickContainer');
+        if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
+        const joystickContainer = document.getElementById('joystickContainer');
+        if (joystickContainer) joystickContainer.style.display = 'block';
+    }
+
     console.log('🎮 Game Started!');
     console.log('Device:', isMobileDevice ? '📱 Mobile' : '🖥️ PC');
     console.log('Controls:', isMobileDevice ? 'Joystick + Touch' : 'MOBA (Right-click move, Left-click shoot)');
     console.log('Quality:', qualitySettings);
     console.log('Game Area Top:', gameAreaTop);
 };
+
+// Pause button event listeners
+const pauseBtnMobile = document.getElementById('pauseBtnMobile');
+if (pauseBtnMobile) {
+    pauseBtnMobile.addEventListener('click', function() {
+        if (gameState.isPlaying && !gameState.isGameOver) {
+            gameState.isPaused = true;
+            document.getElementById('pauseOverlay').style.display = 'flex';
+        }
+    });
+}
+
+const resumeBtn = document.getElementById('resumeBtn');
+if (resumeBtn) {
+    resumeBtn.addEventListener('click', function() {
+        gameState.isPaused = false;
+        document.getElementById('pauseOverlay').style.display = 'none';
+    });
+}
+
+const abortBtn = document.getElementById('abortBtn');
+if (abortBtn) {
+    abortBtn.addEventListener('click', function() {
+        gameState.isPaused = false;
+        document.getElementById('pauseOverlay').style.display = 'none';
+        gameOver();
+    });
+}
