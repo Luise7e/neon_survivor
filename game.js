@@ -460,36 +460,50 @@ const input = {
 };
 
 // Control Mode Configuration
-let controlMode = localStorage.getItem('controlMode') || 'joystick'; // 'tap' or 'joystick'
+// Modes: 'default' (right=move, left=shoot), 'inverted' (right=shoot, left=move), 'tap' (tap to action)
+let controlMode = localStorage.getItem('controlMode') || 'default';
+
+// Tap to Action state
+let tapToActionTarget = null; // {x, y, isEnemy, enemy}
+let isAutoShooting = false;
 
 // Function to set control mode (called from settings)
 window.setControlMode = function(mode) {
     controlMode = mode;
+    localStorage.setItem('controlMode', mode);
     updateControlVisibility();
 };
 
 function updateControlVisibility() {
+    const moveJoystickContainer = document.getElementById('joystickContainer');
     const shootJoystickContainer = document.getElementById('shootJoystickContainer');
-    const actionButtons = document.getElementById('actionButtons');
     const abilityBtnSmall = document.getElementById('abilityBtnSmall');
+    const abilityBtn = document.getElementById('abilityBtn');
 
     console.log('🎮 Control Mode:', controlMode);
-    console.log('🕹️ Shoot Joystick:', shootJoystickContainer ? 'Found' : 'NOT FOUND');
-    console.log('🔘 Action Buttons:', actionButtons ? 'Found' : 'NOT FOUND');
-    console.log('⚡ Small Ability Btn:', abilityBtnSmall ? 'Found' : 'NOT FOUND');
 
-    if (controlMode === 'joystick') {
-        // Dual joystick mode
+    if (controlMode === 'default' || controlMode === 'inverted') {
+        // Dual joystick modes
+        if (moveJoystickContainer) moveJoystickContainer.style.display = 'flex';
         if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
-        if (actionButtons) actionButtons.style.display = 'none';
         if (abilityBtnSmall) abilityBtnSmall.style.display = 'flex';
-        console.log('✅ Dual Joystick Mode Activated');
-    } else {
-        // Tap mode
+        if (abilityBtn) abilityBtn.style.display = 'none';
+        console.log('✅ Dual Joystick Mode:', controlMode);
+    } else if (controlMode === 'tap') {
+        // Tap to action mode
+        if (moveJoystickContainer) moveJoystickContainer.style.display = 'none';
         if (shootJoystickContainer) shootJoystickContainer.style.display = 'none';
-        if (actionButtons) actionButtons.style.display = 'flex';
         if (abilityBtnSmall) abilityBtnSmall.style.display = 'none';
-        console.log('✅ Tap to Shoot Mode Activated');
+        if (abilityBtn) abilityBtn.style.display = 'flex';
+        console.log('✅ Tap to Action Mode Activated');
+    } else {
+        // Legacy 'joystick' mode - treat as 'default'
+        controlMode = 'default';
+        localStorage.setItem('controlMode', 'default');
+        if (moveJoystickContainer) moveJoystickContainer.style.display = 'flex';
+        if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
+        if (abilityBtnSmall) abilityBtnSmall.style.display = 'flex';
+        if (abilityBtn) abilityBtn.style.display = 'none';
     }
 }
 
@@ -652,9 +666,23 @@ if (isMobileDevice) {
     }
 
     // ===================================
-    // TAP TO SHOOT MODE (Original)
     // ===================================
-    // Disparo tocando cualquier punto de la pantalla (excepto joystick, botón de pausa y botón de habilidad)
+    // TAP TO ACTION MODE
+    // ===================================
+    // Helper function to find enemy at touch position
+    function findEnemyAtPosition(x, y) {
+        for (let enemy of enemies) {
+            const dx = x - enemy.x;
+            const dy = y - enemy.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < enemy.radius + 20) { // 20px touch tolerance
+                return enemy;
+            }
+        }
+        return null;
+    }
+
+    // Tap to action - detect tap on enemy or empty space
     window.addEventListener('touchstart', (e) => {
         // Solo funciona en modo tap
         if (controlMode !== 'tap') return;
@@ -664,22 +692,37 @@ if (isMobileDevice) {
             const target = touch.target;
             if (
                 target.closest &&
-                (target.closest('#joystickContainer') ||
-                 target.closest('#abilityBtn') ||
+                (target.closest('#abilityBtn') ||
                  target.closest('#pauseBtnMobile'))
             ) {
                 continue;
             }
-            // Disparar hacia el punto tocado
+
             if (gameState.isPlaying && !gameState.isPaused && !gameState.isCountdown) {
                 const tapX = touch.clientX;
                 const tapY = touch.clientY;
-                const angle = Math.atan2(tapY - player.y, tapX - player.x);
-                player.angle = angle;
-                // Control de cadencia de disparo con mejora aplicada
-                if (Date.now() - player.lastShootTime > getShootCooldown()) {
-                    createPlayerBullet(angle);
-                    player.lastShootTime = Date.now();
+
+                // Check if tapped on an enemy
+                const tappedEnemy = findEnemyAtPosition(tapX, tapY);
+
+                if (tappedEnemy) {
+                    // Tap on enemy - start auto-shooting
+                    tapToActionTarget = {
+                        x: tapX,
+                        y: tapY,
+                        isEnemy: true,
+                        enemy: tappedEnemy
+                    };
+                    isAutoShooting = true;
+                } else {
+                    // Tap on empty space - move to location
+                    tapToActionTarget = {
+                        x: tapX,
+                        y: tapY,
+                        isEnemy: false,
+                        enemy: null
+                    };
+                    isAutoShooting = false;
                 }
             }
         }
@@ -1527,9 +1570,27 @@ function update() {
 
     // MOVE PLAYER
     if (isMobileDevice) {
-        if (input.joystick.active) {
-            player.x += input.joystick.x * player.speed;
-            player.y += input.joystick.y * player.speed;
+        if (controlMode === 'tap') {
+            // Tap to Action Mode - auto movement
+            if (tapToActionTarget && !tapToActionTarget.isEnemy) {
+                const dx = tapToActionTarget.x - player.x;
+                const dy = tapToActionTarget.y - player.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 10) {
+                    player.x += (dx / dist) * player.speed;
+                    player.y += (dy / dist) * player.speed;
+                } else {
+                    tapToActionTarget = null; // Reached destination
+                }
+            }
+        } else {
+            // Joystick modes (default or inverted)
+            const moveJoystick = controlMode === 'default' ? input.joystick : input.shootJoystick;
+            if (moveJoystick.active) {
+                player.x += moveJoystick.x * player.speed;
+                player.y += moveJoystick.y * player.speed;
+            }
         }
     } else {
         if (player.moving) {
@@ -1568,17 +1629,39 @@ function update() {
             player.lastShootTime = now;
         }
     } else {
-        // Mobile: Dual Joystick Mode - Auto shoot while aiming
-        if (controlMode === 'joystick' && input.shootJoystick.active) {
-            player.angle = input.shootJoystick.angle;
+        // Mobile shooting
+        if (controlMode === 'tap') {
+            // Tap to Action - auto shoot at tapped enemy
+            if (tapToActionTarget && tapToActionTarget.isEnemy && tapToActionTarget.enemy) {
+                const enemy = tapToActionTarget.enemy;
+                // Check if enemy still exists
+                if (enemies.includes(enemy)) {
+                    const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
+                    player.angle = angle;
 
-            // Auto-shoot while joystick is active con mejora aplicada
-            if (now - player.lastShootTime > getShootCooldown()) {
-                createPlayerBullet(player.angle);
-                player.lastShootTime = now;
+                    if (now - player.lastShootTime > getShootCooldown()) {
+                        createPlayerBullet(angle);
+                        player.lastShootTime = now;
+                    }
+                } else {
+                    // Enemy died, clear target
+                    tapToActionTarget = null;
+                    isAutoShooting = false;
+                }
+            }
+        } else {
+            // Joystick shooting (default or inverted)
+            const shootJoystick = controlMode === 'default' ? input.shootJoystick : input.joystick;
+            if (shootJoystick.active) {
+                player.angle = shootJoystick.angle;
+
+                // Auto-shoot while joystick is active
+                if (now - player.lastShootTime > getShootCooldown()) {
+                    createPlayerBullet(player.angle);
+                    player.lastShootTime = now;
+                }
             }
         }
-        // Tap mode shooting is handled in touchstart event
     }
 
     // Spawn enemies (skip in boss wave and countdown)

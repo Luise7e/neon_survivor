@@ -3567,7 +3567,7 @@
                     </div>
                 </div>
 
-                <!-- 4. INVERT CONTROLS -->
+                <!-- 4. CONTROL SCHEME -->
                 <div class="setting-item-modern">
                     <div class="setting-label-modern">
                         <svg class="setting-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3575,23 +3575,39 @@
                             <path d="M3 12h6m6 0h6M12 3v6m0 6v6"></path>
                             <path d="M8 8l-4 4m16 0l-4-4M8 16l-4-4m16 0l-4 4"></path>
                         </svg>
-                        <span class="setting-name-modern">INVERT CONTROLS</span>
+                        <span class="setting-name-modern">CONTROL SCHEME</span>
                     </div>
-                    <div class="control-mode-selector">
-                        <button class="mode-btn active" id="modeMove" data-mode="move">
-                            <span class="mode-label">NORMAL</span>
-                            <span class="mode-sublabel">Left:Move - Right:Shoot</span>
-                        </button>
-                        <div class="mode-divider">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="17 11 21 7 17 3"></polyline>
-                                <polyline points="7 13 3 17 7 21"></polyline>
-                            </svg>
+                    <div class="control-options">
+                        <div class="control-option">
+                            <input type="radio" id="controlDefault" name="controlScheme" value="default" checked>
+                            <label for="controlDefault">
+                                <div class="option-icon">🕹️</div>
+                                <div class="option-content">
+                                    <div class="option-title">Default Joysticks</div>
+                                    <div class="option-desc">Right: Move | Left: Shoot</div>
+                                </div>
+                            </label>
                         </div>
-                        <button class="mode-btn" id="modeShoot" data-mode="shoot">
-                            <span class="mode-label">INVERTED</span>
-                            <span class="mode-sublabel">Left:Shoot - Right:Move</span>
-                        </button>
+                        <div class="control-option">
+                            <input type="radio" id="controlInverted" name="controlScheme" value="inverted">
+                            <label for="controlInverted">
+                                <div class="option-icon">🔄</div>
+                                <div class="option-content">
+                                    <div class="option-title">Inverted Joysticks</div>
+                                    <div class="option-desc">Right: Shoot | Left: Move</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="control-option">
+                            <input type="radio" id="controlTap" name="controlScheme" value="tap">
+                            <label for="controlTap">
+                                <div class="option-icon">👆</div>
+                                <div class="option-content">
+                                    <div class="option-title">Tap to Action</div>
+                                    <div class="option-desc">Tap enemy to shoot | Tap ground to move</div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -4230,7 +4246,7 @@
     const defaultSettings = {
         masterVolume: 70,
         hapticFeedback: true,
-        invertControls: false, // false = Move left, true = Shoot left
+        controlScheme: 'default', // 'default', 'inverted', or 'tap'
         controlSize: 'normal'
     };
 
@@ -4263,25 +4279,33 @@
             }
         });
 
-        // === 3. INVERT CONTROLS ===
-        const modeMove = document.getElementById('modeMove');
-        const modeShoot = document.getElementById('modeShoot');
-
-        modeMove.addEventListener('click', function() {
-            currentSettings.invertControls = false;
-            modeMove.classList.add('active');
-            modeShoot.classList.remove('active');
-            saveSettings();
-            applyInvertControls();
+        // === 3. CONTROL SCHEME ===
+        const controlRadios = document.querySelectorAll('input[name="controlScheme"]');
+        
+        controlRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    currentSettings.controlScheme = this.value;
+                    saveSettings();
+                    applyControlScheme();
+                }
+            });
         });
 
-        modeShoot.addEventListener('click', function() {
-            currentSettings.invertControls = true;
-            modeShoot.classList.add('active');
-            modeMove.classList.remove('active');
-            saveSettings();
-            applyInvertControls();
-        });
+        function applyControlScheme() {
+            const scheme = currentSettings.controlScheme || 'default';
+            
+            // Set selected radio
+            const radioToCheck = document.querySelector(`input[name="controlScheme"][value="${scheme}"]`);
+            if (radioToCheck) {
+                radioToCheck.checked = true;
+            }
+            
+            // Apply to game
+            if (typeof window.setControlMode === 'function') {
+                window.setControlMode(scheme);
+            }
+        }
 
         // === 4. CONTROLS SIZE ===
         const sizeSmall = document.getElementById('sizeSmall');
