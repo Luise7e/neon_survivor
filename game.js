@@ -247,7 +247,7 @@ const player = {
     get radius() { return ViewportScale.playerSize; }, // Dinámico
     health: 100,
     maxHealth: 100,
-    get speed() { 
+    get speed() {
         const baseSpeed = (isMobileDevice ? 4 : 3) * ViewportScale.scale;
         return baseSpeed * (playerStats.movementSpeed.currentValue / playerStats.movementSpeed.baseValue);
     }, // Velocidad proporcional con mejora
@@ -459,54 +459,6 @@ const input = {
     }
 };
 
-// Control Mode Configuration
-// Modes: 'default' (right=move, left=shoot), 'inverted' (right=shoot, left=move), 'tap' (tap to action)
-let controlMode = localStorage.getItem('controlMode') || 'default';
-
-// Tap to Action state
-let tapToActionTarget = null; // {x, y, isEnemy, enemy}
-let isAutoShooting = false;
-
-// Function to set control mode (called from settings)
-window.setControlMode = function(mode) {
-    controlMode = mode;
-    localStorage.setItem('controlMode', mode);
-    updateControlVisibility();
-};
-
-function updateControlVisibility() {
-    const moveJoystickContainer = document.getElementById('joystickContainer');
-    const shootJoystickContainer = document.getElementById('shootJoystickContainer');
-    const abilityBtnSmall = document.getElementById('abilityBtnSmall');
-    const abilityBtn = document.getElementById('abilityBtn');
-
-    console.log('🎮 Control Mode:', controlMode);
-
-    if (controlMode === 'default' || controlMode === 'inverted') {
-        // Dual joystick modes
-        if (moveJoystickContainer) moveJoystickContainer.style.display = 'flex';
-        if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
-        if (abilityBtnSmall) abilityBtnSmall.style.display = 'flex';
-        if (abilityBtn) abilityBtn.style.display = 'none';
-        console.log('✅ Dual Joystick Mode:', controlMode);
-    } else if (controlMode === 'tap') {
-        // Tap to action mode
-        if (moveJoystickContainer) moveJoystickContainer.style.display = 'none';
-        if (shootJoystickContainer) shootJoystickContainer.style.display = 'none';
-        if (abilityBtnSmall) abilityBtnSmall.style.display = 'none';
-        if (abilityBtn) abilityBtn.style.display = 'flex';
-        console.log('✅ Tap to Action Mode Activated');
-    } else {
-        // Legacy 'joystick' mode - treat as 'default'
-        controlMode = 'default';
-        localStorage.setItem('controlMode', 'default');
-        if (moveJoystickContainer) moveJoystickContainer.style.display = 'flex';
-        if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
-        if (abilityBtnSmall) abilityBtnSmall.style.display = 'flex';
-        if (abilityBtn) abilityBtn.style.display = 'none';
-    }
-}
-
 // ===================================
 // MOBILE CONTROLS - WILD RIFT STYLE
 // ===================================
@@ -667,76 +619,9 @@ if (isMobileDevice) {
 
     // ===================================
     // ===================================
-    // TAP TO ACTION MODE
     // ===================================
-    // Helper function to find enemy at touch position
-    function findEnemyAtPosition(x, y) {
-        for (let enemy of enemies) {
-            const dx = x - enemy.x;
-            const dy = y - enemy.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < enemy.radius + 20) { // 20px touch tolerance
-                return enemy;
-            }
-        }
-        return null;
-    }
-
-    // Tap to action - detect tap on enemy or empty space
-    window.addEventListener('touchstart', (e) => {
-        // Solo funciona en modo tap
-        if (controlMode !== 'tap') return;
-
-        for (let touch of e.changedTouches) {
-            // Ignorar si el toque es en los controles
-            const target = touch.target;
-            if (
-                target.closest &&
-                (target.closest('#abilityBtn') ||
-                 target.closest('#pauseBtnMobile'))
-            ) {
-                continue;
-            }
-
-            if (gameState.isPlaying && !gameState.isPaused && !gameState.isCountdown) {
-                const tapX = touch.clientX;
-                const tapY = touch.clientY;
-
-                // Check if tapped on an enemy
-                const tappedEnemy = findEnemyAtPosition(tapX, tapY);
-
-                if (tappedEnemy) {
-                    // Tap on enemy - start auto-shooting
-                    tapToActionTarget = {
-                        x: tapX,
-                        y: tapY,
-                        isEnemy: true,
-                        enemy: tappedEnemy
-                    };
-                    isAutoShooting = true;
-                } else {
-                    // Tap on empty space - move to location
-                    tapToActionTarget = {
-                        x: tapX,
-                        y: tapY,
-                        isEnemy: false,
-                        enemy: null
-                    };
-                    isAutoShooting = false;
-                }
-            }
-        }
-    });
-
-    // Ability Button (Large - Tap Mode)
-    const abilityBtn = document.getElementById('abilityBtn');
-    abilityBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        initAudio(); // Inicializar audio en primera interacción
-        if (collectedAbility && gameState.isPlaying) {
-            useAbility();
-        }
-    });
+    // ABILITY BUTTON
+    // ===================================
 
     // Ability Button (Small - Dual Joystick Mode)
     const abilityBtnSmall = document.getElementById('abilityBtnSmall');
@@ -754,9 +639,6 @@ if (isMobileDevice) {
     window.addEventListener('touchstart', () => {
         initAudio();
     }, { once: true });
-
-    // Apply control mode visibility on load
-    updateControlVisibility();
 
     // ...fin controles móviles...
 }
@@ -1124,13 +1006,13 @@ function spawnAbilityPickup(x, y) {
 function createPlayerBullet(angle) {
     const baseDamage = 35;
     let finalDamage = baseDamage * (playerStats.bulletDamage.currentValue / playerStats.bulletDamage.baseValue);
-    
+
     // Critical hit chance
     const isCritical = Math.random() < playerStats.criticalChance.currentValue;
     if (isCritical) {
         finalDamage *= 2;
     }
-    
+
     bullets.push({
         x: player.x,
         y: player.y,
@@ -1219,7 +1101,7 @@ function upgradePlayerStat(statName) {
     } else {
         // Otros stats: incremento compuesto del 5%
         stat.currentValue = stat.baseValue * Math.pow(1 + Math.abs(stat.increment), stat.level);
-        
+
         // Para stats que decrecen (fireRate, resilience), aplicar el signo
         if (stat.increment < 0) {
             stat.currentValue = stat.baseValue * Math.pow(1 + stat.increment, stat.level);
@@ -1262,14 +1144,14 @@ function createStatsSnapshot() {
         experience: gameState.experience,
         stats: {}
     };
-    
+
     for (let statName in playerStats) {
         statsSnapshot.stats[statName] = {
             level: playerStats[statName].level,
             currentValue: playerStats[statName].currentValue
         };
     }
-    
+
     // Guardar también salud máxima del jugador
     statsSnapshot.playerMaxHealth = player.maxHealth;
     statsSnapshot.playerHealth = player.health;
@@ -1278,18 +1160,18 @@ function createStatsSnapshot() {
 // Restaurar snapshot (deshacer cambios)
 function restoreStatsSnapshot() {
     if (!statsSnapshot) return;
-    
+
     gameState.experience = statsSnapshot.experience;
-    
+
     for (let statName in statsSnapshot.stats) {
         playerStats[statName].level = statsSnapshot.stats[statName].level;
         playerStats[statName].currentValue = statsSnapshot.stats[statName].currentValue;
     }
-    
+
     // Restaurar salud del jugador
     player.maxHealth = statsSnapshot.playerMaxHealth;
     player.health = statsSnapshot.playerHealth;
-    
+
     showNotification('Changes reverted');
 }
 
@@ -1570,27 +1452,10 @@ function update() {
 
     // MOVE PLAYER
     if (isMobileDevice) {
-        if (controlMode === 'tap') {
-            // Tap to Action Mode - auto movement
-            if (tapToActionTarget && !tapToActionTarget.isEnemy) {
-                const dx = tapToActionTarget.x - player.x;
-                const dy = tapToActionTarget.y - player.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist > 10) {
-                    player.x += (dx / dist) * player.speed;
-                    player.y += (dy / dist) * player.speed;
-                } else {
-                    tapToActionTarget = null; // Reached destination
-                }
-            }
-        } else {
-            // Joystick modes (default or inverted)
-            const moveJoystick = controlMode === 'default' ? input.joystick : input.shootJoystick;
-            if (moveJoystick.active) {
-                player.x += moveJoystick.x * player.speed;
-                player.y += moveJoystick.y * player.speed;
-            }
+        // Joystick movement
+        if (input.joystick.active) {
+            player.x += input.joystick.x * player.speed;
+            player.y += input.joystick.y * player.speed;
         }
     } else {
         if (player.moving) {
@@ -1629,37 +1494,14 @@ function update() {
             player.lastShootTime = now;
         }
     } else {
-        // Mobile shooting
-        if (controlMode === 'tap') {
-            // Tap to Action - auto shoot at tapped enemy
-            if (tapToActionTarget && tapToActionTarget.isEnemy && tapToActionTarget.enemy) {
-                const enemy = tapToActionTarget.enemy;
-                // Check if enemy still exists
-                if (enemies.includes(enemy)) {
-                    const angle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-                    player.angle = angle;
+        // Mobile: Joystick shooting
+        if (input.shootJoystick.active) {
+            player.angle = input.shootJoystick.angle;
 
-                    if (now - player.lastShootTime > getShootCooldown()) {
-                        createPlayerBullet(angle);
-                        player.lastShootTime = now;
-                    }
-                } else {
-                    // Enemy died, clear target
-                    tapToActionTarget = null;
-                    isAutoShooting = false;
-                }
-            }
-        } else {
-            // Joystick shooting (default or inverted)
-            const shootJoystick = controlMode === 'default' ? input.shootJoystick : input.joystick;
-            if (shootJoystick.active) {
-                player.angle = shootJoystick.angle;
-
-                // Auto-shoot while joystick is active
-                if (now - player.lastShootTime > getShootCooldown()) {
-                    createPlayerBullet(player.angle);
-                    player.lastShootTime = now;
-                }
+            // Auto-shoot while joystick is active
+            if (now - player.lastShootTime > getShootCooldown()) {
+                createPlayerBullet(player.angle);
+                player.lastShootTime = now;
             }
         }
     }
@@ -1675,7 +1517,7 @@ function update() {
     if (!gameState.isCountdown && enemies.length === 0 && gameState.enemiesToSpawn === 0) {
         // Oleada completada - mostrar modal de upgrades
         console.log(`🎉 Wave ${gameState.wave} completed!`);
-        
+
         // Verificar si debemos mostrar anuncio en este nivel
         const shouldShowAd = shouldShowAdForWave(gameState.wave);
 
@@ -1687,7 +1529,7 @@ function update() {
 
         // Pausar el juego y mostrar modal de upgrades
         gameState.isPaused = true;
-        
+
         // Pequeña pausa para que el jugador vea que la oleada terminó
         setTimeout(() => {
             if (typeof window.showUpgradeModal === 'function') {

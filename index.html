@@ -164,21 +164,21 @@
             box-shadow: 0 0 30px rgba(0, 255, 255, 1), 0 4px 15px rgba(0, 0, 0, 0.7);
         }
 
-        /* Pause Button - NEON STYLE */
+        /* Pause Button - NEON CIRCULAR STYLE - POSITIONED AT 10:30 ABOVE LEFT JOYSTICK */
         .pause-btn-mobile {
             position: absolute;
-            bottom: 165px;
-            left: 30px;
-            width: 45px;
-            height: 45px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, rgba(10, 10, 40, 0.9) 0%, rgba(40, 0, 60, 0.9) 100%);
-            border: 2px solid;
-            border-image: linear-gradient(135deg, #00ffff, #ff00ff) 1;
+            /* Position at 10:30 clock position relative to left joystick */
+            bottom: calc(30px + 120px + 15px); /* joystick bottom + joystick height + margin */
+            left: calc(30px + 120px * 0.75); /* joystick left + 3/4 of joystick width */
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(255, 0, 255, 0.2) 100%);
+            border: 3px solid #00ffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.7), inset 0 0 15px rgba(0, 255, 255, 0.1);
             cursor: pointer;
             transition: all 0.2s ease;
             pointer-events: all;
@@ -189,24 +189,24 @@
         .pause-btn-mobile::after {
             content: '';
             position: absolute;
-            width: 5px;
-            height: 20px;
+            width: 4px;
+            height: 16px;
             background: linear-gradient(180deg, #00ffff, #ff00ff);
             border-radius: 2px;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.9);
         }
 
         .pause-btn-mobile::before {
-            left: 14px;
+            left: 18px;
         }
 
         .pause-btn-mobile::after {
-            right: 14px;
+            right: 18px;
         }
 
         .pause-btn-mobile:active {
             transform: scale(0.9);
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8), inset 0 0 20px rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 35px rgba(0, 255, 255, 1), inset 0 0 20px rgba(0, 255, 255, 0.3);
         }
 
         .pause-btn-mobile:active::before,
@@ -287,6 +287,7 @@
         }
 
         /* Shoot Joystick (Right Side) */
+        /* Shoot Joystick Container - SAME SIZE AS MOVEMENT JOYSTICK */
         .shoot-joystick-container {
             position: absolute;
             bottom: 30px;
@@ -297,50 +298,70 @@
         }
 
         .shoot-joystick-container .joystick-base {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
             background: radial-gradient(circle at center, rgba(255, 0, 255, 0.12) 0%, rgba(255, 0, 255, 0.03) 100%);
             border: 2px solid rgba(255, 0, 255, 0.3);
             box-shadow: 0 0 20px rgba(255, 0, 255, 0.2), inset 0 0 15px rgba(255, 0, 255, 0.08);
+            pointer-events: all;
+            touch-action: none;
         }
 
         .shoot-joystick-container .joystick-stick {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             background: linear-gradient(135deg, #ff00ff 0%, #ff0088 100%);
+            border: 2px solid #ffffff;
             box-shadow: 0 0 20px rgba(255, 0, 255, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.05s ease-out;
+            pointer-events: none;
         }
 
         .shoot-joystick-container .joystick-stick.active {
+            transform: translate(-50%, -50%) scale(1.1);
             box-shadow: 0 0 30px rgba(255, 0, 255, 1), 0 4px 15px rgba(0, 0, 0, 0.7);
         }
 
-        /* Ability Button Small (for dual joystick mode) */
+        /* Ability Button Small (for dual joystick mode) - POSITIONED AT 1:30 ABOVE RIGHT JOYSTICK */
         .ability-btn-small {
             position: absolute;
-            bottom: 165px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
+            /* Position at 1:30 clock position relative to right joystick */
+            bottom: calc(30px + 120px + 15px); /* joystick bottom + joystick height + margin */
+            right: calc(30px + 120px * 0.25); /* joystick right + 1/4 of joystick width */
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
-            background: linear-gradient(135deg, rgba(255, 0, 255, 0.9) 0%, rgba(138, 0, 230, 0.9) 100%);
-            border: 3px solid #ffffff;
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.2) 0%, rgba(138, 0, 230, 0.2) 100%);
+            border: 3px solid #ff00ff;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 28px;
             color: #fff;
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.7), 0 5px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.7), inset 0 0 15px rgba(255, 0, 255, 0.1);
             cursor: pointer;
             transition: all 0.1s ease;
-            position: absolute;
             pointer-events: all;
+            backdrop-filter: blur(10px);
         }
 
         .ability-btn-small.inactive {
-            opacity: 0.3;
-            background: linear-gradient(135deg, rgba(120, 120, 120, 0.6) 0%, rgba(80, 80, 80, 0.6) 100%);
+            opacity: 0.4;
+            background: linear-gradient(135deg, rgba(120, 120, 120, 0.2) 0%, rgba(80, 80, 80, 0.2) 100%);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
 
         .ability-btn-small:active {
             transform: scale(0.9);
-            box-shadow: 0 0 30px rgba(255, 0, 255, 1), 0 2px 10px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 35px rgba(255, 0, 255, 1), inset 0 0 20px rgba(255, 0, 255, 0.3);
         }
 
         .ability-btn-small .cooldown-overlay {
@@ -1910,7 +1931,7 @@
         }
 
         /* ===========================
-           SETTINGS MENU - REDESIGNED
+           SETTINGS MENU - MODERN MINIMAL DESIGN
         =========================== */
         .settings-menu {
             position: fixed;
@@ -1918,571 +1939,313 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at 50% 50%, #1a000a 0%, #000000 100%);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
             z-index: 10002;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 0;
             display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .settings-menu.active {
-            display: block;
+            display: flex;
         }
 
-        .settings-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: clamp(12px, 2vh, 18px) clamp(12px, 2.5vw, 18px);
-            padding-bottom: clamp(20px, 3vh, 30px);
+        /* Settings Panel */
+        .settings-panel {
+            background: linear-gradient(135deg, rgba(10, 10, 30, 0.95) 0%, rgba(20, 10, 40, 0.95) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 16px;
+            max-width: 480px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 100px rgba(0, 255, 255, 0.1);
+            animation: slideIn 0.3s ease;
         }
 
-        .settings-header {
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Header */
+        .settings-panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: clamp(12px, 2vh, 18px);
-            position: sticky;
-            top: 0;
-            background: linear-gradient(180deg, #000000 0%, rgba(0,0,0,0.95) 80%, transparent 100%);
-            z-index: 10;
-            padding: clamp(10px, 1.5vh, 15px) 0;
+            padding: 24px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
         }
 
-        .settings-title {
-            font-size: clamp(20px, 4.5vw, 32px);
-            font-weight: 900;
-            background: linear-gradient(135deg, #00ffff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .settings-panel-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ffff;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            margin: 0;
         }
 
-        .close-settings-btn {
+        .settings-close-btn {
             background: transparent;
             border: none;
-            color: rgba(255, 255, 255, 0.6);
-            width: clamp(32px, 7vw, 42px);
-            height: clamp(32px, 7vw, 42px);
+            color: rgba(255, 255, 255, 0.5);
+            width: 32px;
+            height: 32px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .close-settings-btn svg {
-            width: clamp(20px, 4.5vw, 28px);
-            height: clamp(20px, 4.5vw, 28px);
-        }
-
-        .close-settings-btn:hover {
-            color: #ff0055;
-            transform: scale(1.15) rotate(90deg);
-        }
-
-        .close-settings-btn:active {
-            transform: scale(0.95) rotate(90deg);
-        }
-
-        .settings-content {
-            display: flex;
-            flex-direction: column;
-            gap: clamp(12px, 2.5vh, 18px);
-        }
-
-        /* Setting Categories */
-        .settings-category {
-            margin-bottom: clamp(6px, 1vh, 8px);
-        }
-
-        .category-title {
-            font-size: clamp(12px, 2.6vw, 16px);
-            font-weight: 700;
-            color: #00ffff;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: clamp(8px, 1.5vh, 12px);
-            padding-left: clamp(6px, 1.2vw, 10px);
-            border-left: 3px solid #00ffff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
-        }
-
-        /* Setting Sections */
-        .setting-section {
-            background: linear-gradient(135deg, rgba(26, 0, 51, 0.4) 0%, rgba(10, 10, 40, 0.4) 100%);
-            border: 1px solid rgba(255, 0, 255, 0.25);
-            border-radius: 10px;
-            padding: clamp(10px, 2vh, 14px) clamp(12px, 2.5vw, 16px);
-            backdrop-filter: blur(12px);
-            box-shadow:
-                0 4px 16px rgba(0, 0, 0, 0.25),
-                inset 0 0 20px rgba(255, 0, 255, 0.03);
-            transition: all 0.3s ease;
-        }
-
-        .setting-section:hover {
-            border-color: rgba(255, 0, 255, 0.4);
-            box-shadow:
-                0 6px 20px rgba(0, 0, 0, 0.3),
-                inset 0 0 25px rgba(255, 0, 255, 0.05);
-        }
-
-        .setting-label {
-            font-size: clamp(13px, 2.8vw, 16px);
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: clamp(5px, 1vh, 8px);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .setting-label .emoji {
-            font-size: clamp(15px, 3.2vw, 20px);
-        }
-
-        .setting-description {
-            font-size: clamp(10px, 2vw, 12px);
-            color: rgba(255, 255, 255, 0.55);
-            margin-bottom: clamp(10px, 2vh, 14px);
-            line-height: 1.3;
-        }
-
-        /* Slider Controls */
-        .slider-container {
-            display: flex;
-            flex-direction: column;
-            gap: clamp(6px, 1.2vh, 10px);
-        }
-
-        .slider-row {
-            display: flex;
-            align-items: center;
-            gap: clamp(8px, 2vw, 12px);
-        }
-
-        .slider-label {
-            font-size: clamp(11px, 2.2vw, 13px);
-            color: rgba(255, 255, 255, 0.8);
-            min-width: clamp(70px, 16vw, 100px);
-            font-weight: 600;
-        }
-
-        .slider-wrapper {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: clamp(8px, 1.8vw, 12px);
-        }
-
-        .slider {
-            -webkit-appearance: none;
-            appearance: none;
-            flex: 1;
-            height: clamp(5px, 1vh, 6px);
-            background: linear-gradient(90deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
-            border-radius: 10px;
-            outline: none;
-            border: 1px solid rgba(255, 0, 255, 0.3);
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: clamp(16px, 3.4vw, 20px);
-            height: clamp(16px, 3.4vw, 20px);
-            background: linear-gradient(135deg, #ff00ff, #00ffff);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
-            transition: all 0.2s ease;
-        }
-
-        .slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 0 25px rgba(255, 0, 255, 1);
-        }
-
-        .slider::-moz-range-thumb {
-            width: clamp(16px, 3.4vw, 20px);
-            height: clamp(16px, 3.4vw, 20px);
-            background: linear-gradient(135deg, #ff00ff, #00ffff);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
-            border: none;
-            transition: all 0.2s ease;
-        }
-
-        .slider::-moz-range-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 0 25px rgba(255, 0, 255, 1);
-        }
-
-        .slider-value {
-            font-size: clamp(12px, 2.5vw, 14px);
-            font-weight: 700;
-            color: #00ffff;
-            min-width: clamp(35px, 7vw, 45px);
-            text-align: right;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
-        }
-
-        /* Toggle Switch */
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: clamp(10px, 2vw, 14px);
-        }
-
-        .toggle-label {
-            font-size: clamp(12px, 2.5vw, 14px);
-            color: rgba(255, 255, 255, 0.85);
-            font-weight: 600;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: clamp(44px, 10vw, 56px);
-            height: clamp(22px, 4.8vh, 28px);
-            background: rgba(100, 100, 100, 0.3);
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .toggle-switch.active {
-            background: linear-gradient(135deg, rgba(255, 0, 255, 0.4), rgba(0, 255, 255, 0.4));
-            border-color: #00ffff;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        }
-
-        .toggle-slider {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: clamp(16px, 4vw, 22px);
-            height: clamp(16px, 4vw, 22px);
-            background: linear-gradient(135deg, #666, #888);
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        .toggle-switch.active .toggle-slider {
-            transform: translateX(clamp(20px, 5vw, 28px));
-            background: linear-gradient(135deg, #00ffff, #ff00ff);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-        }
-
-        /* Radio Options (for difficulty, size, etc) */
-        .control-options {
-            display: flex;
-            flex-direction: column;
-            gap: clamp(6px, 1.5vh, 10px);
-        }
-
-        .control-option {
-            position: relative;
-        }
-
-        .control-option input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .control-option label {
-            display: flex;
-            align-items: center;
-            gap: clamp(8px, 1.8vw, 12px);
-            background: rgba(20, 20, 50, 0.5);
-            border: 2px solid rgba(255, 0, 255, 0.25);
             border-radius: 8px;
-            padding: clamp(8px, 1.6vh, 11px) clamp(10px, 2vw, 14px);
-            cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
-        .control-option input[type="radio"]:checked + label {
-            background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
-            border-color: #00ffff;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), inset 0 0 15px rgba(255, 0, 255, 0.1);
+        .settings-close-btn svg {
+            width: 20px;
+            height: 20px;
         }
 
-        .control-option label:hover {
-            border-color: rgba(0, 255, 255, 0.5);
-            transform: translateX(3px);
+        .settings-close-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ff0055;
         }
 
-        .option-icon {
-            font-size: clamp(16px, 4vw, 22px);
+        /* Settings List */
+        .settings-list {
+            padding: 8px;
+            max-height: calc(80vh - 100px);
+            overflow-y: auto;
+        }
+
+        .settings-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .settings-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .settings-list::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        /* Settings Item */
+        .settings-item {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .settings-item:hover {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 255, 255, 0.2);
+        }
+
+        .settings-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .settings-item-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .settings-item-icon {
+            width: 20px;
+            height: 20px;
+            color: #00ffff;
             flex-shrink: 0;
         }
 
-        .option-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            flex: 1;
-        }
-
-        .option-title {
-            font-size: clamp(12px, 2.5vw, 14px);
-            font-weight: 700;
-            color: #fff;
+        .settings-item-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .option-desc {
-            font-size: clamp(9px, 1.9vw, 11px);
-            color: rgba(255, 255, 255, 0.55);
-            line-height: 1.2;
+        .settings-item-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        /* Logout Button */
-        .logout-btn {
-            background: linear-gradient(135deg, rgba(255, 0, 0, 0.2), rgba(200, 0, 0, 0.2));
-            border: 2px solid rgba(255, 0, 0, 0.5);
-            color: #ff4444;
-            padding: clamp(10px, 2vh, 14px) clamp(16px, 3vw, 20px);
-            border-radius: 10px;
-            font-size: clamp(13px, 2.7vw, 16px);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        /* Slider */
+        .settings-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .settings-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00ffff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .settings-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+        }
+
+        .settings-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #00ffff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .settings-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #00ffff;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        /* Toggle Switch */
+        .settings-toggle {
+            width: 48px;
+            height: 26px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            position: relative;
             cursor: pointer;
             transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .settings-toggle.active {
+            background: linear-gradient(135deg, #00ffff, #00aa99);
+        }
+
+        .settings-toggle-slider {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .settings-toggle.active .settings-toggle-slider {
+            left: 25px;
+        }
+
+        /* Size Buttons */
+        .settings-size-group {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .settings-size-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .settings-size-btn.active {
+            background: rgba(0, 255, 255, 0.15);
+            border-color: #00ffff;
+            color: #00ffff;
+            box-shadow: 0 0 12px rgba(0, 255, 255, 0.3);
+        }
+
+        .settings-size-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Logout Item */
+        .settings-item-logout {
+            background: rgba(255, 0, 0, 0.05);
+            border-color: rgba(255, 0, 0, 0.2);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .settings-item-logout:hover {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: rgba(255, 0, 0, 0.3);
+        }
+
+        .settings-logout-btn {
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2);
-            width: 100%;
-        }
-
-        .logout-btn:hover {
-            background: linear-gradient(135deg, rgba(255, 0, 0, 0.4), rgba(200, 0, 0, 0.4));
-            border-color: #ff0000;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
-            transform: translateY(-2px);
-        }
-
-        .logout-btn svg {
-            width: clamp(16px, 3.2vw, 20px);
-            height: clamp(16px, 3.2vw, 20px);
-        }
-
-        .control-option {
-            position: relative;
-        }
-
-        .control-option input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-        }
-
-        .control-option label {
-            display: block;
-            background: rgba(0, 0, 0, 0.5);
-            border: 3px solid rgba(255, 0, 255, 0.3);
-            border-radius: 15px;
-            padding: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .control-option input[type="radio"]:checked + label {
-            background: rgba(255, 0, 255, 0.2);
-            border-color: #ff00ff;
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
-        }
-
-        .control-option label:hover {
-            transform: translateY(-5px);
-            border-color: #00ffff;
-        }
-
-        .option-icon {
-            font-size: clamp(40px, 8vw, 60px);
-            margin-bottom: 15px;
-        }
-
-        .option-title {
-            font-size: clamp(16px, 3vw, 20px);
-            font-weight: 900;
-            color: #00ffff;
-            text-shadow: 0 0 15px #00ffff;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-
-        .option-desc {
-            font-size: clamp(12px, 2.2vw, 14px);
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.4;
-        }
-
-        .stats-tabs {
-            display: flex;
             gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: nowrap;
-            justify-content: center;
-            overflow-x: auto;
-        }
-
-        .tab-btn {
-            background: rgba(255, 0, 255, 0.2);
-            border: 2px solid #ff00ff;
-            color: #fff;
-            padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 30px);
-            font-size: clamp(12px, 2.5vw, 16px);
-            font-weight: 700;
+            padding: 20px;
+            background: transparent;
+            border: none;
+            color: #ff6666;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             cursor: pointer;
-            border-radius: 25px;
-            font-family: 'Orbitron', sans-serif;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
+            transition: all 0.2s ease;
         }
 
-        .tab-btn.active {
-            background: linear-gradient(135deg, #ff00ff, #00ffff);
-            color: #000;
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+        .settings-logout-btn svg {
+            width: 18px;
+            height: 18px;
         }
 
-        .tab-btn:hover {
-            transform: scale(1.05);
+        .settings-logout-btn:hover {
+            color: #ff0000;
         }
 
-        .stats-content {
-            display: none;
-        }
+        /* Responsive */
+        @media (max-width: 480px) {
+            .settings-panel {
+                max-width: 100%;
+                border-radius: 0;
+                height: 100%;
+            }
 
-        .stats-content.active {
-            display: block;
-        }
-
-        .ranking-section {
-            background: rgba(20, 0, 40, 0.6);
-            border: 2px solid rgba(255, 0, 255, 0.4);
-            border-radius: 15px;
-            padding: clamp(15px, 3vw, 25px);
-            margin-bottom: 25px;
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.3);
-        }
-
-        .section-title {
-            font-size: clamp(18px, 3.5vw, 24px);
-            color: #00ffff;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px #00ffff;
-            font-weight: 700;
-        }
-
-        .ranking-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .ranking-table th {
-            background: rgba(255, 0, 255, 0.3);
-            color: #fff;
-            padding: clamp(8px, 2vw, 12px);
-            text-align: left;
-            font-size: clamp(12px, 2vw, 14px);
-            text-transform: uppercase;
-            border-bottom: 2px solid #ff00ff;
-        }
-
-        .ranking-table td {
-            padding: clamp(8px, 2vw, 12px);
-            color: #fff;
-            font-size: clamp(11px, 1.8vw, 14px);
-            border-bottom: 1px solid rgba(255, 0, 255, 0.2);
-        }
-
-        .ranking-table tr:hover {
-            background: rgba(0, 255, 255, 0.1);
-        }
-
-        .ranking-table tr.current-user {
-            background: rgba(255, 215, 0, 0.2);
-            border: 2px solid #ffd700;
-        }
-
-        .rank-number {
-            font-weight: 900;
-            color: #00ffff;
-            font-size: clamp(14px, 2.5vw, 18px);
-        }
-
-        .rank-gold {
-            color: #ffd700;
-        }
-
-        .rank-silver {
-            color: #c0c0c0;
-        }
-
-        .rank-bronze {
-            color: #cd7f32;
-        }
-
-        .my-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .stat-box {
-            background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
-            border: 2px solid rgba(255, 0, 255, 0.5);
-            border-radius: 15px;
-            padding: clamp(15px, 3vw, 20px);
-            text-align: center;
-        }
-
-        .stat-box-value {
-            font-size: clamp(24px, 5vw, 36px);
-            font-weight: 900;
-            color: #00ffff;
-            text-shadow: 0 0 20px #00ffff;
-        }
-
-        .stat-box-label {
-            font-size: clamp(10px, 2vw, 12px);
-            color: rgba(255, 255, 255, 0.7);
-            text-transform: uppercase;
-            margin-top: 8px;
-        }
-
-        .loading-stats {
-            text-align: center;
-            color: #00ffff;
-            font-size: clamp(16px, 3vw, 20px);
-            padding: 40px;
-        }
-
-        @media (max-width: 768px) {
-            .ranking-table th:nth-child(4),
-            .ranking-table td:nth-child(4) {
-                display: none;
+            .settings-list {
+                max-height: calc(100vh - 100px);
             }
         }
 
@@ -2504,9 +2267,30 @@
             width: 32px;
             height: 32px;
         }
-        .mobile-controls.size-small .action-btn,
+        .mobile-controls.size-small .pause-btn-mobile,
         .mobile-controls.size-small .ability-btn-small {
-            /* Si quieres escalar los botones, puedes usar scale aquí */
+            width: 42px;
+            height: 42px;
+            font-size: 22px;
+        }
+        .mobile-controls.size-small .pause-btn-mobile {
+            bottom: calc(30px + clamp(70px, 14vw, 90px) + 12px);
+            left: calc(30px + clamp(70px, 14vw, 90px) * 0.75);
+        }
+        .mobile-controls.size-small .ability-btn-small {
+            bottom: calc(30px + clamp(70px, 14vw, 90px) + 12px);
+            right: calc(30px + clamp(70px, 14vw, 90px) * 0.25);
+        }
+        .mobile-controls.size-small .pause-btn-mobile::before,
+        .mobile-controls.size-small .pause-btn-mobile::after {
+            width: 3px;
+            height: 12px;
+        }
+        .mobile-controls.size-small .pause-btn-mobile::before {
+            left: 14px;
+        }
+        .mobile-controls.size-small .pause-btn-mobile::after {
+            right: 14px;
         }
 
         /* Normal Controls (default) */
@@ -2523,6 +2307,20 @@
             width: 50px;
             height: 50px;
         }
+        .mobile-controls.size-normal .pause-btn-mobile,
+        .mobile-controls.size-normal .ability-btn-small {
+            width: 55px;
+            height: 55px;
+            font-size: 28px;
+        }
+        .mobile-controls.size-normal .pause-btn-mobile {
+            bottom: calc(30px + 120px + 15px);
+            left: calc(30px + 120px * 0.75);
+        }
+        .mobile-controls.size-normal .ability-btn-small {
+            bottom: calc(30px + 120px + 15px);
+            right: calc(30px + 120px * 0.25);
+        }
 
         /* Large Controls */
         .mobile-controls.size-large .joystick-container,
@@ -2538,9 +2336,30 @@
             width: 70px;
             height: 70px;
         }
-        .mobile-controls.size-large .action-btn,
+        .mobile-controls.size-large .pause-btn-mobile,
         .mobile-controls.size-large .ability-btn-small {
-            /* Si quieres escalar los botones, puedes usar scale aquí */
+            width: 68px;
+            height: 68px;
+            font-size: 36px;
+        }
+        .mobile-controls.size-large .pause-btn-mobile {
+            bottom: calc(30px + clamp(110px, 22vw, 150px) + 18px);
+            left: calc(30px + clamp(110px, 22vw, 150px) * 0.75);
+        }
+        .mobile-controls.size-large .ability-btn-small {
+            bottom: calc(30px + clamp(110px, 22vw, 150px) + 18px);
+            right: calc(30px + clamp(110px, 22vw, 150px) * 0.25);
+        }
+        .mobile-controls.size-large .pause-btn-mobile::before,
+        .mobile-controls.size-large .pause-btn-mobile::after {
+            width: 5px;
+            height: 20px;
+        }
+        .mobile-controls.size-large .pause-btn-mobile::before {
+            left: 26px;
+        }
+        .mobile-controls.size-large .pause-btn-mobile::after {
+            right: 26px;
         }
 
         /* ===========================
@@ -2871,69 +2690,7 @@
         }
 
         /* Control Mode Selector */
-        .control-mode-selector {
-            display: flex;
-            align-items: center;
-            gap: clamp(8px, 1.6vw, 12px);
-            background: rgba(0, 0, 0, 0.3);
-            padding: clamp(6px, 1.2vh, 8px);
-            border-radius: 12px;
-            border: 1px solid rgba(0, 255, 255, 0.2);
-        }
-
-        .mode-btn {
-            flex: 1;
-            background: rgba(20, 20, 50, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.6);
-            padding: clamp(12px, 2.4vh, 16px);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: clamp(4px, 0.8vh, 6px);
-        }
-
-        .mode-btn.active {
-            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2));
-            border-color: #00ffff;
-            color: #00ffff;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-        }
-
-        .mode-btn:hover:not(.active) {
-            border-color: rgba(0, 255, 255, 0.4);
-            color: rgba(0, 255, 255, 0.8);
-        }
-
-        .mode-label {
-            font-size: clamp(14px, 2.8vw, 18px);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .mode-sublabel {
-            font-size: clamp(10px, 2vw, 12px);
-            opacity: 0.7;
-        }
-
-        .mode-divider {
-            width: clamp(24px, 4.8vw, 32px);
-            height: clamp(24px, 4.8vw, 32px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(0, 255, 255, 0.4);
-        }
-
-        .mode-divider svg {
-            width: 100%;
-            height: 100%;
-        }
-
+        /* Control Scheme Radio Options */
         /* Size Selector */
         .size-selector {
             display: flex;
@@ -3056,7 +2813,7 @@
             background: rgba(0, 0, 0, 0.95);
             z-index: 10000;
             overflow-y: auto;
-            padding: clamp(8px, 2vw, 15px);
+            padding: clamp(15px, 3vw, 30px);
         }
 
         .upgrade-modal.active {
@@ -3068,24 +2825,24 @@
 
         .upgrade-container {
             width: 100%;
-            max-width: 850px;
+            max-width: 900px;
             background: linear-gradient(135deg, rgba(0, 20, 40, 0.9), rgba(20, 0, 40, 0.9));
             border: 2px solid #00ffff;
-            border-radius: 15px;
-            padding: clamp(12px, 2.5vw, 20px);
+            border-radius: 20px;
+            padding: clamp(20px, 4vw, 40px);
             box-shadow: 0 0 50px rgba(0, 255, 255, 0.3);
             margin: auto;
         }
 
         .upgrade-title {
-            font-size: clamp(20px, 4vw, 32px);
+            font-size: clamp(28px, 5vw, 42px);
             font-weight: bold;
             background: linear-gradient(45deg, #00ffff, #ff00ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-align: center;
-            margin-bottom: clamp(10px, 2vw, 15px);
+            margin-bottom: clamp(15px, 3vw, 25px);
             text-transform: uppercase;
             letter-spacing: 2px;
             text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
@@ -3094,28 +2851,28 @@
         .xp-section {
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(0, 255, 255, 0.3);
-            border-radius: 10px;
-            padding: clamp(10px, 2vw, 15px);
-            margin-bottom: clamp(12px, 2.5vw, 18px);
+            border-radius: 15px;
+            padding: clamp(15px, 3vw, 25px);
+            margin-bottom: clamp(20px, 4vw, 30px);
         }
 
         .xp-earned {
             text-align: center;
-            font-size: clamp(13px, 2.5vw, 16px);
+            font-size: clamp(16px, 3vw, 20px);
             color: #00ffff;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-weight: 600;
         }
 
         .xp-bar-container {
             width: 100%;
-            height: clamp(24px, 4vw, 30px);
+            height: clamp(30px, 5vw, 40px);
             background: rgba(0, 0, 0, 0.6);
             border: 2px solid #00ffff;
-            border-radius: 15px;
+            border-radius: 20px;
             overflow: hidden;
             position: relative;
-            margin-bottom: 12px;
+            margin-bottom: 20px;
         }
 
         .xp-bar {
@@ -3148,7 +2905,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(12px, 2.2vw, 15px);
+            font-size: clamp(14px, 2.5vw, 18px);
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
@@ -3157,16 +2914,16 @@
 
         .enemy-xp-breakdown {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: clamp(6px, 1.5vw, 10px);
-            margin-top: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: clamp(10px, 2vw, 15px);
+            margin-top: 15px;
         }
 
         .enemy-xp-item {
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: clamp(6px, 1.2vw, 10px);
+            border-radius: 10px;
+            padding: clamp(8px, 1.5vw, 12px);
             text-align: center;
             transition: all 0.3s;
         }
@@ -3177,34 +2934,34 @@
         }
 
         .enemy-icon {
-            font-size: clamp(18px, 3.5vw, 24px);
-            margin-bottom: 3px;
+            font-size: clamp(24px, 4vw, 32px);
+            margin-bottom: 5px;
         }
 
         .enemy-xp-amount {
-            font-size: clamp(11px, 2.2vw, 14px);
+            font-size: clamp(14px, 2.5vw, 16px);
             color: #00ffff;
             font-weight: 600;
         }
 
         .enemy-xp-label {
-            font-size: clamp(9px, 1.8vw, 11px);
+            font-size: clamp(10px, 2vw, 12px);
             color: #888;
             text-transform: uppercase;
         }
 
         .upgrades-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: clamp(8px, 1.8vw, 12px);
-            margin-bottom: clamp(12px, 2.5vw, 18px);
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: clamp(12px, 2.5vw, 20px);
+            margin-bottom: clamp(20px, 4vw, 30px);
         }
 
         .upgrade-card {
             background: rgba(0, 0, 0, 0.6);
             border: 2px solid rgba(0, 255, 255, 0.3);
-            border-radius: 12px;
-            padding: clamp(10px, 2vw, 14px);
+            border-radius: 15px;
+            padding: clamp(12px, 2.5vw, 18px);
             transition: all 0.3s;
             position: relative;
             overflow: hidden;
@@ -3229,28 +2986,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
         }
 
         .upgrade-name {
-            font-size: clamp(12px, 2.4vw, 15px);
+            font-size: clamp(14px, 2.8vw, 18px);
             font-weight: bold;
             color: #00ffff;
             text-transform: uppercase;
         }
 
         .upgrade-level {
-            font-size: clamp(11px, 2.2vw, 14px);
+            font-size: clamp(12px, 2.4vw, 16px);
             color: #ff00ff;
             font-weight: 600;
         }
 
         .upgrade-description {
-            font-size: clamp(10px, 2vw, 12px);
+            font-size: clamp(11px, 2.2vw, 14px);
             color: #aaa;
-            margin-bottom: 8px;
-            min-height: 2.2em;
-            line-height: 1.3;
+            margin-bottom: 12px;
+            min-height: 2.5em;
         }
 
         .upgrade-footer {
@@ -3260,18 +3016,18 @@
         }
 
         .upgrade-cost {
-            font-size: clamp(11px, 2.3vw, 14px);
+            font-size: clamp(13px, 2.6vw, 16px);
             color: #ffaa00;
             font-weight: 600;
         }
 
         .upgrade-btn {
-            width: clamp(30px, 6vw, 38px);
-            height: clamp(30px, 6vw, 38px);
+            width: clamp(35px, 7vw, 45px);
+            height: clamp(35px, 7vw, 45px);
             border: 2px solid #00ffff;
             background: rgba(0, 255, 255, 0.1);
             color: #00ffff;
-            font-size: clamp(18px, 3.5vw, 24px);
+            font-size: clamp(20px, 4vw, 28px);
             font-weight: bold;
             border-radius: 50%;
             cursor: pointer;
@@ -3295,18 +3051,18 @@
 
         .upgrade-actions {
             display: flex;
-            gap: clamp(8px, 1.5vw, 12px);
+            gap: clamp(10px, 2vw, 15px);
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .btn-upgrade-action {
-            padding: clamp(10px, 2vw, 14px) clamp(20px, 4vw, 32px);
-            font-size: clamp(12px, 2.4vw, 16px);
+            padding: clamp(12px, 2.5vw, 16px) clamp(25px, 5vw, 40px);
+            font-size: clamp(14px, 2.8vw, 18px);
             font-weight: 600;
             text-transform: uppercase;
             border: 2px solid;
-            border-radius: 20px;
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s;
             letter-spacing: 1px;
@@ -3338,32 +3094,9 @@
 
         @media (max-width: 600px) {
             .upgrades-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .enemy-xp-breakdown {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .upgrade-container {
-                padding: 10px;
-            }
-
-            .upgrade-title {
-                margin-bottom: 8px;
-            }
-
-            .xp-section {
-                padding: 8px;
-                margin-bottom: 10px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .upgrades-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .enemy-xp-breakdown {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -3512,139 +3245,87 @@
 
     <!-- Settings Menu -->
     <div class="settings-menu" id="settingsMenu">
-        <div class="settings-container">
-            <div class="settings-header">
-                <div class="settings-title">⚙️ SETTINGS</div>
-                <button class="close-settings-btn" id="closeSettingsBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+        <div class="settings-panel">
+
+            <!-- Header -->
+            <div class="settings-panel-header">
+                <h2 class="settings-panel-title">SETTINGS</h2>
+                <button class="settings-close-btn" id="closeSettingsBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
             </div>
 
-            <div class="settings-content">
+            <!-- Settings List -->
+            <div class="settings-list">
 
-                <!-- 1. LOGOUT BUTTON -->
-                <div class="setting-item logout-item" id="logoutItem" style="display:none;">
-                    <button class="logout-btn-full" id="logoutBtn">
-                        <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <!-- Volume -->
+                <div class="settings-item">
+                    <div class="settings-item-header">
+                        <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                        <span class="settings-item-label">Volume</span>
+                    </div>
+                    <div class="settings-item-content">
+                        <input type="range" class="settings-slider" id="masterVolume" min="0" max="100" value="70">
+                        <span class="settings-value" id="masterVolumeValue">70%</span>
+                    </div>
+                </div>
+
+                <!-- Haptic Feedback -->
+                <div class="settings-item">
+                    <div class="settings-item-header">
+                        <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                        </svg>
+                        <span class="settings-item-label">Haptic Feedback</span>
+                    </div>
+                    <div class="settings-item-content">
+                        <div class="settings-toggle active" id="hapticToggle">
+                            <div class="settings-toggle-slider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control Size -->
+                <div class="settings-item">
+                    <div class="settings-item-header">
+                        <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                        <span class="settings-item-label">Control Size</span>
+                    </div>
+                    <div class="settings-item-content">
+                        <div class="settings-size-group">
+                            <button class="settings-size-btn" id="sizeSmall" data-size="small">S</button>
+                            <button class="settings-size-btn active" id="sizeNormal" data-size="normal">M</button>
+                            <button class="settings-size-btn" id="sizeLarge" data-size="large">L</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout (si está logueado) -->
+                <div class="settings-item settings-item-logout" id="logoutItem" style="display:none;">
+                    <button class="settings-logout-btn" id="logoutBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
-                        <span class="logout-text">LOGOUT</span>
+                        <span>Logout</span>
                     </button>
                 </div>
 
-                <!-- 2. VOLUME CONTROL -->
-                <div class="setting-item-modern">
-                    <div class="setting-label-modern">
-                        <svg class="setting-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                        </svg>
-                        <span class="setting-name-modern">VOLUME</span>
-                    </div>
-                    <div class="slider-container-modern">
-                        <input type="range" class="slider-modern" id="masterVolume" min="0" max="100" value="70">
-                        <div class="slider-value-modern" id="masterVolumeValue">70%</div>
-                    </div>
-                </div>
-
-                <!-- 3. HAPTIC FEEDBACK -->
-                <div class="setting-item-modern">
-                    <div class="setting-label-modern">
-                        <svg class="setting-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                        </svg>
-                        <span class="setting-name-modern">HAPTIC FEEDBACK</span>
-                    </div>
-                    <div class="toggle-switch-modern active" id="hapticToggle">
-                        <div class="toggle-slider-modern"></div>
-                    </div>
-                </div>
-
-                <!-- 4. CONTROL SCHEME -->
-                <div class="setting-item-modern">
-                    <div class="setting-label-modern">
-                        <svg class="setting-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M3 12h6m6 0h6M12 3v6m0 6v6"></path>
-                            <path d="M8 8l-4 4m16 0l-4-4M8 16l-4-4m16 0l-4 4"></path>
-                        </svg>
-                        <span class="setting-name-modern">CONTROL SCHEME</span>
-                    </div>
-                    <div class="control-options">
-                        <div class="control-option">
-                            <input type="radio" id="controlDefault" name="controlScheme" value="default" checked>
-                            <label for="controlDefault">
-                                <div class="option-icon">🕹️</div>
-                                <div class="option-content">
-                                    <div class="option-title">Default Joysticks</div>
-                                    <div class="option-desc">Right: Move | Left: Shoot</div>
-                                </div>
-                            </label>
-                        </div>
-                        <div class="control-option">
-                            <input type="radio" id="controlInverted" name="controlScheme" value="inverted">
-                            <label for="controlInverted">
-                                <div class="option-icon">🔄</div>
-                                <div class="option-content">
-                                    <div class="option-title">Inverted Joysticks</div>
-                                    <div class="option-desc">Right: Shoot | Left: Move</div>
-                                </div>
-                            </label>
-                        </div>
-                        <div class="control-option">
-                            <input type="radio" id="controlTap" name="controlScheme" value="tap">
-                            <label for="controlTap">
-                                <div class="option-icon">👆</div>
-                                <div class="option-content">
-                                    <div class="option-title">Tap to Action</div>
-                                    <div class="option-desc">Tap enemy to shoot | Tap ground to move</div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 5. CONTROLS SIZE -->
-                <div class="setting-item-modern">
-                    <div class="setting-label-modern">
-                        <svg class="setting-icon-modern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        <span class="setting-name-modern">CONTROLS SIZE</span>
-                    </div>
-                    <div class="size-selector">
-                        <button class="size-btn" id="sizeSmall" data-size="small">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="4"></circle>
-                            </svg>
-                            <span>S</span>
-                        </button>
-                        <button class="size-btn active" id="sizeNormal" data-size="normal">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="6"></circle>
-                            </svg>
-                            <span>M</span>
-                        </button>
-                        <button class="size-btn" id="sizeLarge" data-size="large">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="8"></circle>
-                            </svg>
-                            <span>L</span>
-                        </button>
-                    </div>
-                </div>
-
             </div>
+
         </div>
     </div>
 
@@ -3802,7 +3483,7 @@
         </div>
 
         <!-- Shoot Joystick (Right) - Only visible in dual joystick mode -->
-        <div class="shoot-joystick-container" id="shootJoystickContainer" style="display:none;">
+    <div class="shoot-joystick-container" id="shootJoystickContainer">
             <div class="joystick-base" id="shootJoystickBase"></div>
             <div class="joystick-stick" id="shootJoystickStick"></div>
         </div>
@@ -3845,28 +3526,28 @@
     <div class="upgrade-modal" id="upgradeModal">
         <div class="upgrade-container">
             <div class="upgrade-title">⚡ LEVEL UP ⚡</div>
-            
+
             <!-- XP Section -->
             <div class="xp-section">
                 <div class="xp-earned" id="xpEarnedText">You earned 0 experience points this wave!</div>
-                
+
                 <!-- XP Bar -->
                 <div class="xp-bar-container">
                     <div class="xp-bar" id="xpBar"></div>
                     <div class="xp-text" id="xpText">0 XP</div>
                 </div>
-                
+
                 <!-- Enemy XP Breakdown -->
                 <div class="enemy-xp-breakdown" id="enemyXpBreakdown">
                     <!-- Dynamically generated -->
                 </div>
             </div>
-            
+
             <!-- Upgrades Grid -->
             <div class="upgrades-grid" id="upgradesGrid">
                 <!-- Dynamically generated -->
             </div>
-            
+
             <!-- Action Buttons -->
             <div class="upgrade-actions">
                 <button class="btn-upgrade-action btn-undo" id="undoUpgradesBtn">
@@ -4246,7 +3927,6 @@
     const defaultSettings = {
         masterVolume: 70,
         hapticFeedback: true,
-        controlScheme: 'default', // 'default', 'inverted', or 'tap'
         controlSize: 'normal'
     };
 
@@ -4279,35 +3959,7 @@
             }
         });
 
-        // === 3. CONTROL SCHEME ===
-        const controlRadios = document.querySelectorAll('input[name="controlScheme"]');
-        
-        controlRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.checked) {
-                    currentSettings.controlScheme = this.value;
-                    saveSettings();
-                    applyControlScheme();
-                }
-            });
-        });
-
-        function applyControlScheme() {
-            const scheme = currentSettings.controlScheme || 'default';
-            
-            // Set selected radio
-            const radioToCheck = document.querySelector(`input[name="controlScheme"][value="${scheme}"]`);
-            if (radioToCheck) {
-                radioToCheck.checked = true;
-            }
-            
-            // Apply to game
-            if (typeof window.setControlMode === 'function') {
-                window.setControlMode(scheme);
-            }
-        }
-
-        // === 4. CONTROLS SIZE ===
+        // === 3. CONTROLS SIZE ===
         const sizeSmall = document.getElementById('sizeSmall');
         const sizeNormal = document.getElementById('sizeNormal');
         const sizeLarge = document.getElementById('sizeLarge');
@@ -4353,19 +4005,14 @@
 
         document.getElementById('hapticToggle').classList.toggle('active', currentSettings.hapticFeedback);
 
-        // Invert controls UI
-        if (currentSettings.invertControls) {
-            document.getElementById('modeShoot').classList.add('active');
-            document.getElementById('modeMove').classList.remove('active');
-        } else {
-            document.getElementById('modeMove').classList.add('active');
-            document.getElementById('modeShoot').classList.remove('active');
-        }
-
         // Control size UI
-        document.getElementById('sizeSmall').classList.toggle('active', currentSettings.controlSize === 'small');
-        document.getElementById('sizeNormal').classList.toggle('active', currentSettings.controlSize === 'normal');
-        document.getElementById('sizeLarge').classList.toggle('active', currentSettings.controlSize === 'large');
+        const sizeSmall = document.getElementById('sizeSmall');
+        const sizeNormal = document.getElementById('sizeNormal');
+        const sizeLarge = document.getElementById('sizeLarge');
+
+        if (sizeSmall) sizeSmall.classList.toggle('active', currentSettings.controlSize === 'small');
+        if (sizeNormal) sizeNormal.classList.toggle('active', currentSettings.controlSize === 'normal');
+        if (sizeLarge) sizeLarge.classList.toggle('active', currentSettings.controlSize === 'large');
 
         // Apply all settings
         applyAllSettings();
@@ -4379,7 +4026,6 @@
     // Apply all settings at once
     function applyAllSettings() {
         applyVolumeSettings();
-        applyInvertControls();
         applyControlSize(currentSettings.controlSize);
     }
 
@@ -4407,32 +4053,6 @@
             navigator.vibrate(duration);
         }
     };
-
-    // Invert Controls
-    function applyInvertControls() {
-        window.gameSettings = window.gameSettings || {};
-        window.gameSettings.invertControls = currentSettings.invertControls;
-
-        // Swap joystick positions
-        const joystickContainer = document.getElementById('joystickContainer');
-        const shootJoystickContainer = document.getElementById('shootJoystickContainer');
-
-        if (joystickContainer && shootJoystickContainer) {
-            if (currentSettings.invertControls) {
-                // Shoot on left, Move on right
-                joystickContainer.style.left = 'auto';
-                joystickContainer.style.right = 'clamp(15px, 3vw, 25px)';
-                shootJoystickContainer.style.right = 'auto';
-                shootJoystickContainer.style.left = 'clamp(15px, 3vw, 25px)';
-            } else {
-                // Move on left, Shoot on right (default)
-                joystickContainer.style.left = 'clamp(15px, 3vw, 25px)';
-                joystickContainer.style.right = 'auto';
-                shootJoystickContainer.style.left = 'auto';
-                shootJoystickContainer.style.right = 'clamp(15px, 3vw, 25px)';
-            }
-        }
-    }
 
     // Control Size
     function applyControlSize(size) {
@@ -4793,7 +4413,7 @@
         // ===================================
         // UPGRADE MODAL SYSTEM
         // ===================================
-        
+
         const upgradeModal = document.getElementById('upgradeModal');
         const xpBar = document.getElementById('xpBar');
         const xpText = document.getElementById('xpText');
@@ -4804,22 +4424,14 @@
         const acceptUpgradesBtn = document.getElementById('acceptUpgradesBtn');
 
         // Iconos para cada tipo de enemigo
-        // Obtener iconos de enemigos desde game.js ENEMY_TYPES
-        function getEnemyIcon(type) {
-            if (typeof window.ENEMY_TYPES === 'undefined') return '⬤';
-            
-            const typeMap = {
-                'normal': 'BASIC',
-                'fast': 'FAST',
-                'heavy': 'HEAVY',
-                'superheavy': 'SUPERHEAVY',
-                'explosive': 'EXPLOSIVE',
-                'boss': 'BOSS'
-            };
-            
-            const enemyType = window.ENEMY_TYPES[typeMap[type]];
-            return enemyType ? enemyType.icon : '⬤';
-        }
+        const enemyIcons = {
+            normal: '🟢',
+            fast: '⚡',
+            heavy: '🔴',
+            superheavy: '💀',
+            explosive: '💣',
+            boss: '👑'
+        };
 
         // Nombres para cada tipo
         const enemyNames = {
@@ -4829,6 +4441,18 @@
             superheavy: 'Super Heavy',
             explosive: 'Explosive',
             boss: 'Boss'
+        };
+
+        // Iconos para cada stat
+        const statIcons = {
+            movementSpeed: '🏃',
+            fireRate: '🔫',
+            resilience: '🛡️',
+            bulletDamage: '💥',
+            maxHealth: '❤️',
+            pickupMagnet: '🧲',
+            criticalChance: '⚔️',
+            regeneration: '💚'
         };
 
         // Nombres bonitos para las stats
@@ -4843,18 +4467,12 @@
             regeneration: 'Regeneration'
         };
 
-        // Variable para rastrear XP al inicio del modal
-        let xpAtModalStart = 0;
-
         // Mostrar modal de upgrades
         window.showUpgradeModal = function() {
             if (!window.gameState || !window.playerStats) {
                 console.error('Game state or player stats not found');
                 return;
             }
-
-            // Guardar XP actual al abrir modal
-            xpAtModalStart = window.gameState.experience;
 
             // Crear snapshot antes de mostrar el modal
             if (typeof window.createStatsSnapshot === 'function') {
@@ -4881,11 +4499,7 @@
         // Actualizar barra de XP
         function updateXPBar() {
             const currentXP = window.gameState.experience;
-            
-            // Calcular porcentaje basado en XP al inicio del modal
-            const percentRemaining = xpAtModalStart > 0 ? (currentXP / xpAtModalStart) * 100 : 100;
-            
-            xpBar.style.width = `${Math.max(0, percentRemaining)}%`;
+            xpBar.style.width = '100%'; // Siempre llena para mostrar XP disponible
             xpText.textContent = `${currentXP} XP`;
         }
 
@@ -4900,7 +4514,7 @@
                 const item = document.createElement('div');
                 item.className = 'enemy-xp-item';
                 item.innerHTML = `
-                    <div class="enemy-icon">${getEnemyIcon(type)}</div>
+                    <div class="enemy-icon">${enemyIcons[type] || '🎯'}</div>
                     <div class="enemy-xp-amount">+${breakdown[type]} XP</div>
                     <div class="enemy-xp-label">${enemyNames[type] || type}</div>
                 `;
@@ -4922,12 +4536,12 @@
                 card.className = 'upgrade-card';
                 card.innerHTML = `
                     <div class="upgrade-header">
-                        <div class="upgrade-name">${statNames[statName]}</div>
+                        <div class="upgrade-name">${statIcons[statName] || '⭐'} ${statNames[statName]}</div>
                         <div class="upgrade-level">Lv ${stat.level}</div>
                     </div>
                     <div class="upgrade-description">${stat.description}</div>
                     <div class="upgrade-footer">
-                        <div class="upgrade-cost">${cost} XP</div>
+                        <div class="upgrade-cost">💎 ${cost} XP</div>
                         <button class="upgrade-btn" ${!canAfford ? 'disabled' : ''} data-stat="${statName}">+</button>
                     </div>
                 `;
@@ -4942,8 +4556,8 @@
                             card.classList.add('upgrading');
                             setTimeout(() => card.classList.remove('upgrading'), 500);
 
-                            // Actualizar barra de XP
-                            updateXPBar();
+                            // Animar barra de XP vaciándose
+                            animateXPBar();
 
                             // Re-renderizar
                             renderUpgradesGrid();
@@ -4953,6 +4567,20 @@
 
                 upgradesGrid.appendChild(card);
             }
+        }
+
+        // Animar barra de XP
+        function animateXPBar() {
+            const currentXP = window.gameState.experience;
+
+            // Animación de vaciado
+            xpBar.style.transition = 'width 0.3s ease';
+            xpText.textContent = `${currentXP} XP`;
+
+            // Reset para próxima animación
+            setTimeout(() => {
+                xpBar.style.transition = 'width 0.5s ease';
+            }, 300);
         }
 
         // Botón de deshacer
@@ -4967,7 +4595,7 @@
         // Botón de aceptar
         acceptUpgradesBtn.addEventListener('click', () => {
             upgradeModal.classList.remove('active');
-            
+
             // Resetear el tracking de XP de la oleada
             if (typeof window.resetWaveExperience === 'function') {
                 window.resetWaveExperience();
@@ -4977,7 +4605,7 @@
             if (typeof window.gameState !== 'undefined') {
                 window.gameState.isCountdown = false;
                 window.gameState.isPaused = false;
-                
+
                 // Iniciar countdown de la siguiente oleada
                 if (typeof window.startNextWaveCountdown === 'function') {
                     window.startNextWaveCountdown();
