@@ -224,7 +224,18 @@ const gameState = {
     totalEnemiesInWave: 5, // Total para mostrar en HUD
     lastEnemySpawn: 0,
     enemySpawnRate: 1000,
-    difficultyMultiplier: 1
+    difficultyMultiplier: 1,
+    // Sistema de experiencia
+    experience: 0,
+    experienceThisWave: {
+        normal: 0,
+        fast: 0,
+        heavy: 0,
+        superheavy: 0,
+        explosive: 0,
+        boss: 0,
+        total: 0
+    }
 };
 
 // Player
@@ -236,15 +247,90 @@ const player = {
     get radius() { return ViewportScale.playerSize; }, // Dinámico
     health: 100,
     maxHealth: 100,
-    get speed() { return (isMobileDevice ? 4 : 3) * ViewportScale.scale; }, // Velocidad proporcional
+    get speed() { 
+        const baseSpeed = (isMobileDevice ? 4 : 3) * ViewportScale.scale;
+        return baseSpeed * (playerStats.movementSpeed.currentValue / playerStats.movementSpeed.baseValue);
+    }, // Velocidad proporcional con mejora
     color: '#00ffff',
     angle: 0,
     aimX: 0,
     aimY: 0,
     shootCooldown: 0,
     lastShootTime: 0,
+    lastRegenTime: Date.now(),
     moving: false
 };
+
+// Sistema de habilidades del jugador (upgrades)
+const playerStats = {
+    movementSpeed: {
+        level: 0,
+        baseValue: isMobileDevice ? 4 : 3,
+        currentValue: isMobileDevice ? 4 : 3,
+        increment: 0.05, // 5% por nivel
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Move faster on the arena"
+    },
+    fireRate: {
+        level: 0,
+        baseValue: 150, // ms entre disparos
+        currentValue: 150,
+        increment: -0.05, // -5% (reduce cooldown)
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Shoot more frequently"
+    },
+    resilience: {
+        level: 0,
+        baseValue: 1.0, // Multiplicador de daño recibido (1.0 = 100%)
+        currentValue: 1.0,
+        increment: -0.05, // -5% daño recibido
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Take less damage from enemies"
+    },
+    bulletDamage: {
+        level: 0,
+        baseValue: 10,
+        currentValue: 10,
+        increment: 0.05, // +5% daño
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Your shots deal more damage"
+    },
+    maxHealth: {
+        level: 0,
+        baseValue: 100,
+        currentValue: 100,
+        increment: 0.05, // +5% salud máxima
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Increases your maximum HP"
+    },
+    pickupMagnet: {
+        level: 0,
+        baseValue: 50, // Radio de recolección
+        currentValue: 50,
+        increment: 0.05, // +5% radio
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Increases range to collect pickups"
+    },
+    criticalChance: {
+        level: 0,
+        baseValue: 0, // 0% inicial
+        currentValue: 0,
+        increment: 0.02, // +2% por nivel (no es 5% porque sería muy fuerte)
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Chance to deal double damage"
+    },
+    regeneration: {
+        level: 0,
+        baseValue: 0, // HP/segundo
+        currentValue: 0,
+        increment: 0.5, // +0.5 HP/s por nivel (valor fijo, no porcentaje)
+        cost: function() { return 10 * (this.level + 1); },
+        description: "Recover health per second"
+    }
+};
+
+// Snapshot de habilidades para el sistema de deshacer
+let statsSnapshot = null;
 
 // PC shooting logic stub
 function playerShoot(x, y) {
@@ -590,19 +676,9 @@ if (isMobileDevice) {
                 const tapY = touch.clientY;
                 const angle = Math.atan2(tapY - player.y, tapX - player.x);
                 player.angle = angle;
-                // Control de cadencia de disparo
-                if (Date.now() - player.lastShootTime > 120) {
-                    bullets.push({
-                        x: player.x,
-                        y: player.y,
-                        vx: Math.cos(angle) * 14 * ViewportScale.scale,
-                        vy: Math.sin(angle) * 14 * ViewportScale.scale,
-                        radius: ViewportScale.bulletSize, // RESPONSIVE
-                        damage: 35,
-                        color: '#00ffff',
-                        trail: [],
-                        glow: true
-                    });
+                // Control de cadencia de disparo con mejora aplicada
+                if (Date.now() - player.lastShootTime > getShootCooldown()) {
+                    createPlayerBullet(angle);
                     player.lastShootTime = Date.now();
                 }
             }
@@ -807,6 +883,7 @@ function createExplosion(x, y, radius) {
 const ENEMY_TYPES = {
     BASIC: {
         name: 'Basic',
+        icon: '⬤', // Círculo básico magenta
         color: '#ff00ff', // Magenta
         sizeMultiplier: 1,
         speedMultiplier: 1,
@@ -816,6 +893,7 @@ const ENEMY_TYPES = {
     },
     FAST: {
         name: 'Fast',
+        icon: '◆', // Rombo rápido cian
         color: '#00ffff', // Cian
         sizeMultiplier: 0.5,
         speedMultiplier: 1.15,
@@ -825,6 +903,7 @@ const ENEMY_TYPES = {
     },
     HEAVY: {
         name: 'Heavy',
+        icon: '⬢', // Hexágono pesado naranja
         color: '#ff8800', // Naranja
         sizeMultiplier: 1.25,
         speedMultiplier: 0.85,
@@ -834,6 +913,7 @@ const ENEMY_TYPES = {
     },
     SUPERHEAVY: {
         name: 'SuperHeavy',
+        icon: '⬣', // Hexágono grueso rojo
         color: '#ff0055', // Rojo-Rosa
         sizeMultiplier: 1.35,
         speedMultiplier: 0.75,
@@ -843,6 +923,7 @@ const ENEMY_TYPES = {
     },
     EXPLOSIVE: {
         name: 'Explosive',
+        icon: '✦', // Estrella explosiva amarilla
         color: '#ffff00', // Amarillo
         sizeMultiplier: 1,
         speedMultiplier: 1,
@@ -850,6 +931,17 @@ const ENEMY_TYPES = {
         spawnChance: 0.10,
         abilityDropChance: 0.05,
         explosive: true
+    },
+    BOSS: {
+        name: 'Boss',
+        icon: '◈', // Diamante especial violeta
+        color: '#8800ff', // Violeta
+        sizeMultiplier: 2.2,
+        speedMultiplier: 0.8,
+        healthMultiplier: 5,
+        spawnChance: 0,
+        abilityDropChance: 1.0,
+        isBoss: true
     }
 };
 
@@ -981,6 +1073,187 @@ function spawnAbilityPickup(x, y) {
     });
 }
 
+// ===================================
+// SISTEMA DE EXPERIENCIA
+// ===================================
+
+// Crear bala del jugador con mejoras aplicadas
+function createPlayerBullet(angle) {
+    const baseDamage = 35;
+    let finalDamage = baseDamage * (playerStats.bulletDamage.currentValue / playerStats.bulletDamage.baseValue);
+    
+    // Critical hit chance
+    const isCritical = Math.random() < playerStats.criticalChance.currentValue;
+    if (isCritical) {
+        finalDamage *= 2;
+    }
+    
+    bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(angle) * 14 * ViewportScale.scale,
+        vy: Math.sin(angle) * 14 * ViewportScale.scale,
+        radius: ViewportScale.bulletSize,
+        damage: Math.round(finalDamage),
+        color: isCritical ? '#ff00ff' : '#00ffff', // Críticos en magenta
+        trail: [],
+        glow: true,
+        isCritical: isCritical
+    });
+}
+
+// Obtener cooldown de disparo actual
+function getShootCooldown() {
+    const baseCooldown = 120; // ms
+    return Math.max(50, baseCooldown * (playerStats.fireRate.currentValue / playerStats.fireRate.baseValue));
+}
+
+// Otorgar experiencia al matar un enemigo
+function grantExperience(enemy) {
+    let xpAmount = 0;
+    let enemyType = 'normal';
+
+    if (enemy.isBoss) {
+        xpAmount = 100 * gameState.wave;
+        enemyType = 'boss';
+    } else if (enemy.type === 'SUPERHEAVY') {
+        xpAmount = 30 * gameState.wave;
+        enemyType = 'superheavy';
+    } else if (enemy.type === 'HEAVY') {
+        xpAmount = 20 * gameState.wave;
+        enemyType = 'heavy';
+    } else if (enemy.type === 'FAST') {
+        xpAmount = 15 * gameState.wave;
+        enemyType = 'fast';
+    } else if (enemy.type === 'EXPLOSIVE') {
+        xpAmount = 25 * gameState.wave;
+        enemyType = 'explosive';
+    } else {
+        xpAmount = 10 * gameState.wave;
+        enemyType = 'normal';
+    }
+
+    gameState.experience += xpAmount;
+    gameState.experienceThisWave[enemyType] += xpAmount;
+    gameState.experienceThisWave.total += xpAmount;
+}
+
+// Resetear el tracking de XP de la oleada
+function resetWaveExperience() {
+    gameState.experienceThisWave = {
+        normal: 0,
+        fast: 0,
+        heavy: 0,
+        superheavy: 0,
+        explosive: 0,
+        boss: 0,
+        total: 0
+    };
+}
+
+// Mejorar una habilidad
+function upgradePlayerStat(statName) {
+    const stat = playerStats[statName];
+    if (!stat) return false;
+
+    const cost = stat.cost();
+    if (gameState.experience < cost) {
+        showNotification('❌ Not enough experience!');
+        return false;
+    }
+
+    // Gastar experiencia
+    gameState.experience -= cost;
+    stat.level++;
+
+    // Calcular nuevo valor
+    if (statName === 'regeneration') {
+        // Regeneración es valor fijo, no porcentaje
+        stat.currentValue = stat.baseValue + (stat.increment * stat.level);
+    } else if (statName === 'criticalChance') {
+        // Critical chance también es valor fijo (porcentaje)
+        stat.currentValue = stat.baseValue + (stat.increment * stat.level);
+    } else {
+        // Otros stats: incremento compuesto del 5%
+        stat.currentValue = stat.baseValue * Math.pow(1 + Math.abs(stat.increment), stat.level);
+        
+        // Para stats que decrecen (fireRate, resilience), aplicar el signo
+        if (stat.increment < 0) {
+            stat.currentValue = stat.baseValue * Math.pow(1 + stat.increment, stat.level);
+        }
+    }
+
+    // Aplicar mejora al jugador
+    applyStatUpgrade(statName);
+
+    return true;
+}
+
+// Aplicar mejora al gameplay
+function applyStatUpgrade(statName) {
+    switch(statName) {
+        case 'movementSpeed':
+            // Se aplica automáticamente vía getter en player.speed
+            break;
+        case 'fireRate':
+            // Se aplica en la lógica de disparo
+            break;
+        case 'maxHealth':
+            const healthPercent = player.health / player.maxHealth;
+            player.maxHealth = Math.round(playerStats.maxHealth.currentValue);
+            player.health = Math.round(player.maxHealth * healthPercent); // Mantener porcentaje
+            break;
+        case 'resilience':
+        case 'bulletDamage':
+        case 'pickupMagnet':
+        case 'criticalChance':
+        case 'regeneration':
+            // Se aplican en sus respectivas lógicas
+            break;
+    }
+}
+
+// Crear snapshot del estado de habilidades
+function createStatsSnapshot() {
+    statsSnapshot = {
+        experience: gameState.experience,
+        stats: {}
+    };
+    
+    for (let statName in playerStats) {
+        statsSnapshot.stats[statName] = {
+            level: playerStats[statName].level,
+            currentValue: playerStats[statName].currentValue
+        };
+    }
+    
+    // Guardar también salud máxima del jugador
+    statsSnapshot.playerMaxHealth = player.maxHealth;
+    statsSnapshot.playerHealth = player.health;
+}
+
+// Restaurar snapshot (deshacer cambios)
+function restoreStatsSnapshot() {
+    if (!statsSnapshot) return;
+    
+    gameState.experience = statsSnapshot.experience;
+    
+    for (let statName in statsSnapshot.stats) {
+        playerStats[statName].level = statsSnapshot.stats[statName].level;
+        playerStats[statName].currentValue = statsSnapshot.stats[statName].currentValue;
+    }
+    
+    // Restaurar salud del jugador
+    player.maxHealth = statsSnapshot.playerMaxHealth;
+    player.health = statsSnapshot.playerHealth;
+    
+    showNotification('Changes reverted');
+}
+
+// ===================================
+// NOTIFICACIONES Y UI
+// ===================================
+
 function showNotification(text) {
     const notif = document.getElementById('notification');
     notif.textContent = text;
@@ -1086,6 +1359,11 @@ function nextWave() {
     });
 }
 
+// Función para iniciar countdown de siguiente oleada (llamada desde modal de upgrades)
+window.startNextWaveCountdown = function() {
+    nextWave();
+};
+
 function updateHUD() {
     document.getElementById('waveDisplay').textContent = gameState.wave;
     document.getElementById('scoreDisplay').textContent = gameState.score.toLocaleString();
@@ -1174,7 +1452,8 @@ function updateAbilityPickups() {
         const dy = player.y - pickup.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < pickup.radius + player.radius) {
+        const magnetRadius = (pickup.radius + player.radius) * (playerStats.pickupMagnet.currentValue / playerStats.pickupMagnet.baseValue);
+        if (dist < magnetRadius) {
             collectedAbility = pickup.ability;
             updateAbilityButton();
             showNotification(`${pickup.ability.icon} ${pickup.ability.name} - ${isMobileDevice ? 'Tap Ability' : 'Press SPACE'}`);
@@ -1234,6 +1513,18 @@ function update() {
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
 
+    // HEALTH REGENERATION
+    if (player.health < player.maxHealth && playerStats.regeneration.currentValue > 0) {
+        if (!player.lastRegenTime) player.lastRegenTime = now;
+        const timeSinceLastRegen = (now - player.lastRegenTime) / 1000; // Convert to seconds
+        const regenAmount = playerStats.regeneration.currentValue * timeSinceLastRegen;
+        player.health = Math.min(player.maxHealth, player.health + regenAmount);
+        player.lastRegenTime = now;
+        if (regenAmount > 0.1) { // Update HUD if significant regen occurred
+            updateHUD();
+        }
+    }
+
     // MOVE PLAYER
     if (isMobileDevice) {
         if (input.joystick.active) {
@@ -1281,19 +1572,9 @@ function update() {
         if (controlMode === 'joystick' && input.shootJoystick.active) {
             player.angle = input.shootJoystick.angle;
 
-            // Auto-shoot while joystick is active
-            if (now - player.lastShootTime > 300) {
-                bullets.push({
-                    x: player.x,
-                    y: player.y,
-                    vx: Math.cos(player.angle) * 14 * ViewportScale.scale,
-                    vy: Math.sin(player.angle) * 14 * ViewportScale.scale,
-                    radius: ViewportScale.bulletSize, // RESPONSIVE
-                    damage: 35,
-                    color: '#00ffff',
-                    trail: [],
-                    glow: true
-                });
+            // Auto-shoot while joystick is active con mejora aplicada
+            if (now - player.lastShootTime > getShootCooldown()) {
+                createPlayerBullet(player.angle);
                 player.lastShootTime = now;
             }
         }
@@ -1309,23 +1590,32 @@ function update() {
     }
 
     if (!gameState.isCountdown && enemies.length === 0 && gameState.enemiesToSpawn === 0) {
+        // Oleada completada - mostrar modal de upgrades
+        console.log(`🎉 Wave ${gameState.wave} completed!`);
+        
         // Verificar si debemos mostrar anuncio en este nivel
         const shouldShowAd = shouldShowAdForWave(gameState.wave);
 
         if (shouldShowAd && gameState.wave !== lastBossWaveCompleted) {
-            console.log(`🎉 Wave ${gameState.wave} completed! Showing ad...`);
             lastBossWaveCompleted = gameState.wave;
-
             // Mostrar anuncio intersticial
             showInterstitialAd();
-
-            // Pequeña pausa antes de continuar a la siguiente wave
-            setTimeout(() => {
-                nextWave();
-            }, 500);
-        } else {
-            nextWave();
         }
+
+        // Pausar el juego y mostrar modal de upgrades
+        gameState.isPaused = true;
+        
+        // Pequeña pausa para que el jugador vea que la oleada terminó
+        setTimeout(() => {
+            if (typeof window.showUpgradeModal === 'function') {
+                window.showUpgradeModal();
+            } else {
+                // Fallback si el modal no está disponible
+                console.warn('Upgrade modal not available, continuing...');
+                gameState.isPaused = false;
+                nextWave();
+            }
+        }, 1000);
     }    // Update enemies
     enemies.forEach(enemy => {
         const dx = player.x - enemy.x;
@@ -1404,7 +1694,9 @@ function update() {
         if (dist < enemy.radius + player.radius) {
             const currentTime = Date.now();
             const oldHealth = player.health;
-            player.health -= enemy.damage * 0.012;
+            const baseDamage = enemy.damage * 0.012;
+            const actualDamage = baseDamage * (playerStats.resilience.baseValue / playerStats.resilience.currentValue);
+            player.health -= actualDamage;
 
             // Reproducir sonido y vibración solo si ha pasado tiempo suficiente
             if (currentTime - lastHealthDamageTime > 200 && player.health < oldHealth) {
@@ -1443,7 +1735,8 @@ function update() {
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < player.radius + bullet.radius) {
-                player.health -= bullet.damage;
+                const actualDamage = bullet.damage * (playerStats.resilience.baseValue / playerStats.resilience.currentValue);
+                player.health -= actualDamage;
                 hit = true;
                 createParticles(player.x, player.y, 15, bullet.color);
                 playDamageSound();
@@ -1476,6 +1769,9 @@ function update() {
     enemies = enemies.filter(enemy => {
         if (enemy.health <= 0) {
             gameState.kills++;
+
+            // Sistema de experiencia - otorgar XP según tipo y oleada
+            grantExperience(enemy);
 
             // Score según tipo de enemigo
             let scoreBonus = 100;
@@ -1520,7 +1816,8 @@ function update() {
         const dy = player.y - pickup.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < pickup.radius + player.radius) {
+        const magnetRadius = (pickup.radius + player.radius) * (playerStats.pickupMagnet.currentValue / playerStats.pickupMagnet.baseValue);
+        if (dist < magnetRadius) {
             collectedAbility = pickup.ability;
             updateAbilityButton();
             showNotification(`${pickup.ability.icon} ${pickup.ability.name} - ${isMobileDevice ? 'Tap Ability' : 'Press SPACE'}`);
@@ -1859,10 +2156,15 @@ function resetGameState() {
     gameState.kills = 0;
     gameState.partidaGuardada = false;
 
+    // Reset experience system
+    gameState.experience = 0;
+    resetWaveExperience();
+
     console.log('✅ Game state flags reset - isPaused:', gameState.isPaused, 'isPlaying:', gameState.isPlaying);
 
     // Reset player
     player.health = 100;
+    player.maxHealth = 100;
     player.x = window.innerWidth / 2;
     player.y = window.innerHeight / 2;
     player.targetX = player.x;
@@ -1872,6 +2174,12 @@ function resetGameState() {
     player.aimX = 0;
     player.aimY = 0;
     player.shootCooldown = 0;
+
+    // Reset player stats (habilidades)
+    for (let statName in playerStats) {
+        playerStats[statName].level = 0;
+        playerStats[statName].currentValue = playerStats[statName].baseValue;
+    }
 
     // Clear all arrays
     enemies = [];
@@ -1894,11 +2202,22 @@ function resetGameState() {
     // Reset HUD opacity
     document.getElementById('gameHUD').style.opacity = '1';
 
+    // Reset snapshot
+    statsSnapshot = null;
+
     console.log('🔄 Game state reset complete');
 }
 
-// Exportar función de reset globalmente
+// Exportar funciones y objetos globalmente
 window.resetGameState = resetGameState;
+window.gameState = gameState;
+window.playerStats = playerStats;
+window.upgradePlayerStat = upgradePlayerStat;
+window.createStatsSnapshot = createStatsSnapshot;
+window.restoreStatsSnapshot = restoreStatsSnapshot;
+window.grantExperience = grantExperience;
+window.resetWaveExperience = resetWaveExperience;
+window.ENEMY_TYPES = ENEMY_TYPES;
 
 // Función para iniciar el juego desde el menú con un nivel específico
 window.startGameFromMenu = function(startLevel) {
