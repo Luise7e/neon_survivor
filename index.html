@@ -28,6 +28,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>NEON SURVIVOR ARENA | Universal Battle Royale</title>
     <link rel="manifest" href="manifest.json">
+    <script src="game.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@600;700&display=swap');
 
@@ -3108,6 +3109,11 @@
     <span class="platform-specific mobile" style="display:none"></span>
     <!-- Start Menu / Login Screen -->
     <div class="start-menu" id="startMenu">
+        <!-- Version Indicator -->
+        <div style="position: absolute; top: 10px; right: 10px; font-size: 10px; color: #0ff; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; z-index: 10000;">
+            v3.0.2 - POINTER FIX
+        </div>
+
         <!-- Hero Section -->
         <div class="menu-hero">
             <div class="menu-logo">NEON SURVIVOR</div>
@@ -3561,11 +3567,26 @@
     </div>
 
     <!-- Pause Overlay -->
-    <div class="game-over" id="pauseOverlay" style="display:none; z-index:9500; background:rgba(0,0,0,0.97);">
-        <h1 style="font-size:70px; background:linear-gradient(45deg,#00ffff,#ff00ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:0 0 50px #00ffff; margin-bottom:30px; animation:title-glow 2s ease-in-out infinite;">PAUSA</h1>
-        <div style="margin-bottom:40px; display: flex; flex-direction: column; gap: 18px; align-items: center;">
-            <button class="btn-neon" id="resumeBtn" style="font-size:22px; padding:18px 50px; border-radius:40px;">▶ REANUDAR</button>
-            <button class="btn-neon" id="abortBtn" style="font-size:20px; padding:14px 44px; border-radius:40px; background: linear-gradient(135deg, #ff0055, #ff00ff); color: #fff;">END GAME</button>
+    <div class="game-over" id="pauseOverlay" style="display:none; z-index:9500; background:rgba(0,0,0,0.95);">
+        <div style="max-width: 900px; width: 95%; max-height: 95vh; display: flex; flex-direction: column; padding: 15px 20px;">
+            <!-- Compact Header with Buttons -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; gap: 15px; flex-wrap: wrap;">
+                <h1 style="font-size:clamp(24px, 4vw, 36px); background:linear-gradient(45deg,#00ffff,#ff00ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:0 0 30px #00ffff; margin:0; animation:title-glow 2s ease-in-out infinite; flex: 0 0 auto;">PAUSA</h1>
+
+                <div style="display: flex; gap: 10px; flex: 1; justify-content: flex-end; flex-wrap: wrap;">
+                    <button class="btn-neon" id="resumeBtn" style="font-size:clamp(13px, 2.5vw, 16px); padding:10px 28px; border-radius:30px; min-width: 110px;">▶ RESUME</button>
+                    <button class="btn-neon" id="abortBtn" style="font-size:clamp(13px, 2.5vw, 16px); padding:10px 28px; border-radius:30px; background: linear-gradient(135deg, #ff0055, #ff00ff); color: #fff; min-width: 110px;">END GAME</button>
+                </div>
+            </div>
+
+            <!-- Stats Section - MAXIMIZED -->
+            <div style="background: linear-gradient(135deg, rgba(0,255,255,0.1), rgba(255,0,255,0.1)); border: 2px solid rgba(0,255,255,0.3); border-radius: 15px; padding: 15px; box-shadow: 0 0 30px rgba(0,255,255,0.2); flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <h2 style="font-family: 'Orbitron', sans-serif; font-size: clamp(15px, 3vw, 18px); color: #00ffff; text-align: center; margin: 0 0 12px 0; text-shadow: 0 0 10px #00ffff;">CURRENT STATS</h2>
+
+                <div id="pauseStatsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; font-family: 'Rajdhani', sans-serif; flex: 1; align-content: start;">
+                    <!-- Stats will be injected here -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3626,12 +3647,19 @@
         if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
             window.gameState.isPaused = !window.gameState.isPaused;
             this.style.opacity = window.gameState.isPaused ? "1" : "0.7";
+
+            // Show/hide pause overlay and update stats
+            const pauseOverlay = document.getElementById('pauseOverlay');
+            if (pauseOverlay) {
+                pauseOverlay.style.display = window.gameState.isPaused ? 'flex' : 'none';
+                if (window.gameState.isPaused && typeof window.updatePauseStats === 'function') {
+                    window.updatePauseStats();
+                }
+            }
         }
     });
     </script>
-    </script>
 
-    <script src="game.js"></script>
         <script>
     // --- LOGIN CON GOOGLE Y GESTIÓN DE USUARIO ---
     let currentUser = null;
@@ -4375,64 +4403,106 @@
             });
         }
 
-        // PAUSE BUTTON LOGIC
-    const pauseBtnMobile = document.getElementById('pauseBtnMobile');
     const pauseOverlay = document.getElementById('pauseOverlay');
     const resumeBtn = document.getElementById('resumeBtn');
     const abortBtn = document.getElementById('abortBtn');
 
-        function togglePause() {
-            if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
-                if (!window.gameState.isPaused) {
-                    window.gameState.isPaused = true;
-                    pauseOverlay.style.display = 'flex';
-                    document.getElementById('gameHUD').style.opacity = '0.3';
+        // Function to update pause stats
+        function updatePauseStats() {
+            const pauseStatsGrid = document.getElementById('pauseStatsGrid');
+            if (!pauseStatsGrid || !window.playerStats) return;
+
+            const statNames = {
+                movementSpeed: 'Movement Speed',
+                fireRate: 'Fire Rate',
+                resilience: 'Resilience',
+                bulletDamage: 'Bullet Damage',
+                maxHealth: 'Max Health',
+                pickupMagnet: 'Pickup Range',
+                criticalChance: 'Critical Chance',
+                regeneration: 'Regeneration'
+            };
+
+            pauseStatsGrid.innerHTML = '';
+
+            for (let key in window.playerStats) {
+                const stat = window.playerStats[key];
+                const statCard = document.createElement('div');
+                statCard.style.cssText = `
+                    background: rgba(0,255,255,0.05);
+                    border: 1px solid rgba(0,255,255,0.2);
+                    border-radius: 8px;
+                    padding: 10px;
+                    text-align: center;
+                    transition: all 0.3s ease;
+                `;
+
+                let displayValue;
+                if (key === 'fireRate') {
+                    displayValue = Math.round(stat.currentValue) + ' ms';
+                } else if (key === 'criticalChance') {
+                    displayValue = (stat.currentValue * 100).toFixed(1) + '%';
+                } else if (key === 'resilience') {
+                    displayValue = ((1 - stat.currentValue) * 100).toFixed(1) + '% reduction';
+                } else if (key === 'regeneration') {
+                    displayValue = stat.currentValue.toFixed(1) + ' HP/s';
+                } else if (key === 'pickupMagnet') {
+                    displayValue = Math.round(stat.currentValue) + ' px';
                 } else {
-                    window.gameState.isPaused = false;
-                    pauseOverlay.style.display = 'none';
-                    document.getElementById('gameHUD').style.opacity = '1';
+                    displayValue = stat.currentValue.toFixed(2);
                 }
+
+                statCard.innerHTML = `
+                    <div style="font-size: clamp(11px, 2vw, 13px); color: #00ffff; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">${statNames[key] || key}</div>
+                    <div style="font-size: clamp(16px, 3.5vw, 22px); color: #fff; font-weight: 700; text-shadow: 0 0 8px #00ffff;">${displayValue}</div>
+                    <div style="font-size: clamp(10px, 1.8vw, 12px); color: #ff00ff; margin-top: 4px;">Level ${stat.level}</div>
+                `;
+
+                pauseStatsGrid.appendChild(statCard);
             }
         }
 
-        if (pauseBtnMobile) {
-            pauseBtnMobile.addEventListener('click', togglePause);
+        // Export function globally
+        window.updatePauseStats = updatePauseStats;
+
+        if (resumeBtn) {
+            resumeBtn.addEventListener('click', () => {
+                if (window.gameState && window.gameState.isPaused) {
+                    window.gameState.isPaused = false;
+                    if (pauseOverlay) pauseOverlay.style.display = 'none';
+                    const hud = document.getElementById('gameHUD');
+                    if (hud) hud.style.opacity = '1';
+                }
+            });
         }
-
-
-        resumeBtn.addEventListener('click', () => {
-            if (window.gameState && window.gameState.isPaused) {
-                window.gameState.isPaused = false;
-                pauseOverlay.style.display = 'none';
-                document.getElementById('gameHUD').style.opacity = '1';
-            }
-        });
 
         // Botón abandonar partida
-        abortBtn.addEventListener('click', () => {
-            if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
-                // Guardar la partida como ABORTED
-                if (typeof window.guardarPartida === 'function') {
-                    window.guardarPartida(window.gameState.score, window.gameState.wave, window.gameState.kills, 'ABORTED');
+        if (abortBtn) {
+            abortBtn.addEventListener('click', () => {
+                if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
+                    // Guardar la partida como ABORTED
+                    if (typeof window.guardarPartida === 'function') {
+                        window.guardarPartida(window.gameState.score, window.gameState.wave, window.gameState.kills, 'ABORTED');
+                    }
+
+                    // Resetear completamente el estado del juego
+                    if (typeof window.resetGameState === 'function') {
+                        window.resetGameState();
+                    }
+
+                    // Ocultar overlay de pausa
+                    if (pauseOverlay) pauseOverlay.style.display = 'none';
+
+                    // Ocultar HUD
+                    const hud = document.getElementById('gameHUD');
+                    if (hud) hud.classList.remove('active');
+
+                    // Mostrar menú principal
+                    const startMenu = document.getElementById('startMenu');
+                    if (startMenu) startMenu.classList.remove('hidden');
                 }
-
-                // Resetear completamente el estado del juego
-                if (typeof window.resetGameState === 'function') {
-                    window.resetGameState();
-                }
-
-                // Ocultar overlay de pausa
-                pauseOverlay.style.display = 'none';
-
-                // Ocultar HUD
-                document.getElementById('gameHUD').classList.remove('active');
-
-                // Mostrar menú principal
-                if (typeof startMenu !== 'undefined') {
-                    startMenu.classList.remove('hidden');
-                }
-            }
-        });
+            });
+        }
 
         // ESC key toggles pause
         document.addEventListener('keydown', (e) => {
@@ -4500,8 +4570,9 @@
 
         // Mostrar modal de upgrades
         window.showUpgradeModal = function() {
+            console.log('📊 showUpgradeModal called!');
             if (!window.gameState || !window.playerStats) {
-                console.error('Game state or player stats not found');
+                console.error('❌ Game state or player stats not found');
                 return;
             }
 
@@ -4644,8 +4715,8 @@
             }
         });
 
-        // Exportar función globalmente
-        window.showUpgradeModal = window.showUpgradeModal;
+        // Confirm modal function is available
+        console.log('✅ showUpgradeModal function registered:', typeof window.showUpgradeModal);
     </script>
 </body>
 </html>

@@ -75,12 +75,17 @@ const DeviceDetector = {
         this.isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobile))/i.test(navigator.userAgent);
         this.pixelRatio = window.devicePixelRatio || 1;
 
-        console.log('🎮 Device Detection:', {
-            mobile: this.isMobile,
-            tablet: this.isTablet,
-            touch: this.isTouch,
-            pixelRatio: this.pixelRatio
-        });
+        console.log('🎮 ============================================');
+        console.log('🎮 DEVICE DETECTION RESULTS:');
+        console.log('   - User Agent:', navigator.userAgent);
+        console.log('   - isMobile:', this.isMobile);
+        console.log('   - isTablet:', this.isTablet);
+        console.log('   - isTouch:', this.isTouch);
+        console.log('   - maxTouchPoints:', navigator.maxTouchPoints);
+        console.log('   - ontouchstart exists:', 'ontouchstart' in window);
+        console.log('   - pixelRatio:', this.pixelRatio);
+        console.log('   - FINAL RESULT (mobile OR tablet OR touch):', this.isMobile || this.isTablet || this.isTouch);
+        console.log('🎮 ============================================');
 
         return this.isMobile || this.isTablet || this.isTouch;
     },
@@ -117,9 +122,20 @@ const DeviceDetector = {
 const isMobileDevice = DeviceDetector.detect();
 const qualitySettings = DeviceDetector.getQualitySettings();
 
+console.log('🎮 ============================================');
+console.log('🎮 NEON SURVIVOR - VERSION 3.0.0');
+console.log('🎮 Build: 20251024');
+console.log('🎮 ============================================');
+console.log('📱 Device Detection:');
+console.log('   - isMobileDevice:', isMobileDevice);
+console.log('   - User Agent:', navigator.userAgent);
+console.log('   - Screen Size:', window.innerWidth, 'x', window.innerHeight);
+console.log('   - Quality Settings:', qualitySettings);
+console.log('🎮 ============================================');
+
 // Canvas Setup
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+let canvas;
+let ctx;
 
 // ===================================
 // RESPONSIVE SCALING SYSTEM
@@ -160,6 +176,7 @@ const ViewportScale = {
 };
 
 function resizeCanvas() {
+    if (!canvas || !ctx) return; // Safety check
     const dpr = Math.min(DeviceDetector.pixelRatio, 2);
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
@@ -170,44 +187,48 @@ function resizeCanvas() {
     updateGameAreaLimits(); // Actualizar límites del área de juego
 }
 
-resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Prevent context menu
-if (!isMobileDevice) {
-    canvas.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        return false;
-    });
+// Function to initialize canvas event listeners
+function initializeCanvasEvents() {
+    if (!canvas) return;
 
-    // PC Controls: Left click = shoot, Right click = move
-    canvas.addEventListener('mousedown', (e) => {
-        if (gameState.isPaused || gameState.isGameOver) return;
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left);
-        const mouseY = (e.clientY - rect.top);
-        if (e.button === 0) { // Left click: shoot
-            input.mouse.x = mouseX;
-            input.mouse.y = mouseY;
-            input.mouse.leftDown = true;
-            player.aimX = mouseX;
-            player.aimY = mouseY;
-            // Trigger shoot logic (if implemented)
-            playerShoot(mouseX, mouseY);
-        } else if (e.button === 2) { // Right click: move
-            input.mouse.x = mouseX;
-            input.mouse.y = mouseY;
-            input.mouse.rightDown = true;
-            player.targetX = mouseX;
-            player.targetY = mouseY;
-            player.moving = true;
-        }
-    });
+    // Prevent context menu
+    if (!isMobileDevice) {
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            return false;
+        });
 
-    canvas.addEventListener('mouseup', (e) => {
-        if (e.button === 0) input.mouse.leftDown = false;
-        if (e.button === 2) input.mouse.rightDown = false;
-    });
+        // PC Controls: Left click = shoot, Right click = move
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameState.isPaused || gameState.isGameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left);
+            const mouseY = (e.clientY - rect.top);
+            if (e.button === 0) { // Left click: shoot
+                input.mouse.x = mouseX;
+                input.mouse.y = mouseY;
+                input.mouse.leftDown = true;
+                player.aimX = mouseX;
+                player.aimY = mouseY;
+                // Trigger shoot logic (if implemented)
+                playerShoot(mouseX, mouseY);
+            } else if (e.button === 2) { // Right click: move
+                input.mouse.x = mouseX;
+                input.mouse.y = mouseY;
+                input.mouse.rightDown = true;
+                player.targetX = mouseX;
+                player.targetY = mouseY;
+                player.moving = true;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (e.button === 0) input.mouse.leftDown = false;
+            if (e.button === 2) input.mouse.rightDown = false;
+        });
+    }
 }
 
 // Game State
@@ -267,15 +288,15 @@ const playerStats = {
         level: 0,
         baseValue: isMobileDevice ? 4 : 3,
         currentValue: isMobileDevice ? 4 : 3,
-        increment: 0.05, // 5% por nivel
+        increment: 0.025, // 2.5% por nivel
         cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Move faster on the arena"
     },
     fireRate: {
         level: 0,
-        baseValue: 150, // ms entre disparos
-        currentValue: 150,
-        increment: -0.05, // -5% (reduce cooldown)
+        baseValue: 1000, // ms entre disparos
+        currentValue: 1000,
+        increment: -0.025, // -5% (reduce cooldown)
         cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Shoot more frequently"
     },
@@ -299,7 +320,7 @@ const playerStats = {
         level: 0,
         baseValue: 100,
         currentValue: 100,
-        increment: 0.05, // +5% salud máxima
+        increment: 0.025, // +2.5% salud máxima
         cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Increases your maximum HP"
     },
@@ -323,7 +344,7 @@ const playerStats = {
         level: 0,
         baseValue: 0, // HP/segundo
         currentValue: 0,
-        increment: 0.5, // +0.5 HP/s por nivel (valor fijo, no porcentaje)
+        increment: 0.25, // +0.5 HP/s por nivel (valor fijo, no porcentaje)
         cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Recover health per second"
     }
@@ -474,14 +495,59 @@ const input = {
 // MOBILE CONTROLS - WILD RIFT STYLE
 // ===================================
 
-if (isMobileDevice) {
-    console.log('📱 Initializing controls...');
-    document.getElementById('mobileControls').classList.add('active');
-    document.querySelector('.platform-specific.mobile').classList.add('active');
+let mobileControlsInitialized = false;
+
+function initializeMobileControls() {
+    console.log('📱 ============================================');
+    console.log('📱 ATTEMPTING TO INITIALIZE MOBILE CONTROLS');
+    console.log('📱 isMobileDevice:', isMobileDevice);
+    console.log('📱 mobileControlsInitialized:', mobileControlsInitialized);
+    console.log('📱 ============================================');
+
+    if (!isMobileDevice || mobileControlsInitialized) {
+        console.log('❌ INITIALIZATION BLOCKED:');
+        console.log('   - isMobileDevice is FALSE:', !isMobileDevice);
+        console.log('   - Already initialized:', mobileControlsInitialized);
+        return;
+    }
+
+    console.log('📱 ============================================');
+    console.log('📱 INITIALIZING MOBILE CONTROLS - VERSION 3.0');
+    console.log('📱 ============================================');
+
+    const mobileControlsEl = document.getElementById('mobileControls');
+    const platformMobile = document.querySelector('.platform-specific.mobile');
+
+    console.log('📱 mobileControlsEl:', mobileControlsEl ? '✅ Found' : '❌ NOT FOUND');
+    console.log('📱 platformMobile:', platformMobile ? '✅ Found' : '❌ NOT FOUND');
+
+    if (mobileControlsEl) {
+        mobileControlsEl.classList.add('active');
+        console.log('📱 mobileControls activated');
+    }
+    if (platformMobile) {
+        platformMobile.classList.add('active');
+        console.log('📱 platformMobile activated');
+    }
 
     // Joystick - FIXED: Solo la base captura eventos
     const joystickBase = document.getElementById('joystickBase');
     const joystickStick = document.getElementById('joystickStick');
+
+    console.log('📱 Move Joystick Elements:');
+    console.log('   - joystickBase:', joystickBase ? '✅ Found' : '❌ NOT FOUND');
+    console.log('   - joystickStick:', joystickStick ? '✅ Found' : '❌ NOT FOUND');
+
+    if (!joystickBase || !joystickStick) {
+        console.error('❌ Joystick elements not found!');
+        return;
+    }
+
+    // FORZAR pointer-events en joystick base
+    joystickBase.style.pointerEvents = 'all';
+    joystickStick.style.pointerEvents = 'none';
+    console.log('✅ Joystick pointer-events set: base=all, stick=none');
+
     let joystickTouchId = null;
 
     joystickBase.addEventListener('touchstart', (e) => {
@@ -557,7 +623,19 @@ if (isMobileDevice) {
     const shootJoystickStick = document.getElementById('shootJoystickStick');
     let shootJoystickTouchId = null;
 
+    console.log('📱 Shoot Joystick Elements:');
+    console.log('   - shootJoystickBase:', shootJoystickBase ? '✅ Found' : '❌ NOT FOUND');
+    console.log('   - shootJoystickStick:', shootJoystickStick ? '✅ Found' : '❌ NOT FOUND');
+
     if (shootJoystickBase) {
+        console.log('📱 Setting up shoot joystick event listeners...');
+        
+        // FORZAR pointer-events en shoot joystick base
+        shootJoystickBase.style.pointerEvents = 'all';
+        if (shootJoystickStick) {
+            shootJoystickStick.style.pointerEvents = 'none';
+        }
+        console.log('✅ Shoot joystick pointer-events set: base=all, stick=none');
         shootJoystickBase.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -648,12 +726,43 @@ if (isMobileDevice) {
         abilityBtnSmall.addEventListener('click', abilityHandler);
     }
 
+    // Pause button
+    const pauseBtnMobile = document.getElementById('pauseBtnMobile');
+    console.log('🔍 Pause button mobile found in initMobileControls:', pauseBtnMobile);
+    if (pauseBtnMobile) {
+        const pauseHandler = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('⏸️ Pause button activated! Game state:', gameState.isPlaying, gameState.isGameOver);
+            if (gameState.isPlaying && !gameState.isGameOver) {
+                gameState.isPaused = true;
+                const pauseOverlay = document.getElementById('pauseOverlay');
+                console.log('📱 Pause overlay:', pauseOverlay);
+                if (pauseOverlay) {
+                    pauseOverlay.style.display = 'flex';
+                    console.log('✅ Pause overlay displayed');
+                }
+
+                // Update pause stats
+                if (typeof window.updatePauseStats === 'function') {
+                    window.updatePauseStats();
+                    console.log('📊 Pause stats updated');
+                }
+            }
+        };
+
+        pauseBtnMobile.addEventListener('touchstart', pauseHandler, { passive: false });
+        pauseBtnMobile.addEventListener('click', pauseHandler);
+        console.log('✅ Pause button event listeners registered (touch + click)');
+    }
+
     // Inicializar audio en primer touch
     window.addEventListener('touchstart', () => {
         initAudio();
     }, { once: true });
 
-    // ...fin controles móviles...
+    mobileControlsInitialized = true;
+    console.log('✅ Mobile controls initialized successfully');
 }
 
 // ===================================
@@ -1026,6 +1135,9 @@ function createPlayerBullet(angle) {
         finalDamage *= 2;
     }
 
+    // Debug log (descomenta para depurar)
+    // console.log('🔫 Bullet created at', Date.now(), 'Cooldown:', getShootCooldown());
+
     bullets.push({
         x: player.x,
         y: player.y,
@@ -1042,8 +1154,9 @@ function createPlayerBullet(angle) {
 
 // Obtener cooldown de disparo actual
 function getShootCooldown() {
-    const baseCooldown = 120; // ms
-    return Math.max(50, baseCooldown * (playerStats.fireRate.currentValue / playerStats.fireRate.baseValue));
+    const cooldown = Math.max(50, playerStats.fireRate.currentValue);
+    // console.log('🎯 Shoot cooldown:', cooldown, 'ms'); // Debug log
+    return cooldown;
 }
 
 // Otorgar experiencia al matar un enemigo
@@ -1492,18 +1605,8 @@ function update() {
     if (!isMobileDevice) {
         // PC: Mouse shooting
         player.angle = Math.atan2(player.aimY - player.y, player.aimX - player.x);
-        if (input.mouse.leftDown && now - player.lastShootTime > 90) {
-            bullets.push({
-                x: player.x,
-                y: player.y,
-                vx: Math.cos(player.angle) * 14 * ViewportScale.scale,
-                vy: Math.sin(player.angle) * 14 * ViewportScale.scale,
-                radius: ViewportScale.bulletSize, // RESPONSIVE
-                damage: 35,
-                color: '#00ffff',
-                trail: [],
-                glow: true
-            });
+        if (input.mouse.leftDown && now - player.lastShootTime >= getShootCooldown()) {
+            createPlayerBullet(player.angle);
             player.lastShootTime = now;
         }
     } else {
@@ -1512,7 +1615,7 @@ function update() {
             player.angle = input.shootJoystick.angle;
 
             // Auto-shoot while joystick is active
-            if (now - player.lastShootTime > getShootCooldown()) {
+            if (now - player.lastShootTime >= getShootCooldown()) {
                 createPlayerBullet(player.angle);
                 player.lastShootTime = now;
             }
@@ -1544,16 +1647,21 @@ function update() {
         gameState.isPaused = true;
 
         // Pequeña pausa para que el jugador vea que la oleada terminó
-        setTimeout(() => {
+        let attempts = 0;
+        const checkModal = () => {
+            attempts++;
             if (typeof window.showUpgradeModal === 'function') {
                 window.showUpgradeModal();
+            } else if (attempts < 50) { // Check for up to 5 seconds
+                setTimeout(checkModal, 100);
             } else {
                 // Fallback si el modal no está disponible
-                console.warn('Upgrade modal not available, continuing...');
+                console.warn('Upgrade modal not available after 5 seconds, continuing...');
                 gameState.isPaused = false;
                 nextWave();
             }
-        }, 1000);
+        };
+        setTimeout(checkModal, 1000);
     }    // Update enemies
     enemies.forEach(enemy => {
         const dx = player.x - enemy.x;
@@ -2159,6 +2267,31 @@ window.ENEMY_TYPES = ENEMY_TYPES;
 
 // Función para iniciar el juego desde el menú con un nivel específico
 window.startGameFromMenu = function(startLevel) {
+    console.log('🎮 Starting game from menu, level:', startLevel);
+
+    // Initialize canvas if not done
+    if (!canvas) {
+        canvas = document.getElementById('gameCanvas');
+        if (!canvas) {
+            console.error('❌ Canvas not found!');
+            return;
+        }
+        ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+        // Initialize canvas events
+        initializeCanvasEvents();
+
+        // Initialize canvas size
+        resizeCanvas();
+
+        console.log('✅ Canvas initialized');
+    }
+
+    // Initialize mobile controls if needed
+    if (isMobileDevice) {
+        initializeMobileControls();
+    }
+
     // Reset completo del estado del juego
     resetGameState();
 
@@ -2189,10 +2322,23 @@ window.startGameFromMenu = function(startLevel) {
 
     // Ensure both joysticks are visible on mobile
     if (isMobileDevice) {
+        console.log('📱 Ensuring joysticks are visible...');
         const shootJoystickContainer = document.getElementById('shootJoystickContainer');
-        if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
         const joystickContainer = document.getElementById('joystickContainer');
-        if (joystickContainer) joystickContainer.style.display = 'block';
+
+        console.log('   - shootJoystickContainer:', shootJoystickContainer ? '✅ Found' : '❌ NOT FOUND');
+        console.log('   - joystickContainer:', joystickContainer ? '✅ Found' : '❌ NOT FOUND');
+
+        if (shootJoystickContainer) {
+            shootJoystickContainer.style.display = 'block';
+            console.log('   - shootJoystickContainer display set to block');
+            console.log('   - Computed style:', window.getComputedStyle(shootJoystickContainer).display);
+        }
+        if (joystickContainer) {
+            joystickContainer.style.display = 'block';
+            console.log('   - joystickContainer display set to block');
+            console.log('   - Computed style:', window.getComputedStyle(joystickContainer).display);
+        }
     }
 
     console.log('🎮 Game Started!');
@@ -2203,29 +2349,4 @@ window.startGameFromMenu = function(startLevel) {
 };
 
 // Pause button event listeners
-const pauseBtnMobile = document.getElementById('pauseBtnMobile');
-if (pauseBtnMobile) {
-    pauseBtnMobile.addEventListener('click', function() {
-        if (gameState.isPlaying && !gameState.isGameOver) {
-            gameState.isPaused = true;
-            document.getElementById('pauseOverlay').style.display = 'flex';
-        }
-    });
-}
-
-const resumeBtn = document.getElementById('resumeBtn');
-if (resumeBtn) {
-    resumeBtn.addEventListener('click', function() {
-        gameState.isPaused = false;
-        document.getElementById('pauseOverlay').style.display = 'none';
-    });
-}
-
-const abortBtn = document.getElementById('abortBtn');
-if (abortBtn) {
-    abortBtn.addEventListener('click', function() {
-        gameState.isPaused = false;
-        document.getElementById('pauseOverlay').style.display = 'none';
-        gameOver();
-    });
-}
+// Note: Pause, resume and abort button event listeners are handled in initializeMobileControls() and index.html
