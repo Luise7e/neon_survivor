@@ -1,0 +1,18 @@
+Design complete spritesheet for all of these:
+
+Protagonista (Player Character)
+
+Design a heroic neon character tileset for a top-down action game. Create a complete sprite sheet with 8 directional movement animations (up, down, left, right, and 4 diagonals). Character features: glowing cyan/electric blue humanoid figure with geometric armor patterns, pulsing energy core in chest, sharp angular design. Include 4 frames per direction showing smooth walking/floating animation. Style: Neon cyberpunk aesthetic, bright glow effects, clean vector-like edges, transparent background. Each frame 64x64 pixels, full tileset 512x256 pixels (8 directions x 4 frames). High contrast neon colors against dark transparent background.
+
+Enemigo Tipo 1: Básico/Rápido
+Design a small aggressive neon enemy tileset for a top-down shooter game. Create 8 directional movement sprites (up, down, left, right, and 4 diagonals). Enemy design: hostile glowing red geometric creature, triangular or diamond-shaped body with sharp edges, menacing eye or sensor in center, pulsing threat indicator. Include 4 animation frames per direction. Style: Neon minimalist, dangerous red/orange glow effects, angular threatening shape, transparent background. Each frame 48x48 pixels, full tileset 384x192 pixels (8 directions x 4 frames). High contrast neon aesthetic.
+
+ Enemigo Tipo 2: Tanque/Lento
+Design a heavy armored neon enemy tileset for a top-down action game. Create 8 directional movement sprites (up, down, left, right, and 4 diagonals). Enemy design: large glowing magenta/purple geometric tank-like creature, hexagonal or octagonal body with armor plating patterns, defensive shield glow effect, intimidating presence. Include 3 animation frames per direction (slower movement). Style: Neon cyberpunk, strong magenta/purple glow, heavy geometric design, transparent background. Each frame 80x80 pixels, full tileset 640x240 pixels (8 directions x 3 frames). Powerful neon aesthetic.
+
+Enemigo Tipo 3: Evasivo/Zigzag
+Design an agile darting neon enemy tileset for a top-down shooter game. Create 8 directional movement sprites (up, down, left, right, and 4 diagonals). Enemy design: slim glowing yellow/green geometric creature, elongated aerodynamic shape with motion trails, speed lines, erratic energy patterns. Include 4 animation frames per direction showing rapid movement. Style: Neon electric aesthetic, bright yellow/lime green glow effects, dynamic angular shape, transparent background. Each frame 56x56 pixels, full tileset 448x224 pixels (8 directions x 4 frames). High-speed neon visual.
+
+Proyectiles/Balas
+
+Design neon projectile sprites for a top-down shooter game. Create bullet variations: player bullets (cyan/blue glowing energy bolts with trail effect), enemy bullets (red/orange hostile projectiles). Include 4 directional variations (cardinal directions). Style: Neon minimalist, bright glow effects, clean geometric shapes (elongated diamonds or arrows), motion blur trails, transparent background. Each projectile 16x16 to 32x32 pixels. High contrast neon colors with pulsing energy effect.

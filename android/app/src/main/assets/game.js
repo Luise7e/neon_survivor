@@ -1,87 +1,118 @@
 // ===================================
-// NEON SURVIVOR ARENA - MOBA EDITION
-// PC: Right-click move, Left-click shoot
-// Mobile: Wild Rift style (Landscape)
+// NEON SURVIVOR ARENA - MOBILE EDITION
+// Mobile: Dual Joystick Controls (Wild Rift Style)
 // ===================================
 
 // ===================================
-// ADMOB INTEGRATION (AdMob Plus)
+// ADMOB INTEGRATION (Native Android)
 // ===================================
 let admobReady = false;
 let lastBossWaveCompleted = 0;
-let interstitialAd = null;
 
-// Inicializar AdMob cuando el dispositivo esté listo
-document.addEventListener('deviceready', async function() {
-    if (window.admob) {
-        console.log('📱 AdMob Plus Plugin Ready');
+// Sistema de bonus x3 por anuncio
+let adBonusState = {
+    active: false,        // Si el bonus x3 está activo (anuncio visto pero no consumido)
+    canWatch: true        // Si puede ver un anuncio (se resetea al consumir el bonus)
+};
 
-        try {
-            // Inicializar AdMob Plus
-            await window.admob.start();
+// Función llamada desde Android cuando AdMob está listo
+function onAdMobReady() {
+    admobReady = true;
+    console.log('✅ AdMob Native Android Ready');
+}
 
-            // Crear el anuncio intersticial
-            interstitialAd = new window.admob.InterstitialAd({
-                //real cambiar en prod adUnitId: 'ca-app-pub-4698386674302808/7423787962'
-                adUnitId: 'ca-app-pub-3940256099942544/1033173712'
-            });
-
-            // Cargar el primer anuncio
-            await interstitialAd.load();
-
-            admobReady = true;
-            console.log('✅ AdMob Plus Configured and Interstitial Loaded');
-
-            // Escuchar cuando el anuncio se cierre para cargar el siguiente
-            document.addEventListener('admob.interstitial.dismiss', async () => {
-                console.log('📺 Interstitial ad dismissed, loading next one...');
-                await interstitialAd.load();
-            });
-
-        } catch (error) {
-            console.error('❌ Error initializing AdMob Plus:', error);
-        }
-    } else {
-        console.log('⚠️ AdMob Plus plugin not found - running in web mode');
-    }
-}, false);
+// Exponer el estado del bonus para el UI
+window.adBonusState = adBonusState;
 
 // Función para determinar si se debe mostrar anuncio en este wave
 function shouldShowAdForWave(wave) {
-    // Anuncios en niveles específicos: 5, 7, 10
-    if (wave === 5 || wave === 7 || wave === 10) {
-        return true;
-    }
-    
+
     // Después del nivel 10: cada 2 niveles O después de boss (múltiplos de 5)
     if (wave > 10) {
         // Boss waves (múltiplos de 5)
         if (wave % 5 === 0) {
             return true;
         }
-        // Cada 2 niveles (11, 13, 14, 16, 17, 19, etc.)
-        if ((wave - 10) % 2 === 1) {
+        // Cada 3 niveles (11, 14, 17, 20, etc.)
+        if ((wave - 10) % 3 === 1) {
             return true;
         }
     }
-    
+
     return false;
 }
 
 // Función para mostrar anuncio intersticial
 async function showInterstitialAd() {
-    if (admobReady && interstitialAd) {
+    if (typeof Android !== 'undefined') {
         try {
-            console.log('📺 Showing AdMob Interstitial Ad...');
-            await interstitialAd.show();
+            console.log('📺 Showing AdMob Native Interstitial Ad...');
+            Android.showInterstitial();
         } catch (error) {
             console.error('❌ Error showing interstitial ad:', error);
         }
     } else {
-        console.log('⚠️ AdMob not ready or not available');
+        console.log('⚠️ AdMob not available (running in browser)');
     }
 }
 
+// Función para activar bonus x3 después de ver anuncio
+function activateTripleBonus() {
+    if (adBonusState.active) {
+        console.log('⚠️ Bonus x3 already active - consume it first');
+        showNotification('❌ Use current bonus first!');
+        return false;
+    }
+
+    if (!adBonusState.canWatch) {
+        console.log('⚠️ Cannot watch ad - bonus already pending');
+        return false;
+    }
+
+    if (typeof Android !== 'undefined') {
+        try {
+            console.log('📺 Showing Ad for x3 Upgrade Bonus...');
+            Android.showRewardedAd(); // Usar anuncio con recompensa
+
+            // El callback onAdRewarded() será llamado desde Android cuando termine el anuncio
+            return true;
+        } catch (error) {
+            console.error('❌ Error showing rewarded ad:', error);
+            return false;
+        }
+    } else {
+        // Modo prueba en navegador
+        console.log('⚠️ AdMob not available (running in browser) - Activating bonus for testing');
+        onAdRewarded();
+        return true;
+    }
+}
+
+// Callback llamado desde Android cuando el usuario completa el anuncio con recompensa
+function onAdRewarded() {
+    console.log('🎁 Ad watched! Activating x3 Upgrade Bonus');
+    adBonusState.active = true;
+    adBonusState.canWatch = false; // No puede ver otro hasta consumir este
+
+    // Notificar al usuario
+    if (typeof showNotification === 'function') {
+        showNotification('🎁 x3 UPGRADE BONUS ACTIVE!');
+    }
+
+    // Actualizar el UI del modal si está abierto
+    if (typeof window.updateUpgradeModalBonusUI === 'function') {
+        window.updateUpgradeModalBonusUI();
+    }
+
+    // Re-renderizar la tabla para mostrar los valores con bonus
+    if (typeof window.renderUpgradesGrid === 'function') {
+        window.renderUpgradesGrid();
+    }
+}
+
+// Exponer funciones globalmente
+window.activateTripleBonus = activateTripleBonus;
+window.onAdRewarded = onAdRewarded;
 // Device Detection
 const DeviceDetector = {
     isMobile: false,
@@ -95,12 +126,6 @@ const DeviceDetector = {
         this.isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobile))/i.test(navigator.userAgent);
         this.pixelRatio = window.devicePixelRatio || 1;
 
-        console.log('🎮 Device Detection:', {
-            mobile: this.isMobile,
-            tablet: this.isTablet,
-            touch: this.isTouch,
-            pixelRatio: this.pixelRatio
-        });
 
         return this.isMobile || this.isTablet || this.isTouch;
     },
@@ -137,58 +162,83 @@ const DeviceDetector = {
 const isMobileDevice = DeviceDetector.detect();
 const qualitySettings = DeviceDetector.getQualitySettings();
 
+
+
 // Canvas Setup
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+let canvas;
+let ctx;
+
+// ===================================
+// RESPONSIVE SCALING SYSTEM
+// ===================================
+const ViewportScale = {
+    baseWidth: 1920,  // Referencia para escritorio
+    baseHeight: 1080,
+    scale: 1,
+    playerSize: 20,
+    bulletSize: 5,
+    enemySize: 18,
+
+    update() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+
+        // Calcular escala basada en el ancho de la pantalla
+        this.scale = Math.min(screenWidth / this.baseWidth, screenHeight / this.baseHeight);
+
+        // Tamaños adaptativos (% del viewport)
+        if (isMobileDevice) {
+            this.playerSize = screenWidth * 0.05; // 5% del ancho de pantalla
+            this.bulletSize = screenWidth * 0.01; // 0.6% del ancho
+            this.enemySize = screenWidth * 0.045; // 1.9% del ancho
+        } else {
+            this.playerSize = screenWidth * 0.025; // 2.5% del ancho
+            this.bulletSize = screenWidth * 0.008; // 0.8% del ancho
+            this.enemySize = screenWidth * 0.03; // 3% del ancho
+        }
+
+    }
+};
 
 function resizeCanvas() {
-    const dpr = Math.min(DeviceDetector.pixelRatio, 2);
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
+    if (!canvas || !ctx) {
+        console.warn('⚠️ resizeCanvas called but canvas or ctx is null');
+        return; // Safety check
+    }
+
+    // CRITICAL FIX: No usar DPR scaling en el canvas
+    // El canvas debe tener el mismo tamaño lógico que la ventana
+    // El navegador se encarga automáticamente del escalado DPR
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     canvas.style.width = window.innerWidth + 'px';
     canvas.style.height = window.innerHeight + 'px';
-    ctx.scale(dpr, dpr);
+
+    // NO aplicar ctx.scale(dpr, dpr) - esto causa que los elementos se dibujen fuera de pantalla
+    // Reset transformations to identity
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    ViewportScale.update(); // Actualizar escalas
     updateGameAreaLimits(); // Actualizar límites del área de juego
+
+    const dpr = Math.min(DeviceDetector.pixelRatio, 2);
+    console.log('📐 Canvas Resized:', {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        styleWidth: canvas.style.width,
+        styleHeight: canvas.style.height,
+        dpr: dpr,
+        note: 'DPR scaling DISABLED - browser handles it automatically',
+        viewportScale: ViewportScale.scale
+    });
 }
 
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+// El listener de resize se agregará después de inicializar el canvas
 
-// Prevent context menu
-if (!isMobileDevice) {
-    canvas.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        return false;
-    });
+// Function to initialize canvas event listeners
+function initializeCanvasEvents() {
+    if (!canvas) return;
 
-    // PC Controls: Left click = shoot, Right click = move
-    canvas.addEventListener('mousedown', (e) => {
-        if (gameState.isPaused || gameState.isGameOver) return;
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left);
-        const mouseY = (e.clientY - rect.top);
-        if (e.button === 0) { // Left click: shoot
-            input.mouse.x = mouseX;
-            input.mouse.y = mouseY;
-            input.mouse.leftDown = true;
-            player.aimX = mouseX;
-            player.aimY = mouseY;
-            // Trigger shoot logic (if implemented)
-            playerShoot(mouseX, mouseY);
-        } else if (e.button === 2) { // Right click: move
-            input.mouse.x = mouseX;
-            input.mouse.y = mouseY;
-            input.mouse.rightDown = true;
-            player.targetX = mouseX;
-            player.targetY = mouseY;
-            player.moving = true;
-        }
-    });
-
-    canvas.addEventListener('mouseup', (e) => {
-        if (e.button === 0) input.mouse.leftDown = false;
-        if (e.button === 2) input.mouse.rightDown = false;
-    });
 }
 
 // Game State
@@ -205,7 +255,18 @@ const gameState = {
     totalEnemiesInWave: 5, // Total para mostrar en HUD
     lastEnemySpawn: 0,
     enemySpawnRate: 1000,
-    difficultyMultiplier: 1
+    difficultyMultiplier: 1,
+    // Sistema de experiencia
+    experience: 0,
+    experienceThisWave: {
+        normal: 0,
+        fast: 0,
+        heavy: 0,
+        superheavy: 0,
+        explosive: 0,
+        boss: 0,
+        total: 0
+    }
 };
 
 // Player
@@ -214,18 +275,93 @@ const player = {
     y: window.innerHeight / 2,
     targetX: window.innerWidth / 2,
     targetY: window.innerHeight / 2,
-    radius: isMobileDevice ? 20 : 18,
+    get radius() { return ViewportScale.playerSize; }, // Dinámico
     health: 100,
     maxHealth: 100,
-    speed: isMobileDevice ? 4 : 3,
+    get speed() {
+        const baseSpeed = (isMobileDevice ? 4 : 3) * ViewportScale.scale;
+        return baseSpeed * (playerStats.movementSpeed.currentValue / playerStats.movementSpeed.baseValue);
+    }, // Velocidad proporcional con mejora
     color: '#00ffff',
     angle: 0,
     aimX: 0,
     aimY: 0,
     shootCooldown: 0,
     lastShootTime: 0,
+    lastRegenTime: Date.now(),
     moving: false
 };
+
+// Sistema de habilidades del jugador (upgrades)
+const playerStats = {
+    movementSpeed: {
+        level: 0,
+        baseValue: isMobileDevice ? 4 : 3,
+        currentValue: isMobileDevice ? 4 : 3,
+        increment: 0.025, // 2.5% por nivel
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Move faster on the arena"
+    },
+    fireRate: {
+        level: 0,
+        baseValue: 1000, // ms entre disparos
+        currentValue: 1000,
+        increment: -0.025, // -5% (reduce cooldown)
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Shoot more frequently"
+    },
+    resilience: {
+        level: 0,
+        baseValue: 1.0, // Multiplicador de daño recibido (1.0 = 100%)
+        currentValue: 1.0,
+        increment: -0.05, // -5% daño recibido
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Take less damage from enemies"
+    },
+    bulletDamage: {
+        level: 0,
+        baseValue: 10,
+        currentValue: 10,
+        increment: 0.05, // +5% daño
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Your shots deal more damage"
+    },
+    maxHealth: {
+        level: 0,
+        baseValue: 100,
+        currentValue: 100,
+        increment: 0.025, // +2.5% salud máxima
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Increases your maximum HP"
+    },
+    pickupMagnet: {
+        level: 0,
+        baseValue: 50, // Radio de recolección
+        currentValue: 50,
+        increment: 0.05, // +5% radio
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Increases range to collect pickups"
+    },
+    criticalChance: {
+        level: 0,
+        baseValue: 0, // 0% inicial
+        currentValue: 0,
+        increment: 0.02, // +2% por nivel (no es 5% porque sería muy fuerte)
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Chance to deal double damage"
+    },
+    regeneration: {
+        level: 0,
+        baseValue: 0, // HP/segundo
+        currentValue: 0,
+        increment: 0.25, // +0.5 HP/s por nivel (valor fijo, no porcentaje)
+        cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
+        description: "Recover health per second"
+    }
+};
+
+// Snapshot de habilidades para el sistema de deshacer
+let statsSnapshot = null;
 
 // PC shooting logic stub
 function playerShoot(x, y) {
@@ -256,6 +392,18 @@ let lastHealthDamageTime = 0; // Para controlar el sonido de daño
 
 // Expose gameState globally for pause button logic
 window.gameState = gameState;
+
+// Mostrar mejor puntuación en el perfil si está logado
+window.showUserBestScore = function(bestScore) {
+    const bestScoreDiv = document.getElementById('userBestScore');
+    const bestScoreValue = document.getElementById('bestScoreValue');
+    if (window.isGuestMode) {
+        bestScoreDiv.style.display = 'none';
+    } else {
+        bestScoreDiv.style.display = 'block';
+        bestScoreValue.textContent = bestScore ? bestScore.toLocaleString() : '0';
+    }
+};
 
 // Audio Context para efectos de sonido
 let audioContext;
@@ -311,16 +459,21 @@ function updateAbilityButton() {
         abilityBtn.textContent = '⚡';
         abilityBtn.classList.add('inactive');
     }
+
+    // Add event listener for ability button
+    const abilityHandler = (e) => {
+        e.preventDefault();
+        initAudio();
+        if (collectedAbility && gameState.isPlaying) {
+            useAbility();
+        }
+    };
+    abilityBtn.addEventListener('touchstart', abilityHandler);
+    abilityBtn.addEventListener('click', abilityHandler);
 }
 
 // Input Handling
 const input = {
-    mouse: {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2,
-        leftDown: false,
-        rightDown: false
-    },
     joystick: {
         active: false,
         x: 0,
@@ -342,52 +495,52 @@ const input = {
     }
 };
 
-// Control Mode Configuration
-let controlMode = localStorage.getItem('controlMode') || 'joystick'; // 'tap' or 'joystick'
-
-// Function to set control mode (called from settings)
-window.setControlMode = function(mode) {
-    controlMode = mode;
-    updateControlVisibility();
-};
-
-function updateControlVisibility() {
-    const shootJoystickContainer = document.getElementById('shootJoystickContainer');
-    const actionButtons = document.getElementById('actionButtons');
-    const abilityBtnSmall = document.getElementById('abilityBtnSmall');
-
-    console.log('🎮 Control Mode:', controlMode);
-    console.log('🕹️ Shoot Joystick:', shootJoystickContainer ? 'Found' : 'NOT FOUND');
-    console.log('🔘 Action Buttons:', actionButtons ? 'Found' : 'NOT FOUND');
-    console.log('⚡ Small Ability Btn:', abilityBtnSmall ? 'Found' : 'NOT FOUND');
-
-    if (controlMode === 'joystick') {
-        // Dual joystick mode
-        if (shootJoystickContainer) shootJoystickContainer.style.display = 'block';
-        if (actionButtons) actionButtons.style.display = 'none';
-        if (abilityBtnSmall) abilityBtnSmall.style.display = 'flex';
-        console.log('✅ Dual Joystick Mode Activated');
-    } else {
-        // Tap mode
-        if (shootJoystickContainer) shootJoystickContainer.style.display = 'none';
-        if (actionButtons) actionButtons.style.display = 'flex';
-        if (abilityBtnSmall) abilityBtnSmall.style.display = 'none';
-        console.log('✅ Tap to Shoot Mode Activated');
-    }
-}
-
 // ===================================
 // MOBILE CONTROLS - WILD RIFT STYLE
 // ===================================
 
-if (isMobileDevice) {
-    console.log('📱 Initializing Wild Rift controls...');
-    document.getElementById('mobileControls').classList.add('active');
-    document.querySelector('.platform-specific.mobile').classList.add('active');
+let mobileControlsInitialized = false;
+
+function initializeMobileControls() {
+
+
+    if (!isMobileDevice || mobileControlsInitialized) {
+
+        return;
+    }
+
+
+
+    const mobileControlsEl = document.getElementById('mobileControls');
+    const platformMobile = document.querySelector('.platform-specific.mobile');
+
+
+
+    if (mobileControlsEl) {
+        mobileControlsEl.classList.add('active');
+        console.log('📱 mobileControls activated');
+    }
+    if (platformMobile) {
+        platformMobile.classList.add('active');
+        console.log('📱 platformMobile activated');
+    }
 
     // Joystick - FIXED: Solo la base captura eventos
     const joystickBase = document.getElementById('joystickBase');
     const joystickStick = document.getElementById('joystickStick');
+
+
+
+    if (!joystickBase || !joystickStick) {
+        console.error('❌ Joystick elements not found!');
+        return;
+    }
+
+    // FORZAR pointer-events en joystick base
+    joystickBase.style.pointerEvents = 'all';
+    joystickStick.style.pointerEvents = 'none';
+    console.log('✅ Joystick pointer-events set: base=all, stick=none');
+
     let joystickTouchId = null;
 
     joystickBase.addEventListener('touchstart', (e) => {
@@ -463,7 +616,19 @@ if (isMobileDevice) {
     const shootJoystickStick = document.getElementById('shootJoystickStick');
     let shootJoystickTouchId = null;
 
+    console.log('📱 Shoot Joystick Elements:');
+    console.log('   - shootJoystickBase:', shootJoystickBase ? '✅ Found' : '❌ NOT FOUND');
+    console.log('   - shootJoystickStick:', shootJoystickStick ? '✅ Found' : '❌ NOT FOUND');
+
     if (shootJoystickBase) {
+        console.log('📱 Setting up shoot joystick event listeners...');
+
+        // FORZAR pointer-events en shoot joystick base
+        shootJoystickBase.style.pointerEvents = 'all';
+        if (shootJoystickStick) {
+            shootJoystickStick.style.pointerEvents = 'none';
+        }
+        console.log('✅ Shoot joystick pointer-events set: base=all, stick=none');
         shootJoystickBase.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -535,69 +700,58 @@ if (isMobileDevice) {
     }
 
     // ===================================
-    // TAP TO SHOOT MODE (Original)
     // ===================================
-    // Disparo tocando cualquier punto de la pantalla (excepto joystick, botón de pausa y botón de habilidad)
-    window.addEventListener('touchstart', (e) => {
-        // Solo funciona en modo tap
-        if (controlMode !== 'tap') return;
-
-        for (let touch of e.changedTouches) {
-            // Ignorar si el toque es en los controles
-            const target = touch.target;
-            if (
-                target.closest &&
-                (target.closest('#joystickContainer') ||
-                 target.closest('#abilityBtn') ||
-                 target.closest('#pauseBtnMobile'))
-            ) {
-                continue;
-            }
-            // Disparar hacia el punto tocado
-            if (gameState.isPlaying && !gameState.isPaused && !gameState.isCountdown) {
-                const tapX = touch.clientX;
-                const tapY = touch.clientY;
-                const angle = Math.atan2(tapY - player.y, tapX - player.x);
-                player.angle = angle;
-                // Control de cadencia de disparo
-                if (Date.now() - player.lastShootTime > 120) {
-                    bullets.push({
-                        x: player.x,
-                        y: player.y,
-                        vx: Math.cos(angle) * 14,
-                        vy: Math.sin(angle) * 14,
-                        radius: 5.25,
-                        damage: 35,
-                        color: '#00ffff',
-                        trail: [],
-                        glow: true
-                    });
-                    player.lastShootTime = Date.now();
-                }
-            }
-        }
-    });
-
-    // Ability Button (Large - Tap Mode)
-    const abilityBtn = document.getElementById('abilityBtn');
-    abilityBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        initAudio(); // Inicializar audio en primera interacción
-        if (collectedAbility && gameState.isPlaying) {
-            useAbility();
-        }
-    });
+    // ===================================
+    // ABILITY BUTTON
+    // ===================================
 
     // Ability Button (Small - Dual Joystick Mode)
     const abilityBtnSmall = document.getElementById('abilityBtnSmall');
     if (abilityBtnSmall) {
-        abilityBtnSmall.addEventListener('touchstart', (e) => {
+        const abilityHandler = (e) => {
             e.preventDefault();
             initAudio();
             if (collectedAbility && gameState.isPlaying) {
                 useAbility();
             }
-        });
+        };
+        abilityBtnSmall.addEventListener('touchstart', abilityHandler);
+        abilityBtnSmall.addEventListener('click', abilityHandler);
+    }
+
+    // Pause button
+    const pauseBtnMobile = document.getElementById('pauseBtnMobile');
+    console.log('🔍 Pause button mobile found in initMobileControls:', pauseBtnMobile);
+    if (pauseBtnMobile) {
+        const pauseHandler = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('⏸️ Pause button activated! Game state:', gameState.isPlaying, gameState.isGameOver);
+            if (gameState.isPlaying && !gameState.isGameOver) {
+                gameState.isPaused = true;
+                const pauseOverlay = document.getElementById('pauseOverlay');
+                console.log('📱 Pause overlay:', pauseOverlay);
+                if (pauseOverlay) {
+                    pauseOverlay.style.display = 'flex';
+                    console.log('✅ Pause overlay displayed');
+                }
+
+                // Reset page to 1 when opening pause menu
+                if (typeof window.currentStatsPage !== 'undefined') {
+                    window.currentStatsPage = 1;
+                }
+
+                // Update pause stats
+                if (typeof window.updatePauseStats === 'function') {
+                    window.updatePauseStats();
+                    console.log('📊 Pause stats updated');
+                }
+            }
+        };
+
+        pauseBtnMobile.addEventListener('touchstart', pauseHandler, { passive: false });
+        pauseBtnMobile.addEventListener('click', pauseHandler);
+        console.log('✅ Pause button event listeners registered (touch + click)');
     }
 
     // Inicializar audio en primer touch
@@ -605,10 +759,8 @@ if (isMobileDevice) {
         initAudio();
     }, { once: true });
 
-    // Apply control mode visibility on load
-    updateControlVisibility();
-
-    // ...fin controles móviles...
+    mobileControlsInitialized = true;
+    console.log('✅ Mobile controls initialized successfully');
 }
 
 // ===================================
@@ -626,9 +778,9 @@ const ABILITIES = {
                 bullets.push({
                     x: player.x,
                     y: player.y,
-                    vx: Math.cos(angle) * 12,
-                    vy: Math.sin(angle) * 12,
-                    radius: 10.5,
+                    vx: Math.cos(angle) * 12 * ViewportScale.scale,
+                    vy: Math.sin(angle) * 12 * ViewportScale.scale,
+                    radius: ViewportScale.bulletSize * 2, // RESPONSIVE FIREBALL
                     damage: 70,
                     color: '#ff4400',
                     trail: [],
@@ -776,6 +928,7 @@ function createExplosion(x, y, radius) {
 const ENEMY_TYPES = {
     BASIC: {
         name: 'Basic',
+        icon: '⬤', // Círculo básico magenta
         color: '#ff00ff', // Magenta
         sizeMultiplier: 1,
         speedMultiplier: 1,
@@ -785,6 +938,7 @@ const ENEMY_TYPES = {
     },
     FAST: {
         name: 'Fast',
+        icon: '◆', // Rombo rápido cian
         color: '#00ffff', // Cian
         sizeMultiplier: 0.5,
         speedMultiplier: 1.15,
@@ -794,6 +948,7 @@ const ENEMY_TYPES = {
     },
     HEAVY: {
         name: 'Heavy',
+        icon: '⬢', // Hexágono pesado naranja
         color: '#ff8800', // Naranja
         sizeMultiplier: 1.25,
         speedMultiplier: 0.85,
@@ -803,6 +958,7 @@ const ENEMY_TYPES = {
     },
     SUPERHEAVY: {
         name: 'SuperHeavy',
+        icon: '⬣', // Hexágono grueso rojo
         color: '#ff0055', // Rojo-Rosa
         sizeMultiplier: 1.35,
         speedMultiplier: 0.75,
@@ -812,6 +968,7 @@ const ENEMY_TYPES = {
     },
     EXPLOSIVE: {
         name: 'Explosive',
+        icon: '✦', // Estrella explosiva amarilla
         color: '#ffff00', // Amarillo
         sizeMultiplier: 1,
         speedMultiplier: 1,
@@ -819,6 +976,17 @@ const ENEMY_TYPES = {
         spawnChance: 0.10,
         abilityDropChance: 0.05,
         explosive: true
+    },
+    BOSS: {
+        name: 'Boss',
+        icon: '◈', // Diamante especial violeta
+        color: '#8800ff', // Violeta
+        sizeMultiplier: 2.2,
+        speedMultiplier: 0.8,
+        healthMultiplier: 5,
+        spawnChance: 0,
+        abilityDropChance: 1.0,
+        isBoss: true
     }
 };
 
@@ -843,11 +1011,25 @@ function getSpawnPosition() {
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
 
+    // CRITICAL FIX: Los enemigos deben aparecer FUERA de la pantalla visible
+    // pero respetando el área del HUD (gameAreaTop)
     switch(side) {
-        case 0: x = Math.random() * screenWidth; y = gameAreaTop - 40; break;
-        case 1: x = screenWidth + 40; y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop); break;
-        case 2: x = Math.random() * screenWidth; y = screenHeight + 40; break;
-        case 3: x = -40; y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop); break;
+        case 0: // Top - fuera de la pantalla, no debajo del HUD
+            x = Math.random() * screenWidth;
+            y = -60; // Muy arriba, completamente fuera de vista
+            break;
+        case 1: // Right
+            x = screenWidth + 40;
+            y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop);
+            break;
+        case 2: // Bottom
+            x = Math.random() * screenWidth;
+            y = screenHeight + 40;
+            break;
+        case 3: // Left
+            x = -40;
+            y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop);
+            break;
     }
 
     return { x, y };
@@ -857,10 +1039,9 @@ function spawnEnemy() {
     const enemyType = selectEnemyType();
     const position = getSpawnPosition();
 
-    const baseRadius = isMobileDevice ? 20 : 18;
-    const radius = baseRadius * enemyType.sizeMultiplier;
+    const radius = ViewportScale.enemySize * enemyType.sizeMultiplier; // RESPONSIVE
     const baseHealth = 55 + gameState.wave * 15;
-    const baseSpeed = (0.5 + gameState.wave * 0.09) * gameState.difficultyMultiplier;
+    const baseSpeed = (0.5 + gameState.wave * 0.09) * gameState.difficultyMultiplier * ViewportScale.scale;
 
     const enemy = {
         x: position.x,
@@ -886,10 +1067,9 @@ function spawnBoss() {
     const position = getSpawnPosition();
     const bossesInWave = Math.floor(gameState.wave / 10) + 1;
 
-    const baseRadius = isMobileDevice ? 45 : 40;
-    const radius = baseRadius + (gameState.wave * 2);
+    const radius = ViewportScale.enemySize * 2.2 + (gameState.wave * ViewportScale.scale); // RESPONSIVE BOSS
     const baseHealth = 500 + gameState.wave * 150;
-    const baseSpeed = (0.8 + gameState.wave * 0.03) * gameState.difficultyMultiplier;
+    const baseSpeed = (0.8 + gameState.wave * 0.03) * gameState.difficultyMultiplier * ViewportScale.scale;
 
     const boss = {
         x: position.x,
@@ -944,13 +1124,239 @@ function spawnAbilityPickup(x, y) {
     abilityPickups.push({
         x: x,
         y: clampedY,
-        radius: isMobileDevice ? 28 : 24,
+        radius: ViewportScale.playerSize * 1.4, // RESPONSIVE ABILITY SIZE
         ability: ability,
         rotation: 0,
         life: 18,
         pulse: 0
     });
 }
+
+// ===================================
+// SISTEMA DE EXPERIENCIA
+// ===================================
+
+// Crear bala del jugador con mejoras aplicadas
+function createPlayerBullet(angle) {
+    const baseDamage = 35;
+    let finalDamage = baseDamage * (playerStats.bulletDamage.currentValue / playerStats.bulletDamage.baseValue);
+
+    // Critical hit chance
+    const isCritical = Math.random() < playerStats.criticalChance.currentValue;
+    if (isCritical) {
+        finalDamage *= 2;
+    }
+
+    // Debug log (descomenta para depurar)
+    // console.log('🔫 Bullet created at', Date.now(), 'Cooldown:', getShootCooldown());
+
+    bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(angle) * 14 * ViewportScale.scale,
+        vy: Math.sin(angle) * 14 * ViewportScale.scale,
+        radius: ViewportScale.bulletSize,
+        damage: Math.round(finalDamage),
+        color: isCritical ? '#ff00ff' : '#00ffff', // Críticos en magenta
+        trail: [],
+        glow: true,
+        isCritical: isCritical
+    });
+}
+
+// Obtener cooldown de disparo actual
+function getShootCooldown() {
+    const cooldown = Math.max(50, playerStats.fireRate.currentValue);
+    // console.log('🎯 Shoot cooldown:', cooldown, 'ms'); // Debug log
+    return cooldown;
+}
+
+// Otorgar experiencia al matar un enemigo
+function grantExperience(enemy) {
+    let xpAmount = 0;
+    let enemyType = 'normal';
+
+    if (enemy.isBoss) {
+        xpAmount = 100 * gameState.wave;
+        enemyType = 'boss';
+    } else if (enemy.type === 'SUPERHEAVY') {
+        xpAmount = 30 * gameState.wave;
+        enemyType = 'superheavy';
+    } else if (enemy.type === 'HEAVY') {
+        xpAmount = 20 * gameState.wave;
+        enemyType = 'heavy';
+    } else if (enemy.type === 'FAST') {
+        xpAmount = 15 * gameState.wave;
+        enemyType = 'fast';
+    } else if (enemy.type === 'EXPLOSIVE') {
+        xpAmount = 25 * gameState.wave;
+        enemyType = 'explosive';
+    } else {
+        xpAmount = 10 * gameState.wave;
+        enemyType = 'normal';
+    }
+
+    gameState.experience += xpAmount;
+    gameState.experienceThisWave[enemyType] += xpAmount;
+    gameState.experienceThisWave.total += xpAmount;
+}
+
+// Resetear el tracking de XP de la oleada
+function resetWaveExperience() {
+    gameState.experienceThisWave = {
+        normal: 0,
+        fast: 0,
+        heavy: 0,
+        superheavy: 0,
+        explosive: 0,
+        boss: 0,
+        total: 0
+    };
+}
+
+// Mejorar una habilidad
+function upgradePlayerStat(statName) {
+    const stat = playerStats[statName];
+    if (!stat) return false;
+
+    const cost = stat.cost();
+    if (gameState.experience < cost) {
+        showNotification('❌ Not enough experience!');
+        return false;
+    }
+
+    // Gastar experiencia
+    gameState.experience -= cost;
+
+    // Determinar el multiplicador de potencia del bonus
+    const bonusMultiplier = adBonusState.active ? 3 : 1;
+
+    // Subir solo 1 nivel
+    stat.level++;
+
+    // Calcular nuevo valor aplicando el incremento las veces del multiplicador
+    if (statName === 'regeneration') {
+        // Regeneración es valor fijo, no porcentaje
+        // Aplicar el incremento multiplicado por el bonus
+        stat.currentValue = stat.baseValue + (stat.increment * stat.level);
+
+        // Si hay bonus, añadir 2 incrementos más
+        if (bonusMultiplier === 3) {
+            stat.currentValue += stat.increment * 2;
+        }
+    } else if (statName === 'criticalChance') {
+        // Critical chance también es valor fijo (porcentaje)
+        stat.currentValue = stat.baseValue + (stat.increment * stat.level);
+
+        // Si hay bonus, añadir 2 incrementos más
+        if (bonusMultiplier === 3) {
+            stat.currentValue += stat.increment * 2;
+        }
+    } else {
+        // Otros stats: incremento compuesto
+        // Calcular el valor base para este nivel
+        const normalValue = stat.baseValue * Math.pow(1 + Math.abs(stat.increment), stat.level);
+
+        if (bonusMultiplier === 3) {
+            // Con bonus: aplicar el incremento 2 veces más desde el valor normal
+            // normalValue * (1 + increment)^2
+            if (stat.increment < 0) {
+                // Para stats que decrecen (fireRate, resilience)
+                stat.currentValue = normalValue * Math.pow(1 + stat.increment, 2);
+            } else {
+                // Para stats que crecen
+                stat.currentValue = normalValue * Math.pow(1 + stat.increment, 2);
+            }
+        } else {
+            // Sin bonus: comportamiento normal
+            if (stat.increment < 0) {
+                stat.currentValue = stat.baseValue * Math.pow(1 + stat.increment, stat.level);
+            } else {
+                stat.currentValue = normalValue;
+            }
+        }
+    }
+
+    // Si se usó el bonus x3, desactivarlo y permitir ver otro anuncio
+    if (adBonusState.active) {
+        adBonusState.active = false;
+        adBonusState.canWatch = true; // Ahora puede ver otro anuncio
+        showNotification('🎁 x3 BONUS APPLIED!');
+
+        // Actualizar UI del modal
+        if (typeof window.updateUpgradeModalBonusUI === 'function') {
+            window.updateUpgradeModalBonusUI();
+        }
+    }
+
+    // Aplicar mejora al jugador
+    applyStatUpgrade(statName);
+
+    return true;
+}// Aplicar mejora al gameplay
+function applyStatUpgrade(statName) {
+    switch(statName) {
+        case 'movementSpeed':
+            // Se aplica automáticamente vía getter en player.speed
+            break;
+        case 'fireRate':
+            // Se aplica en la lógica de disparo
+            break;
+        case 'maxHealth':
+            const healthPercent = player.health / player.maxHealth;
+            player.maxHealth = Math.round(playerStats.maxHealth.currentValue);
+            player.health = Math.round(player.maxHealth * healthPercent); // Mantener porcentaje
+            break;
+        case 'resilience':
+        case 'bulletDamage':
+        case 'pickupMagnet':
+        case 'criticalChance':
+        case 'regeneration':
+            // Se aplican en sus respectivas lógicas
+            break;
+    }
+}
+
+// Crear snapshot del estado de habilidades
+function createStatsSnapshot() {
+    statsSnapshot = {
+        experience: gameState.experience,
+        stats: {}
+    };
+
+    for (let statName in playerStats) {
+        statsSnapshot.stats[statName] = {
+            level: playerStats[statName].level,
+            currentValue: playerStats[statName].currentValue
+        };
+    }
+
+    // Guardar también salud máxima del jugador
+    statsSnapshot.playerMaxHealth = player.maxHealth;
+    statsSnapshot.playerHealth = player.health;
+}
+
+// Restaurar snapshot (deshacer cambios)
+function restoreStatsSnapshot() {
+    if (!statsSnapshot) return;
+
+    gameState.experience = statsSnapshot.experience;
+
+    for (let statName in statsSnapshot.stats) {
+        playerStats[statName].level = statsSnapshot.stats[statName].level;
+        playerStats[statName].currentValue = statsSnapshot.stats[statName].currentValue;
+    }
+
+    // Restaurar salud del jugador
+    player.maxHealth = statsSnapshot.playerMaxHealth;
+    player.health = statsSnapshot.playerHealth;
+
+    showNotification('Changes reverted');
+}
+
+// ===================================
+// NOTIFICACIONES Y UI
+// ===================================
 
 function showNotification(text) {
     const notif = document.getElementById('notification');
@@ -996,6 +1402,7 @@ function showWaveCountdown(callback) {
             clearInterval(interval);
             countdownEl.style.display = 'none';
             gameState.isCountdown = false;
+            console.log('⏰ Countdown finished! isCountdown:', gameState.isCountdown, 'enemiesToSpawn:', gameState.enemiesToSpawn);
             if (callback) callback();
         }
     }, 1000);
@@ -1006,6 +1413,10 @@ function nextWave() {
     gameState.enemiesPerWave = Math.floor(gameState.enemiesPerWave * 1.30);
     gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
     gameState.enemySpawnRate = Math.max(350, 1000 - gameState.wave * 45);
+
+    // Resetear el estado del bonus x3 para la nueva oleada
+    adBonusState.active = false;
+    adBonusState.canWatch = true;
 
     // Wave de jefe (múltiplos de 5)
     const isBossWave = gameState.wave % 5 === 0;
@@ -1057,6 +1468,11 @@ function nextWave() {
     });
 }
 
+// Función para iniciar countdown de siguiente oleada (llamada desde modal de upgrades)
+window.startNextWaveCountdown = function() {
+    nextWave();
+};
+
 function updateHUD() {
     document.getElementById('waveDisplay').textContent = gameState.wave;
     document.getElementById('scoreDisplay').textContent = gameState.score.toLocaleString();
@@ -1076,8 +1492,13 @@ function gameOver() {
     gameState.isPlaying = false;
 
     document.getElementById('finalWave').textContent = gameState.wave;
-    document.getElementById('finalKills').textContent = gameState.kills;
     document.getElementById('finalScore').textContent = gameState.score.toLocaleString();
+
+    // Actualizar tabla de stats en Game Over
+    if (typeof window.updateGameOverStats === 'function') {
+        window.updateGameOverStats();
+    }
+
     document.getElementById('gameOver').classList.add('active');
 
     // Guardar partida solo una vez
@@ -1086,6 +1507,69 @@ function gameOver() {
         gameState.partidaGuardada = true;
     }
 }
+
+// Función para continuar la partida después de ver anuncio
+function continueGameAfterAd() {
+    console.log('🎮 Continue game after ad');
+
+    // Restaurar 25% de vida
+    player.health = player.maxHealth * 0.25;
+
+    // Limpiar enemigos cercanos (dar al jugador un respiro)
+    const playerRadius = 200;
+    enemies = enemies.filter(enemy => {
+        const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+        return dist > playerRadius;
+    });
+
+    // Limpiar balas enemigas
+    bullets = bullets.filter(bullet => !bullet.fromBoss);
+
+    // Reactivar el juego
+    gameState.isGameOver = false;
+    gameState.isPlaying = true;
+    gameState.isPaused = false;
+
+    // Cerrar pantalla de Game Over
+    document.getElementById('gameOver').classList.remove('active');
+
+    // Actualizar HUD
+    updateHUD();
+
+    // Notificar al usuario
+    showNotification('💚 Restored 25% HP - Keep fighting!');
+}
+
+// Función para activar continue después de ver anuncio
+function showAdForContinue() {
+    if (typeof Android !== 'undefined') {
+        try {
+            console.log('📺 Showing Ad for Continue Game...');
+            Android.showRewardedAdForContinue();
+            // El callback será window.onAdRewardedContinue()
+            return true;
+        } catch (error) {
+            console.error('❌ Error showing rewarded ad:', error);
+            return false;
+        }
+    } else {
+        // Modo prueba en navegador
+        console.log('⚠️ AdMob not available (running in browser) - Continue for testing');
+        onAdRewardedContinue();
+        return true;
+    }
+}
+
+// Callback llamado desde Android cuando se completa el anuncio de continue
+function onAdRewardedContinue() {
+    console.log('🎁 Ad watched! Continuing game...');
+    continueGameAfterAd();
+}
+
+// Exponer funciones globalmente
+window.continueGameAfterAd = continueGameAfterAd;
+window.showAdForContinue = showAdForContinue;
+window.onAdRewardedContinue = onAdRewardedContinue;
 
 // ===================================
 // GAME LOGIC
@@ -1145,7 +1629,8 @@ function updateAbilityPickups() {
         const dy = player.y - pickup.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < pickup.radius + player.radius) {
+        const magnetRadius = (pickup.radius + player.radius) * (playerStats.pickupMagnet.currentValue / playerStats.pickupMagnet.baseValue);
+        if (dist < magnetRadius) {
             collectedAbility = pickup.ability;
             updateAbilityButton();
             showNotification(`${pickup.ability.icon} ${pickup.ability.name} - ${isMobileDevice ? 'Tap Ability' : 'Press SPACE'}`);
@@ -1205,98 +1690,92 @@ function update() {
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
 
-    // MOVE PLAYER
-    if (isMobileDevice) {
-        if (input.joystick.active) {
-            player.x += input.joystick.x * player.speed;
-            player.y += input.joystick.y * player.speed;
+    // HEALTH REGENERATION
+    if (player.health < player.maxHealth && playerStats.regeneration.currentValue > 0) {
+        if (!player.lastRegenTime) player.lastRegenTime = now;
+        const timeSinceLastRegen = (now - player.lastRegenTime) / 1000; // Convert to seconds
+        const regenAmount = playerStats.regeneration.currentValue * timeSinceLastRegen;
+        player.health = Math.min(player.maxHealth, player.health + regenAmount);
+        player.lastRegenTime = now;
+        if (regenAmount > 0.1) { // Update HUD if significant regen occurred
+            updateHUD();
         }
-    } else {
-        if (player.moving) {
-            const dx = player.targetX - player.x;
-            const dy = player.targetY - player.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+    }
 
-            if (dist > 8) {
-                player.x += (dx / dist) * player.speed;
-                player.y += (dy / dist) * player.speed;
-            } else {
-                player.moving = false;
-            }
-        }
+    // MOVE PLAYER - Mobile only (Joystick)
+    if (input.joystick.active) {
+        player.x += input.joystick.x * player.speed;
+        player.y += input.joystick.y * player.speed;
     }
 
     player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
     player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
 
-    // SHOOTING
-    if (!isMobileDevice) {
-        // PC: Mouse shooting
-        player.angle = Math.atan2(player.aimY - player.y, player.aimX - player.x);
-        if (input.mouse.leftDown && now - player.lastShootTime > 90) {
-            bullets.push({
-                x: player.x,
-                y: player.y,
-                vx: Math.cos(player.angle) * 14,
-                vy: Math.sin(player.angle) * 14,
-                radius: 4.5,
-                damage: 35,
-                color: '#00ffff',
-                trail: [],
-                glow: true
-            });
+    // SHOOTING - Mobile only (Joystick)
+    if (input.shootJoystick.active) {
+        player.angle = input.shootJoystick.angle;
+
+        // Auto-shoot while joystick is active
+        if (now - player.lastShootTime >= getShootCooldown()) {
+            createPlayerBullet(player.angle);
             player.lastShootTime = now;
         }
-    } else {
-        // Mobile: Dual Joystick Mode - Auto shoot while aiming
-        if (controlMode === 'joystick' && input.shootJoystick.active) {
-            player.angle = input.shootJoystick.angle;
-
-            // Auto-shoot while joystick is active
-            if (now - player.lastShootTime > 120) {
-                bullets.push({
-                    x: player.x,
-                    y: player.y,
-                    vx: Math.cos(player.angle) * 14,
-                    vy: Math.sin(player.angle) * 14,
-                    radius: 5.25,
-                    damage: 35,
-                    color: '#00ffff',
-                    trail: [],
-                    glow: true
-                });
-                player.lastShootTime = now;
-            }
-        }
-        // Tap mode shooting is handled in touchstart event
     }
 
     // Spawn enemies (skip in boss wave and countdown)
     const isBossWave = gameState.wave % 5 === 0;
+
+    // DEBUG: Log spawn conditions every 60 frames (~1 second)
+    if (Math.random() < 0.016) {
+        console.log('🔍 Spawn Check:', {
+            isCountdown: gameState.isCountdown,
+            isBossWave: isBossWave,
+            enemiesToSpawn: gameState.enemiesToSpawn,
+            timeSinceLastSpawn: now - gameState.lastEnemySpawn,
+            spawnRate: gameState.enemySpawnRate,
+            canSpawn: !gameState.isCountdown && !isBossWave && gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate
+        });
+    }
+
     if (!gameState.isCountdown && !isBossWave && gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate) {
+        console.log('✅ Spawning enemy! Remaining:', gameState.enemiesToSpawn - 1);
         spawnEnemy();
         gameState.enemiesToSpawn--;
         gameState.lastEnemySpawn = now;
     }
 
     if (!gameState.isCountdown && enemies.length === 0 && gameState.enemiesToSpawn === 0) {
+        // Oleada completada - mostrar modal de upgrades
+        console.log(`🎉 Wave ${gameState.wave} completed!`);
+
         // Verificar si debemos mostrar anuncio en este nivel
         const shouldShowAd = shouldShowAdForWave(gameState.wave);
-        
+
         if (shouldShowAd && gameState.wave !== lastBossWaveCompleted) {
-            console.log(`🎉 Wave ${gameState.wave} completed! Showing ad...`);
             lastBossWaveCompleted = gameState.wave;
-            
             // Mostrar anuncio intersticial
             showInterstitialAd();
-            
-            // Pequeña pausa antes de continuar a la siguiente wave
-            setTimeout(() => {
-                nextWave();
-            }, 500);
-        } else {
-            nextWave();
         }
+
+        // Pausar el juego y mostrar modal de upgrades
+        gameState.isPaused = true;
+
+        // Pequeña pausa para que el jugador vea que la oleada terminó
+        let attempts = 0;
+        const checkModal = () => {
+            attempts++;
+            if (typeof window.showUpgradeModal === 'function') {
+                window.showUpgradeModal();
+            } else if (attempts < 50) { // Check for up to 5 seconds
+                setTimeout(checkModal, 100);
+            } else {
+                // Fallback si el modal no está disponible
+                console.warn('Upgrade modal not available after 5 seconds, continuing...');
+                gameState.isPaused = false;
+                nextWave();
+            }
+        };
+        setTimeout(checkModal, 1000);
     }    // Update enemies
     enemies.forEach(enemy => {
         const dx = player.x - enemy.x;
@@ -1319,10 +1798,10 @@ function update() {
                 bullets.push({
                     x: enemy.x,
                     y: enemy.y,
-                    vx: Math.cos(angle) * 10,
-                    vy: Math.sin(angle) * 10,
-                    radius: 8,
-                    damage: 20 + gameState.wave * 2,
+                    vx: Math.cos(angle) * 10 * ViewportScale.scale,
+                    vy: Math.sin(angle) * 10 * ViewportScale.scale,
+                    radius: ViewportScale.bulletSize * 0.75, // RESPONSIVE BOSS BULLET
+                    damage: 10 + gameState.wave * 2,
                     color: '#8800ff',
                     trail: [],
                     glow: true,
@@ -1355,9 +1834,9 @@ function update() {
                         bullets.push({
                             x: enemy.x,
                             y: enemy.y,
-                            vx: Math.cos(angle) * 11,
-                            vy: Math.sin(angle) * 11,
-                            radius: 12,
+                            vx: Math.cos(angle) * 11 * ViewportScale.scale,
+                            vy: Math.sin(angle) * 11 * ViewportScale.scale,
+                            radius: ViewportScale.bulletSize * 2.2, // RESPONSIVE BOSS FIREBALL
                             damage: 60,
                             color: '#ff4400',
                             trail: [],
@@ -1375,7 +1854,9 @@ function update() {
         if (dist < enemy.radius + player.radius) {
             const currentTime = Date.now();
             const oldHealth = player.health;
-            player.health -= enemy.damage * 0.012;
+            const baseDamage = enemy.damage * 0.012;
+            const actualDamage = baseDamage * (playerStats.resilience.baseValue / playerStats.resilience.currentValue);
+            player.health -= actualDamage;
 
             // Reproducir sonido y vibración solo si ha pasado tiempo suficiente
             if (currentTime - lastHealthDamageTime > 200 && player.health < oldHealth) {
@@ -1414,7 +1895,8 @@ function update() {
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < player.radius + bullet.radius) {
-                player.health -= bullet.damage;
+                const actualDamage = bullet.damage * (playerStats.resilience.baseValue / playerStats.resilience.currentValue);
+                player.health -= actualDamage;
                 hit = true;
                 createParticles(player.x, player.y, 15, bullet.color);
                 playDamageSound();
@@ -1447,6 +1929,9 @@ function update() {
     enemies = enemies.filter(enemy => {
         if (enemy.health <= 0) {
             gameState.kills++;
+
+            // Sistema de experiencia - otorgar XP según tipo y oleada
+            grantExperience(enemy);
 
             // Score según tipo de enemigo
             let scoreBonus = 100;
@@ -1491,7 +1976,8 @@ function update() {
         const dy = player.y - pickup.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < pickup.radius + player.radius) {
+        const magnetRadius = (pickup.radius + player.radius) * (playerStats.pickupMagnet.currentValue / playerStats.pickupMagnet.baseValue);
+        if (dist < magnetRadius) {
             collectedAbility = pickup.ability;
             updateAbilityButton();
             showNotification(`${pickup.ability.icon} ${pickup.ability.name} - ${isMobileDevice ? 'Tap Ability' : 'Press SPACE'}`);
@@ -1538,18 +2024,55 @@ function update() {
 // ===================================
 
 function render() {
+    if (!ctx || !canvas) {
+        console.error('❌ RENDER ERROR: ctx or canvas is null!', { ctx: !!ctx, canvas: !!canvas });
+        return;
+    }
+
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
+
+    // DEBUG: Verificar estado del canvas SIEMPRE al inicio
+    if (gameState.isPlaying && enemies.length > 0 && Math.random() < 0.02) { // 2% de las veces - más frecuente
+        const canvasStyle = window.getComputedStyle(canvas);
+        console.log('🎨 RENDER DEBUG:', {
+            canvasVisible: canvas.style.display !== 'none' && canvasStyle.display !== 'none',
+            canvasOpacity: canvasStyle.opacity,
+            canvasZIndex: canvasStyle.zIndex,
+            canvasSize: { width: canvas.width, height: canvas.height },
+            screenSize: { width: screenWidth, height: screenHeight },
+            ctxAlpha: ctx.globalAlpha,
+            ctxFillStyle: ctx.fillStyle,
+            enemiesCount: enemies.length,
+            playerPos: { x: Math.round(player.x), y: Math.round(player.y), radius: Math.round(player.radius) },
+            firstEnemyPos: enemies[0] ? {
+                x: Math.round(enemies[0].x),
+                y: Math.round(enemies[0].y),
+                radius: Math.round(enemies[0].radius),
+                color: enemies[0].color
+            } : 'none',
+            gameAreaTop: gameAreaTop
+        });
+    }
+
+    // Ensure globalAlpha is 1 before starting
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
 
     // Clear with gradient
     const gradient = ctx.createRadialGradient(
         screenWidth / 2, screenHeight / 2, 0,
         screenWidth / 2, screenHeight / 2, screenWidth / 2
     );
-    gradient.addColorStop(0, '#0f0f2e');
+    gradient.addColorStop(0, '#101049ff');
     gradient.addColorStop(1, '#000000');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, screenWidth, screenHeight);
+
+    // Reset context state after clearing
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
 
     // Overlay oscuro sobre área del HUD para delimitar zona de juego
     if (gameAreaTop > 0) {
@@ -1671,7 +2194,20 @@ function render() {
     ctx.shadowBlur = 0;
 
     // Render enemies
-    enemies.forEach(enemy => {
+    enemies.forEach((enemy, idx) => {
+        // DEBUG: Log primer enemigo ocasionalmente
+        if (idx === 0 && gameState.isPlaying && Math.random() < 0.01) {
+            console.log('👾 ENEMY RENDER:', {
+                x: enemy.x,
+                y: enemy.y,
+                radius: enemy.radius,
+                color: enemy.color,
+                type: enemy.type,
+                explosive: enemy.explosive,
+                isBoss: enemy.isBoss
+            });
+        }
+
         // Efectos especiales según tipo
         if (enemy.explosive) {
             // Pulso para explosivos
@@ -1708,6 +2244,10 @@ function render() {
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
         ctx.fill();
+
+        // Reset shadow for performance
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
 
         // Indicador de tipo en el centro
         if (enemy.type === 'FAST') {
@@ -1749,12 +2289,31 @@ function render() {
     });
 
     // Render player
-    ctx.shadowColor = player.color;
-    ctx.shadowBlur = qualitySettings.shadowBlur * 2;
-    ctx.fillStyle = player.color;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-    ctx.fill();
+    if (player.x && player.y && player.radius) {
+        // DEBUG: Log player ocasionalmente
+        if (gameState.isPlaying && Math.random() < 0.01) {
+            console.log('🎮 PLAYER RENDER:', {
+                x: player.x,
+                y: player.y,
+                radius: player.radius,
+                color: player.color,
+                health: player.health
+            });
+        }
+
+        ctx.shadowColor = player.color;
+        ctx.shadowBlur = qualitySettings.shadowBlur * 2;
+        ctx.fillStyle = player.color;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Reset shadow
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+    } else {
+        console.error('❌ PLAYER RENDER ERROR:', { x: player.x, y: player.y, radius: player.radius });
+    }
 
     // Player direction indicator
     ctx.strokeStyle = '#ffffff';
@@ -1782,6 +2341,120 @@ function render() {
         ctx.fillText(`${collectedAbility.name} - Press SPACE`, screenWidth / 2, 105);
         ctx.shadowBlur = 0;
     }
+
+    // Reset all context state at end of render for next frame
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#ffffff';
+}
+
+// ===================================
+// AIM CURSOR FOR MOBILE (Shows shooting direction)
+// ===================================
+
+const aimCursor = document.getElementById('aimCursor');
+const MIN_CURSOR_DISTANCE = 80; // Distancia mínima desde el jugador
+const MAX_CURSOR_DISTANCE = 300; // Distancia máxima desde el jugador
+
+function updateAimCursor() {
+    if (!isMobileDevice || !aimCursor) {
+        if (!aimCursor) console.warn('⚠️ aimCursor element not found');
+        return;
+    }
+
+    // Solo mostrar cuando el joystick de disparo esté activo
+    if (input.shootJoystick.active && gameState.isPlaying && !gameState.isPaused && !gameState.isGameOver) {
+        console.log('🎯 Aim cursor should be visible - shootJoystick active');
+        const angle = input.shootJoystick.angle;
+
+        // Calcular distancia base
+        let targetDistance = MAX_CURSOR_DISTANCE;
+
+        // Buscar el enemigo más cercano en la dirección de disparo
+        let closestEnemyDistance = MAX_CURSOR_DISTANCE;
+        for (let enemy of enemies) {
+            const dx = enemy.x - player.x;
+            const dy = enemy.y - player.y;
+            const enemyAngle = Math.atan2(dy, dx);
+            const enemyDistance = Math.sqrt(dx * dx + dy * dy);
+
+            // Verificar si el enemigo está en la dirección del disparo (tolerancia de ±30°)
+            const angleDiff = Math.abs(enemyAngle - angle);
+            const normalizedAngleDiff = Math.min(angleDiff, Math.PI * 2 - angleDiff);
+
+            if (normalizedAngleDiff < Math.PI / 6 && enemyDistance < closestEnemyDistance) {
+                closestEnemyDistance = enemyDistance;
+            }
+        }
+
+        // Usar la distancia del enemigo más cercano o la máxima
+        targetDistance = Math.min(closestEnemyDistance - 20, MAX_CURSOR_DISTANCE);
+
+        // Asegurar distancia mínima
+        targetDistance = Math.max(targetDistance, MIN_CURSOR_DISTANCE);
+
+        // Verificar límites de la pantalla
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+
+        let cursorX = player.x + Math.cos(angle) * targetDistance;
+        let cursorY = player.y + Math.sin(angle) * targetDistance;
+
+        // Ajustar si el cursor se sale de la pantalla
+        const margin = 40; // Margen desde el borde
+        if (cursorX < margin) {
+            const ratio = (margin - player.x) / (cursorX - player.x);
+            cursorX = margin;
+            cursorY = player.y + (cursorY - player.y) * ratio;
+            targetDistance = Math.sqrt(Math.pow(cursorX - player.x, 2) + Math.pow(cursorY - player.y, 2));
+        }
+        if (cursorX > screenWidth - margin) {
+            const ratio = (screenWidth - margin - player.x) / (cursorX - player.x);
+            cursorX = screenWidth - margin;
+            cursorY = player.y + (cursorY - player.y) * ratio;
+            targetDistance = Math.sqrt(Math.pow(cursorX - player.x, 2) + Math.pow(cursorY - player.y, 2));
+        }
+        if (cursorY < gameAreaTop + margin) {
+            const ratio = (gameAreaTop + margin - player.y) / (cursorY - player.y);
+            cursorY = gameAreaTop + margin;
+            cursorX = player.x + (cursorX - player.x) * ratio;
+            targetDistance = Math.sqrt(Math.pow(cursorX - player.x, 2) + Math.pow(cursorY - player.y, 2));
+        }
+        if (cursorY > screenHeight - margin) {
+            const ratio = (screenHeight - margin - player.y) / (cursorY - player.y);
+            cursorY = screenHeight - margin;
+            cursorX = player.x + (cursorX - player.x) * ratio;
+            targetDistance = Math.sqrt(Math.pow(cursorX - player.x, 2) + Math.pow(cursorY - player.y, 2));
+        }
+
+        // Asegurar que no sea menor que la distancia mínima tras ajuste
+        if (targetDistance < MIN_CURSOR_DISTANCE) {
+            const scale = MIN_CURSOR_DISTANCE / targetDistance;
+            cursorX = player.x + (cursorX - player.x) * scale;
+            cursorY = player.y + (cursorY - player.y) * scale;
+        }
+
+        // Posicionar el cursor
+        aimCursor.style.left = cursorX + 'px';
+        aimCursor.style.top = cursorY + 'px';
+        aimCursor.classList.add('active');
+
+        // Log cada 30 frames (~0.5 segundos)
+        if (Math.random() < 0.033) {
+            console.log('🎯 Aim cursor positioned at:', {
+                x: cursorX,
+                y: cursorY,
+                angle,
+                hasActiveClass: aimCursor.classList.contains('active'),
+                computedStyle: window.getComputedStyle(aimCursor).visibility
+            });
+        }
+    } else {
+        // Ocultar cursor cuando no se está disparando
+        aimCursor.classList.remove('active');
+    }
 }
 
 // ===================================
@@ -1799,6 +2472,7 @@ function gameLoop() {
             update();
         }
         render();
+        updateAimCursor(); // Actualizar cursor de apunte en móvil
     } else {
         // Solo renderiza el frame actual para mostrar el overlay de pausa
         render();
@@ -1817,8 +2491,143 @@ function gameLoop() {
 // START GAME
 // ===================================
 
+// Función para resetear completamente el estado del juego
+function resetGameState() {
+    console.log('🔄 Resetting game state...');
+
+    // Reset game state
+    gameState.isPlaying = false;
+    gameState.isGameOver = false;
+    gameState.isPaused = false;
+    gameState.isCountdown = false;
+    gameState.score = 0;
+    gameState.kills = 0;
+    gameState.partidaGuardada = false;
+
+    // Reset experience system
+    gameState.experience = 0;
+    resetWaveExperience();
+
+    console.log('✅ Game state flags reset - isPaused:', gameState.isPaused, 'isPlaying:', gameState.isPlaying);
+
+    // Reset player
+    player.health = 100;
+    player.maxHealth = 100;
+    player.x = window.innerWidth / 2;
+    player.y = window.innerHeight / 2;
+    player.targetX = player.x;
+    player.targetY = player.y;
+    player.moving = false;
+    player.angle = 0;
+    player.aimX = 0;
+    player.aimY = 0;
+    player.shootCooldown = 0;
+
+    // Reset player stats (habilidades)
+    for (let statName in playerStats) {
+        playerStats[statName].level = 0;
+        playerStats[statName].currentValue = playerStats[statName].baseValue;
+    }
+
+    // Clear all arrays
+    enemies = [];
+    bullets = [];
+    particles = [];
+    abilityPickups = [];
+    collectedAbility = null;
+
+    // Reset input
+    input.joystick.active = false;
+    input.joystick.x = 0;
+    input.joystick.y = 0;
+    input.shootJoystick.active = false;
+    input.shootJoystick.x = 0;
+    input.shootJoystick.y = 0;
+
+    // Hide game over screen
+    document.getElementById('gameOver').classList.remove('active');
+
+    // Reset HUD opacity
+    document.getElementById('gameHUD').style.opacity = '1';
+
+    // Reset snapshot
+    statsSnapshot = null;
+
+    console.log('🔄 Game state reset complete');
+}
+
+// Exportar funciones y objetos globalmente
+window.resetGameState = resetGameState;
+window.gameState = gameState;
+window.playerStats = playerStats;
+window.upgradePlayerStat = upgradePlayerStat;
+window.createStatsSnapshot = createStatsSnapshot;
+window.restoreStatsSnapshot = restoreStatsSnapshot;
+window.grantExperience = grantExperience;
+window.resetWaveExperience = resetWaveExperience;
+window.ENEMY_TYPES = ENEMY_TYPES;
+
 // Función para iniciar el juego desde el menú con un nivel específico
 window.startGameFromMenu = function(startLevel) {
+    console.log('🎮 Starting game from menu, level:', startLevel);
+
+    // Initialize canvas if not done
+    if (!canvas) {
+        canvas = document.getElementById('gameCanvas');
+        if (!canvas) {
+            console.error('❌ Canvas not found!');
+            return;
+        }
+        // Use minimal options for better Android WebView compatibility
+        ctx = canvas.getContext('2d', { alpha: false });
+
+        if (!ctx) {
+            console.error('❌ Canvas context could not be created!');
+            return;
+        }
+
+        // Verificar que el canvas sea visible
+        const canvasStyle = window.getComputedStyle(canvas);
+        console.log('🎨 Canvas Style Check:', {
+            display: canvasStyle.display,
+            visibility: canvasStyle.visibility,
+            opacity: canvasStyle.opacity,
+            zIndex: canvasStyle.zIndex,
+            position: canvasStyle.position,
+            width: canvasStyle.width,
+            height: canvasStyle.height
+        });
+
+        // CRITICAL: Asegurar que el canvas sea visible
+        canvas.style.display = 'block';
+        canvas.style.opacity = '1';
+        canvas.style.visibility = 'visible';
+
+        // Initialize canvas events
+        initializeCanvasEvents();
+
+        // Initialize canvas size
+        resizeCanvas();
+
+        // Add resize listener after canvas is initialized
+        window.addEventListener('resize', resizeCanvas);
+
+        console.log('✅ Canvas initialized:', {
+            width: canvas.width,
+            height: canvas.height,
+            styleWidth: canvas.style.width,
+            styleHeight: canvas.style.height
+        });
+    }
+
+    // Initialize mobile controls if needed
+    if (isMobileDevice) {
+        initializeMobileControls();
+    }
+
+    // Reset completo del estado del juego
+    resetGameState();
+
     gameState.wave = startLevel - 1; // Se ajusta porque nextWave() incrementa
     gameState.enemiesPerWave = Math.floor(5 * Math.pow(2.25, startLevel - 1));
     gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
@@ -1826,9 +2635,13 @@ window.startGameFromMenu = function(startLevel) {
 
     document.getElementById('gameHUD').classList.add('active');
     gameState.isPlaying = true;
+    gameState.isPaused = false; // Asegurar que NO está pausado
+    gameState.isGameOver = false; // Asegurar que NO está en game over
     gameState.lastEnemySpawn = Date.now();
     player.lastShootTime = Date.now();
     updateGameAreaLimits();
+
+    console.log('🎮 Game flags set - isPlaying:', gameState.isPlaying, 'isPaused:', gameState.isPaused, 'isGameOver:', gameState.isGameOver);
 
     // Reposicionar jugador en el centro del área de juego válida
     player.x = window.innerWidth / 2;
@@ -1838,37 +2651,48 @@ window.startGameFromMenu = function(startLevel) {
 
     updateHUD();
     nextWave(); // Inicia la primera wave
+
+    console.log('🎮 === GAME START DEBUG INFO ===');
+    console.log('   - Canvas:', canvas ? 'EXISTS' : 'NULL');
+    console.log('   - Canvas width:', canvas ? canvas.width : 'N/A');
+    console.log('   - Canvas height:', canvas ? canvas.height : 'N/A');
+    console.log('   - Context:', ctx ? 'EXISTS' : 'NULL');
+    console.log('   - Player:', player);
+    console.log('   - Enemies count:', enemies.length);
+    console.log('   - Bullets count:', bullets.length);
+    console.log('   - Viewport scale:', ViewportScale);
+    console.log('   - isMobileDevice:', isMobileDevice);
+    console.log('🎮 ===============================');
+
     gameLoop();
+
+    // Ensure both joysticks are visible on mobile
+    if (isMobileDevice) {
+        console.log('📱 Ensuring joysticks are visible...');
+        const shootJoystickContainer = document.getElementById('shootJoystickContainer');
+        const joystickContainer = document.getElementById('joystickContainer');
+
+        console.log('   - shootJoystickContainer:', shootJoystickContainer ? '✅ Found' : '❌ NOT FOUND');
+        console.log('   - joystickContainer:', joystickContainer ? '✅ Found' : '❌ NOT FOUND');
+
+        if (shootJoystickContainer) {
+            shootJoystickContainer.style.display = 'block';
+            console.log('   - shootJoystickContainer display set to block');
+            console.log('   - Computed style:', window.getComputedStyle(shootJoystickContainer).display);
+        }
+        if (joystickContainer) {
+            joystickContainer.style.display = 'block';
+            console.log('   - joystickContainer display set to block');
+            console.log('   - Computed style:', window.getComputedStyle(joystickContainer).display);
+        }
+    }
 
     console.log('🎮 Game Started!');
     console.log('Device:', isMobileDevice ? '📱 Mobile' : '🖥️ PC');
-    console.log('Controls:', isMobileDevice ? 'Joystick + Touch' : 'MOBA (Right-click move, Left-click shoot)');
+    console.log('Controls: Dual Joystick (Wild Rift Style)');
     console.log('Quality:', qualitySettings);
     console.log('Game Area Top:', gameAreaTop);
 };
 
-setTimeout(() => {
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('gameHUD').classList.add('active');
-    gameState.isPlaying = true;
-    gameState.lastEnemySpawn = Date.now();
-    player.lastShootTime = Date.now();
-    gameState.totalEnemiesInWave = gameState.enemiesToSpawn; // Inicializar total
-    updateGameAreaLimits(); // Actualizar límites del área de juego
-
-    // Reposicionar jugador en el centro del área de juego válida
-    player.x = window.innerWidth / 2;
-    player.y = (window.innerHeight + gameAreaTop) / 2;
-    player.targetX = player.x;
-    player.targetY = player.y;
-
-    updateHUD();
-
-    console.log('🎮 Game Started!');
-    console.log('Device:', isMobileDevice ? '📱 Mobile/Tablet' : '🖥️ PC');
-    console.log('Controls:', isMobileDevice ? 'Wild Rift Style' : 'MOBA (Right-click move, Left-click shoot)');
-    console.log('Quality:', qualitySettings);
-    console.log('Game Area Top:', gameAreaTop);
-}, 3000);
-
-gameLoop();
+// Pause button event listeners
+// Note: Pause, resume and abort button event listeners are handled in initializeMobileControls() and index.html

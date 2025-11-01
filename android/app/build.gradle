@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+
+android {
+    namespace 'com.luise7e.neonsurvivor'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.luise7e.neonsurvivor"
+        minSdk 21
+        targetSdk 35
+        versionCode 16
+        versionName "4.0.1"
+
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.gms:play-services-ads:23.2.0'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation 'androidx.browser:browser:1.7.0'
+    implementation 'com.google.firebase:firebase-auth:22.3.1'
+    implementation 'com.google.android.gms:play-services-auth:21.0.0'
+}

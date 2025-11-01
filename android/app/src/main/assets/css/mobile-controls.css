@@ -1,0 +1,182 @@
+/* ===================================
+   MOBILE CONTROLS - DUAL JOYSTICK
+   ================================== */
+
+.mobile-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: clamp(200px, 35vh, 320px);
+    z-index: 500;
+    pointer-events: none;
+    display: none;
+}
+
+.mobile-controls.active {
+    display: block;
+}
+
+/* Movement Joystick (Left) */
+.joystick-container {
+    position: absolute;
+    bottom: clamp(20px, 3vh, 35px);
+    left: clamp(20px, 3vw, 35px);
+    width: clamp(100px, 18vw, 140px);
+    height: clamp(100px, 18vw, 140px);
+    pointer-events: none;
+}
+
+.joystick-base {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, rgba(0, 255, 255, 0.12) 0%, rgba(0, 255, 255, 0.03) 100%);
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.08);
+    pointer-events: all;
+    touch-action: none;
+}
+
+.joystick-stick {
+    position: absolute;
+    width: clamp(40px, 7vw, 60px);
+    height: clamp(40px, 7vw, 60px);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%);
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.05s ease-out;
+    pointer-events: none;
+}
+
+.joystick-stick.active {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 0 30px rgba(0, 255, 255, 1), 0 4px 15px rgba(0, 0, 0, 0.7);
+}
+
+/* Shoot Joystick (Right) */
+.shoot-joystick-container {
+    position: absolute;
+    bottom: clamp(20px, 3vh, 35px);
+    right: clamp(20px, 3vw, 35px);
+    width: clamp(100px, 18vw, 140px);
+    height: clamp(100px, 18vw, 140px);
+    pointer-events: none;
+}
+
+.shoot-joystick-container .joystick-base {
+    background: radial-gradient(circle at center, rgba(255, 0, 255, 0.12) 0%, rgba(255, 0, 255, 0.03) 100%);
+    border: 2px solid rgba(255, 0, 255, 0.3);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.2), inset 0 0 15px rgba(255, 0, 255, 0.08);
+}
+
+.shoot-joystick-container .joystick-stick {
+    background: linear-gradient(135deg, #ff00ff 0%, #ff0088 100%);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.shoot-joystick-container .joystick-stick.active {
+    box-shadow: 0 0 30px rgba(255, 0, 255, 1), 0 4px 15px rgba(0, 0, 0, 0.7);
+}
+
+/* Pause Button */
+.pause-btn-mobile {
+    position: absolute;
+    bottom: calc(clamp(20px, 3vh, 35px) + clamp(100px, 18vw, 140px) + clamp(10px, 2vh, 20px));
+    left: clamp(20px, 3vw, 35px);
+    width: clamp(45px, 8vw, 65px);
+    height: clamp(45px, 8vw, 65px);
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(255, 0, 255, 0.2) 100%);
+    border: 3px solid #00ffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.7), inset 0 0 15px rgba(0, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    pointer-events: all;
+    backdrop-filter: blur(10px);
+}
+
+.pause-btn-mobile::before,
+.pause-btn-mobile::after {
+    content: '';
+    position: absolute;
+    width: clamp(3px, 0.6vw, 5px);
+    height: clamp(12px, 2.5vh, 18px);
+    background: linear-gradient(180deg, #00ffff, #ff00ff);
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.9);
+}
+
+.pause-btn-mobile::before {
+    left: 30%;
+}
+
+.pause-btn-mobile::after {
+    right: 30%;
+}
+
+.pause-btn-mobile:active {
+    transform: scale(0.9);
+    box-shadow: 0 0 35px rgba(0, 255, 255, 1), inset 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+/* Ability Button */
+.ability-btn-small {
+    position: absolute;
+    bottom: calc(clamp(20px, 3vh, 35px) + clamp(100px, 18vw, 140px) + clamp(10px, 2vh, 20px));
+    right: clamp(20px, 3vw, 35px);
+    width: clamp(45px, 8vw, 65px);
+    height: clamp(45px, 8vw, 65px);
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 0, 255, 0.2) 0%, rgba(138, 0, 230, 0.2) 100%);
+    border: 3px solid #ff00ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(22px, 4vw, 32px);
+    color: #fff;
+    box-shadow: 0 0 25px rgba(255, 0, 255, 0.7), inset 0 0 15px rgba(255, 0, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    pointer-events: all;
+    backdrop-filter: blur(10px);
+}
+
+.ability-btn-small.inactive {
+    opacity: 0.4;
+    background: linear-gradient(135deg, rgba(120, 120, 120, 0.2) 0%, rgba(80, 80, 80, 0.2) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.ability-btn-small:active {
+    transform: scale(0.9);
+    box-shadow: 0 0 35px rgba(255, 0, 255, 1), inset 0 0 20px rgba(255, 0, 255, 0.3);
+}
+
+.ability-btn-small .cooldown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.ability-btn-small .cooldown-overlay.active {
+    display: flex;
+}

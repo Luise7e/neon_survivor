@@ -1,0 +1,193 @@
+        @media (max-width: 768px) {
+        /* Compactar controles móviles para pantallas pequeñas */
+        .mobile-controls {
+            height: 18vh !important;
+            max-height: 110px !important;
+            min-height: 70px !important;
+        }
+        .joystick-container {
+            width: 14vw !important;
+            /*min-width: 44px !important;
+            max-width: 64px !important;*/
+            height: 14vw !important;
+            /*min-height: 44px !important;
+            max-height: 64px !important;*/
+            left: 2vw !important;
+            bottom: 2vw !important;
+        }
+        .joystick-stick {
+            width: 22px !important;
+            height: 22px !important;
+        }
+        .action-buttons {
+            bottom: 2vw !important;
+            right: 2vw !important;
+            gap: 6px !important;
+        }
+        .action-btn {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 10px !important;
+        }
+        .ability-btn-small {
+            width: 18px !important;
+            height: 18px !important;
+            font-size: 7px !important;
+            bottom: 7vh !important;
+            right: 2vw !important;
+        }
+        .hud-label {
+            font-size: 6px;
+            letter-spacing: 0.3px;
+        }
+        }
+
+                @media (max-width: 768px) {
+            .hud-value {
+                font-size: 12px;
+            }
+        }
+
+                @media (max-width: 768px) {
+            .health-bar-container {
+                height: 6px;
+            }
+        }
+
+                @media (max-width: 768px) {
+            .loading-logo {
+                font-size: 36px;
+            }
+        }
+
+
+        @media (max-width: 768px) {
+            .loading-subtitle {
+                font-size: 11px;
+                letter-spacing: 2px;
+            }
+        }
+
+                @media (max-width: 768px) {
+            .loading-instructions {
+                font-size: 10px;
+            }
+        }
+
+                @media (max-width: 768px) {
+            .notification {
+                top: 60px;
+                font-size: 14px;
+                padding: 12px 20px;
+            }
+        }
+
+                @media (max-width: 768px) {
+            .wave-indicator {
+                font-size: 48px;
+            }
+        }
+
+
+        @media (max-width: 768px) {
+            .countdown-title {
+                margin-bottom: 10px;
+            }
+            .countdown-subtitle {
+                margin-top: 10px;
+            }
+        }
+
+                @media (max-width: 768px) {
+            .game-over h1 {
+                font-size: 42px;
+            }
+        }
+
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+
+
+        @media (max-width: 768px) {
+            .stat-value {
+                font-size: 36px;
+            }
+        }
+
+
+                @media (max-width: 768px) {
+            .btn-neon {
+                padding: 12px 25px;
+                font-size: 14px;
+            }
+        }
+                @media (min-width: 600px) {
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+                @media (min-width: 768px) {
+            .level-grid {
+                grid-template-columns: repeat(auto-fit, minmax(clamp(85px, 14vw, 105px), 1fr));
+            }
+        }
+
+                /* Responsive */
+        @media (max-width: 480px) {
+            .settings-panel {
+                max-width: 100%;
+                border-radius: 0;
+                height: 100%;
+            }
+
+            .settings-list {
+                max-height: calc(100vh - 100px);
+            }
+        }
+
+         /* Responsive adjustments for compact settings */
+        @media (max-width: 480px) {
+            .setting-item {
+                padding: 10px 12px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .setting-info {
+                width: 100%;
+            }
+
+            .setting-control {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .radio-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .radio-option label {
+                flex: 1;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+                @media (max-width: 600px) {
+            .upgrades-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .enemy-xp-breakdown {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+

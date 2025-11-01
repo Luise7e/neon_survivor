@@ -1,0 +1,41 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build outputs
+*.apk
+*.apks
+*.idsig
+*.aab
+*.zip
+
+# Keys and Certificates
+*.keystore
+*.jks
+my-release-key.*
+
+# Backup files
+backup/
+*-backup-*
+
+# Tools
+bundletool.jar
+
+# Temporary files
+apk-output/
+
+# Node modules (if any)
+node_modules/
+npm-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Old Cordova projects
+neon-survivor/
+platforms/
+plugins/

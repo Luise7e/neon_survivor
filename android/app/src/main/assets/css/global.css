@@ -1,0 +1,119 @@
+/* ===================================
+   NEON SURVIVOR ARENA - GLOBAL STYLES
+   ================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    font-family: 'Orbitron', sans-serif;
+}
+
+body.desktop {
+    cursor: none;
+}
+
+/* Hidden utility class */
+.hidden {
+    display: none !important;
+}
+
+/* Canvas - Force GPU acceleration and compositing */
+#gameCanvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    background: radial-gradient(circle at 50% 50%, #0f0f2e 0%, #000000 100%);
+    z-index: 1;
+    /* Force GPU layer and hardware acceleration */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Custom Cursor (PC only) */
+.custom-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    mix-blend-mode: difference;
+    display: none;
+}
+
+.custom-cursor.active {
+    display: block;
+}
+
+.cursor-dot {
+    width: 8px;
+    height: 8px;
+    background: #00ffff;
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+    animation: pulse-cursor 1s infinite;
+}
+
+.cursor-ring {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #ff00ff;
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    transition: all 0.1s ease;
+    box-shadow: 0 0 20px #ff00ff;
+}
+
+@keyframes pulse-cursor {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+}
+
+/* Neon glow button base style */
+.neon-btn {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(255, 0, 255, 0.15) 100%);
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.neon-btn:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.3) 0%, rgba(255, 0, 255, 0.3) 100%);
+    border-color: #ff00ff;
+    color: #ff00ff;
+    text-shadow: 0 0 15px rgba(255, 0, 255, 1);
+    box-shadow: 0 0 35px rgba(255, 0, 255, 0.8), inset 0 0 30px rgba(255, 0, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.neon-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 0 25px rgba(255, 0, 255, 0.6), inset 0 0 25px rgba(255, 0, 255, 0.15);
+}

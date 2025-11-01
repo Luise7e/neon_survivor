@@ -1,0 +1,174 @@
+/* ===================================
+   GAME UI - HUD & IN-GAME ELEMENTS
+   ================================== */
+
+/* HUD - Head-Up Display */
+.hud {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    pointer-events: none;
+    display: none;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 80%, transparent 100%);
+    padding: 8px 10px;
+    border-bottom: 2px solid;
+    border-image: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff) 1;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 -10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.hud.active {
+    display: flex;
+}
+
+.hud-panel {
+    background: linear-gradient(135deg, rgba(10, 10, 40, 0.7) 0%, rgba(20, 0, 40, 0.7) 100%);
+    border: 1px solid;
+    border-image: linear-gradient(135deg, #00ffff, #ff00ff) 1;
+    border-radius: 6px;
+    padding: 5px 10px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.15), inset 0 0 8px rgba(255, 0, 255, 0.05);
+    flex: 1 1 auto;
+    min-width: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.hud-panel.health-panel {
+    flex: 1.5 1 auto;
+    max-width: 160px;
+}
+
+@media (max-width: 768px) {
+    .hud {
+        padding: 6px 8px;
+    }
+
+    .hud-panel {
+        padding: 4px 6px;
+        border-radius: 4px;
+    }
+
+    .hud-panel.health-panel {
+        max-width: 120px;
+    }
+}
+
+.hud-label {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    font-family: 'Rajdhani', sans-serif;
+    white-space: nowrap;
+}
+
+.hud-value {
+    font-size: 14px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #00ffff, #ff00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+    font-family: 'Orbitron', sans-serif;
+    line-height: 1.1;
+}
+
+/* Health Bar */
+.health-bar-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.health-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ff0055, #ff00ff, #8800ff);
+    background-size: 200% 100%;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(255, 0, 255, 0.6);
+    animation: health-glow 2s ease-in-out infinite;
+}
+
+@keyframes health-glow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Loading Screen */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #000000 0%, #1a001a 50%, #000033 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 9500;
+    animation: bg-shift 5s ease-in-out infinite;
+}
+
+@keyframes bg-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.loading-logo {
+    font-size: clamp(40px, 8vw, 60px);
+    font-weight: 900;
+    background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    margin-bottom: 30px;
+    animation: pulse-logo 2s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(0, 255, 255, 0.2);
+    border-top: 4px solid #00ffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    margin-top: 20px;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    animation: fade-pulse 2s ease-in-out infinite;
+}
+
+@keyframes fade-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
