@@ -48,6 +48,11 @@ body.desktop {
     will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    /* Optimize rendering quality */
+    image-rendering: auto;
+    image-rendering: -webkit-optimize-contrast;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Cursor (PC only) */

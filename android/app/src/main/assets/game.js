@@ -11,8 +11,15 @@ let lastBossWaveCompleted = 0;
 
 // Sistema de bonus x3 por anuncio
 let adBonusState = {
-    active: false,        // Si el bonus x3 está activo (anuncio visto pero no consumido)
-    canWatch: true        // Si puede ver un anuncio (se resetea al consumir el bonus)
+    active: false,        // Si el bonus x3 está activo (anuncio visto pero puede usarse múltiples veces)
+    canWatch: true,       // Si puede ver un anuncio (solo 1 por wave)
+    isLoading: false,     // Si el anuncio se está cargando (previene clics múltiples)
+    usesRemaining: 0      // Cuántas veces más se puede usar el bonus en esta wave
+};
+
+// Estado para el anuncio de continue
+let continueAdState = {
+    isLoading: false      // Si el anuncio de continue se está cargando
 };
 
 // Función llamada desde Android cuando AdMob está listo
@@ -23,6 +30,32 @@ function onAdMobReady() {
 
 // Exponer el estado del bonus para el UI
 window.adBonusState = adBonusState;
+
+// ===================================
+// HAPTIC FEEDBACK (Vibration)
+// ===================================
+function vibrateButton(duration = 50) {
+    try {
+        // Intentar vibración nativa de Android
+        if (typeof Android !== 'undefined' && typeof Android.vibrate === 'function') {
+            Android.vibrate(duration);
+            return;
+        }
+
+        // Fallback a Vibration API del navegador
+        if ('vibrate' in navigator) {
+            navigator.vibrate(duration);
+            return;
+        }
+
+        // Si no hay vibración disponible, no hacer nada (desarrollo/testing)
+    } catch (error) {
+        console.error('❌ Error triggering vibration:', error);
+    }
+}
+
+// Exponer función globalmente
+window.vibrateButton = vibrateButton;
 
 // Función para determinar si se debe mostrar anuncio en este wave
 function shouldShowAdForWave(wave) {
@@ -58,6 +91,8 @@ async function showInterstitialAd() {
 
 // Función para activar bonus x3 después de ver anuncio
 function activateTripleBonus() {
+    console.log('📺 activateTripleBonus called - current state:', JSON.stringify(adBonusState));
+
     if (adBonusState.active) {
         console.log('⚠️ Bonus x3 already active - consume it first');
         showNotification('❌ Use current bonus first!');
@@ -66,23 +101,56 @@ function activateTripleBonus() {
 
     if (!adBonusState.canWatch) {
         console.log('⚠️ Cannot watch ad - bonus already pending');
+        showNotification('⚠️ Bonus already pending!');
         return false;
     }
 
-    if (typeof Android !== 'undefined') {
+    if (adBonusState.isLoading) {
+        console.log('⚠️ Ad already loading - please wait');
+        showNotification('⏳ Loading ad...');
+        return false;
+    }
+
+    if (typeof Android !== 'undefined' && typeof Android.showRewardedAd === 'function') {
         try {
-            console.log('📺 Showing Ad for x3 Upgrade Bonus...');
+            // Verificar si hay anuncio disponible antes de marcar como loading
+            if (typeof Android.isRewardedAdReady === 'function' && !Android.isRewardedAdReady()) {
+                console.warn('⚠️ No rewarded ad available');
+                showNotification('❌ No ad available right now');
+                return false;
+            }
+
+            console.log('📺 Calling Android.showRewardedAd()...');
+            adBonusState.isLoading = true; // Prevenir clics múltiples
+            showNotification('⏳ Loading ad...');
+
             Android.showRewardedAd(); // Usar anuncio con recompensa
+            console.log('✅ Android.showRewardedAd() called successfully');
+
+            // Timeout de seguridad: si no hay respuesta en 3 segundos, resetear estado
+            setTimeout(() => {
+                if (adBonusState.isLoading) {
+                    console.warn('⚠️ Ad load timeout - resetting loading state');
+                    adBonusState.isLoading = false;
+                    showNotification('❌ Ad not available, try again');
+                }
+            }, 3000); // Reducido de 10s a 3s
 
             // El callback onAdRewarded() será llamado desde Android cuando termine el anuncio
             return true;
         } catch (error) {
             console.error('❌ Error showing rewarded ad:', error);
+            adBonusState.isLoading = false;
+            showNotification('❌ Error loading ad');
             return false;
         }
     } else {
         // Modo prueba en navegador
-        console.log('⚠️ AdMob not available (running in browser) - Activating bonus for testing');
+        console.log('⚠️ AdMob not available (Android object not found) - Activating bonus for testing');
+        console.log('   - typeof Android:', typeof Android);
+        if (typeof Android !== 'undefined') {
+            console.log('   - typeof Android.showRewardedAd:', typeof Android.showRewardedAd);
+        }
         onAdRewarded();
         return true;
     }
@@ -90,29 +158,53 @@ function activateTripleBonus() {
 
 // Callback llamado desde Android cuando el usuario completa el anuncio con recompensa
 function onAdRewarded() {
-    console.log('🎁 Ad watched! Activating x3 Upgrade Bonus');
+    console.log('🎁 onAdRewarded called!');
+    console.log('   - State BEFORE:', JSON.stringify(adBonusState));
+
     adBonusState.active = true;
-    adBonusState.canWatch = false; // No puede ver otro hasta consumir este
+    adBonusState.canWatch = false; // No puede ver otro anuncio en esta wave
+    adBonusState.isLoading = false; // Resetear estado de loading
+    adBonusState.usesRemaining = 999; // Usos ilimitados durante esta wave
+
+    console.log('   - State AFTER:', JSON.stringify(adBonusState));
 
     // Notificar al usuario
     if (typeof showNotification === 'function') {
-        showNotification('🎁 x3 UPGRADE BONUS ACTIVE!');
+        showNotification('🎁 x3 BONUS ACTIVE FOR THIS WAVE!');
     }
 
     // Actualizar el UI del modal si está abierto
+    console.log('   - Updating upgrade modal UI...');
     if (typeof window.updateUpgradeModalBonusUI === 'function') {
         window.updateUpgradeModalBonusUI();
+        console.log('   - ✅ UI updated');
+    } else {
+        console.warn('   - ⚠️ updateUpgradeModalBonusUI not available');
     }
 
     // Re-renderizar la tabla para mostrar los valores con bonus
+    console.log('   - Re-rendering upgrades grid...');
     if (typeof window.renderUpgradesGrid === 'function') {
         window.renderUpgradesGrid();
+        console.log('   - ✅ Grid re-rendered');
+    } else {
+        console.warn('   - ⚠️ renderUpgradesGrid not available');
     }
+
+    console.log('🎁 onAdRewarded complete!');
+}
+
+// Callback llamado desde Android si el anuncio falla o se cancela
+function onAdFailed() {
+    console.warn('❌ onAdFailed called - ad was not completed');
+    adBonusState.isLoading = false; // Resetear estado de loading
+    showNotification('❌ Ad not completed');
 }
 
 // Exponer funciones globalmente
 window.activateTripleBonus = activateTripleBonus;
 window.onAdRewarded = onAdRewarded;
+window.onAdFailed = onAdFailed;
 // Device Detection
 const DeviceDetector = {
     isMobile: false,
@@ -206,29 +298,36 @@ function resizeCanvas() {
         return; // Safety check
     }
 
-    // CRITICAL FIX: No usar DPR scaling en el canvas
-    // El canvas debe tener el mismo tamaño lógico que la ventana
-    // El navegador se encarga automáticamente del escalado DPR
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // CRITICAL FIX: Usar DPR para pantallas de alta resolución (Retina, etc.)
+    const dpr = window.devicePixelRatio || 1;
+
+    // Tamaño físico en píxeles (alta resolución)
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+
+    // Tamaño lógico en CSS (tamaño visual)
     canvas.style.width = window.innerWidth + 'px';
     canvas.style.height = window.innerHeight + 'px';
 
-    // NO aplicar ctx.scale(dpr, dpr) - esto causa que los elementos se dibujen fuera de pantalla
-    // Reset transformations to identity
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // Escalar el contexto para que las coordenadas lógicas funcionen correctamente
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Configurar calidad de renderizado
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ViewportScale.update(); // Actualizar escalas
     updateGameAreaLimits(); // Actualizar límites del área de juego
 
-    const dpr = Math.min(DeviceDetector.pixelRatio, 2);
-    console.log('📐 Canvas Resized:', {
+    console.log('📐 Canvas Resized (HIGH QUALITY):', {
         canvasWidth: canvas.width,
         canvasHeight: canvas.height,
         styleWidth: canvas.style.width,
         styleHeight: canvas.style.height,
         dpr: dpr,
-        note: 'DPR scaling DISABLED - browser handles it automatically',
+        logicalWidth: window.innerWidth,
+        logicalHeight: window.innerHeight,
+        note: 'DPR scaling ENABLED for crisp graphics',
         viewportScale: ViewportScale.scale
     });
 }
@@ -279,7 +378,7 @@ const player = {
     health: 100,
     maxHealth: 100,
     get speed() {
-        const baseSpeed = (isMobileDevice ? 4 : 3) * ViewportScale.scale;
+        const baseSpeed = (playerStats.movementSpeed.baseValue) * ViewportScale.scale;
         return baseSpeed * (playerStats.movementSpeed.currentValue / playerStats.movementSpeed.baseValue);
     }, // Velocidad proporcional con mejora
     color: '#00ffff',
@@ -296,8 +395,8 @@ const player = {
 const playerStats = {
     movementSpeed: {
         level: 0,
-        baseValue: isMobileDevice ? 4 : 3,
-        currentValue: isMobileDevice ? 4 : 3,
+        baseValue: 10, // Velocidad base
+        currentValue: 10,
         increment: 0.025, // 2.5% por nivel
         cost: function() { return Math.round(10 * Math.pow(1.2, this.level) + ((this.level + 1) * (this.level + 1) * 2)); },
         description: "Move faster on the arena"
@@ -464,6 +563,7 @@ function updateAbilityButton() {
     const abilityHandler = (e) => {
         e.preventDefault();
         initAudio();
+        vibrateButton(50); // ✅ Vibración al pulsar ability
         if (collectedAbility && gameState.isPlaying) {
             useAbility();
         }
@@ -711,6 +811,7 @@ function initializeMobileControls() {
         const abilityHandler = (e) => {
             e.preventDefault();
             initAudio();
+            vibrateButton(50); // ✅ Vibración al pulsar ability
             if (collectedAbility && gameState.isPlaying) {
                 useAbility();
             }
@@ -726,6 +827,7 @@ function initializeMobileControls() {
         const pauseHandler = function(e) {
             e.preventDefault();
             e.stopPropagation();
+            vibrateButton(50); // ✅ Vibración al pulsar pause
             console.log('⏸️ Pause button activated! Game state:', gameState.isPlaying, gameState.isGameOver);
             if (gameState.isPlaying && !gameState.isGameOver) {
                 gameState.isPaused = true;
@@ -1041,7 +1143,7 @@ function spawnEnemy() {
 
     const radius = ViewportScale.enemySize * enemyType.sizeMultiplier; // RESPONSIVE
     const baseHealth = 55 + gameState.wave * 15;
-    const baseSpeed = (0.5 + gameState.wave * 0.09) * gameState.difficultyMultiplier * ViewportScale.scale;
+    const baseSpeed = (5 + gameState.wave) * gameState.difficultyMultiplier * ViewportScale.scale;
 
     const enemy = {
         x: position.x,
@@ -1231,6 +1333,9 @@ function upgradePlayerStat(statName) {
     // Determinar el multiplicador de potencia del bonus
     const bonusMultiplier = adBonusState.active ? 3 : 1;
 
+    // Guardar el valor actual antes de modificar
+    const currentValueBeforeUpgrade = stat.currentValue;
+
     // Subir solo 1 nivel
     stat.level++;
 
@@ -1238,7 +1343,7 @@ function upgradePlayerStat(statName) {
     if (statName === 'regeneration') {
         // Regeneración es valor fijo, no porcentaje
         // Aplicar el incremento multiplicado por el bonus
-        stat.currentValue = stat.baseValue + (stat.increment * stat.level);
+        stat.currentValue = stat.baseValue + (stat.increment * bonusMultiplier);
 
         // Si hay bonus, añadir 2 incrementos más
         if (bonusMultiplier === 3) {
@@ -1246,7 +1351,7 @@ function upgradePlayerStat(statName) {
         }
     } else if (statName === 'criticalChance') {
         // Critical chance también es valor fijo (porcentaje)
-        stat.currentValue = stat.baseValue + (stat.increment * stat.level);
+        stat.currentValue = Math.min(stat.baseValue + (stat.increment * bonusMultiplier), 1.0);
 
         // Si hay bonus, añadir 2 incrementos más
         if (bonusMultiplier === 3) {
@@ -1254,36 +1359,32 @@ function upgradePlayerStat(statName) {
         }
     } else {
         // Otros stats: incremento compuesto
-        // Calcular el valor base para este nivel
-        const normalValue = stat.baseValue * Math.pow(1 + Math.abs(stat.increment), stat.level);
-
-        if (bonusMultiplier === 3) {
-            // Con bonus: aplicar el incremento 2 veces más desde el valor normal
-            // normalValue * (1 + increment)^2
-            if (stat.increment < 0) {
-                // Para stats que decrecen (fireRate, resilience)
-                stat.currentValue = normalValue * Math.pow(1 + stat.increment, 2);
-            } else {
-                // Para stats que crecen
-                stat.currentValue = normalValue * Math.pow(1 + stat.increment, 2);
-            }
-        } else {
-            // Sin bonus: comportamiento normal
-            if (stat.increment < 0) {
-                stat.currentValue = stat.baseValue * Math.pow(1 + stat.increment, stat.level);
-            } else {
-                stat.currentValue = normalValue;
-            }
-        }
+        //if (bonusMultiplier === 3) {
+        //    // Con bonus: aplicar el incremento 3 veces desde el valor ACTUAL (antes de subir nivel)
+        //    // Esto mantiene la progresión basada en el valor, no en el nivel
+        //    stat.currentValue = currentValueBeforeUpgrade * Math.pow(1 + stat.increment, 3);
+        //} else {
+        //    // Sin bonus: calcular valor normal basado en el nivel
+        //    stat.currentValue = stat.baseValue * Math.pow(1 + stat.increment, stat.level);
+        //}
+        stat.currentValue = currentValueBeforeUpgrade * Math.pow(1 + stat.increment, bonusMultiplier);
     }
 
-    // Si se usó el bonus x3, desactivarlo y permitir ver otro anuncio
+    // Si se usó el bonus x3, notificar pero NO desactivarlo
     if (adBonusState.active) {
-        adBonusState.active = false;
-        adBonusState.canWatch = true; // Ahora puede ver otro anuncio
-        showNotification('🎁 x3 BONUS APPLIED!');
+        // Decrementar usos (aunque está en 999, es para futura implementación)
+        if (adBonusState.usesRemaining > 0) {
+            adBonusState.usesRemaining--;
+        }
+        
+        showNotification('🎁 x3 BONUS APPLIED! Still active for more upgrades');
+        console.log('✨ Bonus used - Remaining uses:', adBonusState.usesRemaining);
+        
+        // NO desactivar el bonus - se mantiene activo para más upgrades
+        // adBonusState.active = false; // ❌ ELIMINADO
+        // adBonusState.canWatch = true; // ❌ ELIMINADO
 
-        // Actualizar UI del modal
+        // Actualizar UI del modal (pero bonus sigue activo)
         if (typeof window.updateUpgradeModalBonusUI === 'function') {
             window.updateUpgradeModalBonusUI();
         }
@@ -1417,6 +1518,8 @@ function nextWave() {
     // Resetear el estado del bonus x3 para la nueva oleada
     adBonusState.active = false;
     adBonusState.canWatch = true;
+    adBonusState.usesRemaining = 0;
+    console.log('🔄 Bonus state reset for new wave:', JSON.stringify(adBonusState));
 
     // Wave de jefe (múltiplos de 5)
     const isBossWave = gameState.wave % 5 === 0;
@@ -1542,14 +1645,41 @@ function continueGameAfterAd() {
 
 // Función para activar continue después de ver anuncio
 function showAdForContinue() {
+    if (continueAdState.isLoading) {
+        console.log('⚠️ Continue ad already loading - please wait');
+        showNotification('⏳ Loading ad...');
+        return false;
+    }
+
     if (typeof Android !== 'undefined') {
         try {
+            // Verificar si hay anuncio disponible antes de marcar como loading
+            if (typeof Android.isRewardedAdReady === 'function' && !Android.isRewardedAdReady()) {
+                console.warn('⚠️ No rewarded ad available for continue');
+                showNotification('❌ No ad available right now');
+                return false;
+            }
+
             console.log('📺 Showing Ad for Continue Game...');
+            continueAdState.isLoading = true;
+            showNotification('⏳ Loading ad...');
+
             Android.showRewardedAdForContinue();
+
+            // Timeout de seguridad: si no hay respuesta en 3 segundos, resetear estado
+            setTimeout(() => {
+                if (continueAdState.isLoading) {
+                    console.warn('⚠️ Continue ad load timeout - resetting loading state');
+                    continueAdState.isLoading = false;
+                    showNotification('❌ Ad not available, try again');
+                }
+            }, 3000); // Reducido de 10s a 3s
+
             // El callback será window.onAdRewardedContinue()
             return true;
         } catch (error) {
             console.error('❌ Error showing rewarded ad:', error);
+            continueAdState.isLoading = false;
             return false;
         }
     } else {
@@ -1563,13 +1693,22 @@ function showAdForContinue() {
 // Callback llamado desde Android cuando se completa el anuncio de continue
 function onAdRewardedContinue() {
     console.log('🎁 Ad watched! Continuing game...');
+    continueAdState.isLoading = false; // Resetear estado de loading
     continueGameAfterAd();
+}
+
+// Callback llamado desde Android si el anuncio de continue falla
+function onAdFailedContinue() {
+    console.warn('❌ Continue ad failed or was cancelled');
+    continueAdState.isLoading = false;
+    showNotification('❌ Ad not completed');
 }
 
 // Exponer funciones globalmente
 window.continueGameAfterAd = continueGameAfterAd;
 window.showAdForContinue = showAdForContinue;
 window.onAdRewardedContinue = onAdRewardedContinue;
+window.onAdFailedContinue = onAdFailedContinue;
 
 // ===================================
 // GAME LOGIC
@@ -1747,12 +1886,14 @@ function update() {
     if (!gameState.isCountdown && enemies.length === 0 && gameState.enemiesToSpawn === 0) {
         // Oleada completada - mostrar modal de upgrades
         console.log(`🎉 Wave ${gameState.wave} completed!`);
+        console.log('🎁 Ad Bonus State:', JSON.stringify(adBonusState));
 
         // Verificar si debemos mostrar anuncio en este nivel
         const shouldShowAd = shouldShowAdForWave(gameState.wave);
 
         if (shouldShowAd && gameState.wave !== lastBossWaveCompleted) {
             lastBossWaveCompleted = gameState.wave;
+            console.log('📺 Showing interstitial ad for wave', gameState.wave);
             // Mostrar anuncio intersticial
             showInterstitialAd();
         }
@@ -1764,9 +1905,12 @@ function update() {
         let attempts = 0;
         const checkModal = () => {
             attempts++;
+            console.log(`🔍 Checking for showUpgradeModal (attempt ${attempts})...`);
             if (typeof window.showUpgradeModal === 'function') {
+                console.log('✅ showUpgradeModal found, calling it...');
                 window.showUpgradeModal();
             } else if (attempts < 50) { // Check for up to 5 seconds
+                console.log('⏳ showUpgradeModal not ready yet, retrying...');
                 setTimeout(checkModal, 100);
             } else {
                 // Fallback si el modal no está disponible
@@ -2579,12 +2723,19 @@ window.startGameFromMenu = function(startLevel) {
             return;
         }
         // Use minimal options for better Android WebView compatibility
-        ctx = canvas.getContext('2d', { alpha: false });
+        ctx = canvas.getContext('2d', {
+            alpha: false,
+            desynchronized: false // Better compatibility with Android WebView
+        });
 
         if (!ctx) {
             console.error('❌ Canvas context could not be created!');
             return;
         }
+
+        // Configurar calidad de renderizado inicial
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         // Verificar que el canvas sea visible
         const canvasStyle = window.getComputedStyle(canvas);
@@ -2692,6 +2843,18 @@ window.startGameFromMenu = function(startLevel) {
     console.log('Controls: Dual Joystick (Wild Rift Style)');
     console.log('Quality:', qualitySettings);
     console.log('Game Area Top:', gameAreaTop);
+
+    // Diagnóstico de calidad gráfica
+    console.log('🎨 GRAPHICS QUALITY DIAGNOSTIC:');
+    console.log('   - Device Pixel Ratio (DPR):', window.devicePixelRatio);
+    console.log('   - Canvas Physical Size:', canvas.width, 'x', canvas.height);
+    console.log('   - Canvas CSS Size:', canvas.style.width, 'x', canvas.style.height);
+    console.log('   - Window Size:', window.innerWidth, 'x', window.innerHeight);
+    console.log('   - imageSmoothingEnabled:', ctx.imageSmoothingEnabled);
+    console.log('   - imageSmoothingQuality:', ctx.imageSmoothingQuality);
+    console.log('   - Alpha channel:', ctx.getContextAttributes().alpha);
+    console.log('   - Desynchronized:', ctx.getContextAttributes().desynchronized);
+    console.log('   - Quality multiplier:', qualitySettings.effectsMultiplier);
 };
 
 // Pause button event listeners

@@ -47,53 +47,8 @@ android/
 ├── gradle.properties                   # Gradle properties
 ├── local.properties                    # Local SDK paths
 ├── gradlew.bat                        # Gradle wrapper (Windows)
-├── build_native_apk.ps1               # PowerShell build script
-└── KEYSTORE_INFO.md                   # Keystore documentation (NEW)
+└── build_native_apk.ps1               # PowerShell build script
 ```
-
----
-
-## 🔐 Official Keystore (CRITICAL)
-
-**⚠️ IMPORTANT: This project uses a SINGLE official keystore for ALL builds. NEVER create new keystores without explicit permission.**
-
-### Keystore Information
-- **Location:** `android/key_store/keystore` (dentro de la carpeta android)
-- **Alias:** `neon-survivor`
-- **Store Password:** `NeonSurvivor2025!`
-- **Key Password:** `NeonSurvivor2025!`
-- **Algorithm:** RSA 2048 bits, SHA256withRSA
-- **Validity:** 10,000 days (~27.4 years)
-
-### Fingerprints
-```
-SHA1: F0:2D:95:F9:34:15:CC:BA:C6:94:D2:8B:D0:24:D0:66:3E:2C:01:61
-SHA256: 28:CC:55:CF:3D:DF:B7:02:3C:56:2B:09:C5:8F:89:D5:B9:AF:C7:9F:6A:E6:91:C2:13:B3:66:23:9C:C2:28:EF
-```
-
-### Rules
-1. ✅ **ALWAYS use this keystore** for all APK builds (debug, release, production)
-2. ❌ **NEVER create new keystores** without explicit user permission
-3. ✅ **ALWAYS backup** this keystore before major changes
-4. ✅ **Firebase Console** must have the SHA1 fingerprint registered
-5. ✅ **Verify fingerprint** with: `keytool -list -v -keystore keystore -storepass NeonSurvivor2025!`
-
-### Firebase Configuration
-**This SHA1 MUST be registered in Firebase Console:**
-```
-F0:2D:95:F9:34:15:CC:BA:C6:94:D2:8B:D0:24:D0:66:3E:2C:01:61
-```
-
-**Steps to update Firebase:**
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select project: `neon-survivor-fe41c`
-3. Go to: Settings → General → Your apps → Android app (`com.luise7e.neonsurvivor`)
-4. Add the SHA1 fingerprint above
-5. Download the new `google-services.json`
-6. Replace `android/app/google-services.json` with the new file
-7. Rebuild the APK
-
-**For complete keystore documentation, see:** `KEYSTORE_INFO.md`
 
 ---
 

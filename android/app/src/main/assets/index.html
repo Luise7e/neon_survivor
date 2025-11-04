@@ -55,6 +55,16 @@
             touch-action: none;
             background: radial-gradient(circle at 50% 50%, #0f0f2e 0%, #000000 100%);
             z-index: 1; /* Canvas debe estar debajo de los controles pero visible */
+            /* Mejorar calidad de renderizado - smooth para gráficos vectoriales */
+            image-rendering: auto;
+            image-rendering: -webkit-optimize-contrast;
+            /* Habilitar aceleración por hardware */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            will-change: transform;
+            /* Antialiasing suave */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Custom Cursor (PC only) */
@@ -115,8 +125,8 @@
         }
 
         .aim-cursor .cursor-dot {
-            width: 10px;
-            height: 10px;
+            width:  5px;
+            height: 5px;
             background: #ff00ff;
             border-radius: 50%;
             position: absolute;
@@ -126,9 +136,9 @@
         }
 
         .aim-cursor .cursor-ring {
-            width: 36px;
-            height: 36px;
-            border: 3px solid #00ffff;
+            width: 18px;
+            height: 18px;
+            border: 1px solid #00ffff;
             border-radius: 50%;
             position: absolute;
             transform: translate(-50%, -50%);
@@ -909,7 +919,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: space-evenly;
             z-index: 8000; /* Menu screens layer */
             font-family: 'Orbitron', sans-serif;
             overflow-y: auto;
@@ -1426,212 +1436,6 @@
             filter: drop-shadow(0 0 8px rgba(255, 165, 0, 0.6));
         }
 
-        /* =========================
-           LEVEL SELECTOR MODAL - VERTICAL OPTIMIZED
-        ========================= */
-        .level-selector {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 50% 50%, #1a0033 0%, #000000 100%);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 8001; /* Menu screens layer - above start menu */
-            padding: clamp(10px, 1.5vh, 18px) clamp(12px, 2.5vw, 20px);
-            overflow: hidden;
-        }
-
-        .level-selector.active {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .level-selector-title {
-            font-size: clamp(18px, 3.5vh, 28px); /* Basado en altura */
-            font-weight: 900;
-            background: linear-gradient(135deg, #ff00ff, #00ffff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: clamp(8px, 1.5vh, 14px);
-            text-align: center;
-            text-shadow: 0 0 25px rgba(255, 0, 255, 0.4);
-            flex-shrink: 0;
-        }
-
-        .level-grid-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: clamp(8px, 1.2vh, 12px);
-            width: 100%;
-            max-width: min(92vw, 550px);
-            flex: 1;
-            min-height: 0;
-        }
-
-        .level-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: clamp(6px, 1.2vw, 10px);
-            width: 100%;
-            padding: clamp(10px, 2vh, 18px) clamp(10px, 2.5vw, 16px);
-            background: linear-gradient(135deg, rgba(26, 0, 51, 0.7) 0%, rgba(10, 10, 40, 0.7) 100%);
-            border-radius: 14px;
-            border: 2px solid;
-            border-image: linear-gradient(135deg, rgba(255, 0, 255, 0.6), rgba(0, 255, 255, 0.6)) 1;
-            box-shadow:
-                0 6px 28px rgba(0, 0, 0, 0.4),
-                inset 0 0 35px rgba(255, 0, 255, 0.08),
-                0 0 45px rgba(255, 0, 255, 0.3);
-            backdrop-filter: blur(20px);
-            flex-shrink: 0;
-        }
-
-        .level-pagination {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .level-page-btn {
-            background: linear-gradient(135deg, rgba(26, 0, 51, 0.8), rgba(51, 0, 102, 0.8));
-            border: 2px solid rgba(255, 0, 255, 0.4);
-            color: rgba(255, 255, 255, 0.6);
-            width: clamp(32px, 6vh, 40px); /* Basado en altura */
-            height: clamp(32px, 6vh, 40px);
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: clamp(12px, 2.5vh, 16px); /* Basado en altura */
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .level-page-btn:hover:not(:disabled) {
-            border-color: #00ffff;
-            color: #00ffff;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-            transform: scale(1.1);
-        }
-
-        .level-page-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .level-page-indicator {
-            font-size: clamp(11px, 2.2vh, 14px); /* Basado en altura */
-            color: #00ffff;
-            font-weight: 700;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-        }
-
-
-
-        .level-btn {
-            background: linear-gradient(135deg, rgba(26, 0, 51, 0.8), rgba(51, 0, 102, 0.8));
-            border: 2px solid #ff00ff;
-            padding: clamp(8px, 1.6vw, 12px);
-            font-size: clamp(12px, 2.4vw, 16px);
-            font-weight: 900;
-            color: #fff;
-            cursor: pointer;
-            border-radius: 10px;
-            font-family: 'Orbitron', sans-serif;
-            box-shadow:
-                0 3px 12px rgba(255, 0, 255, 0.3),
-                inset 0 0 18px rgba(255, 0, 255, 0.1);
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-        }
-
-        .level-btn::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255, 0, 255, 0.3), transparent);
-            transform: rotate(45deg);
-            transition: all 0.5s ease;
-        }
-
-        .level-btn:hover::before {
-            left: 100%;
-        }
-
-        .level-btn:hover {
-            transform: scale(1.08) translateY(-2px);
-            box-shadow:
-                0 0 25px rgba(0, 255, 255, 0.6),
-                0 6px 18px rgba(255, 0, 255, 0.4),
-                inset 0 0 22px rgba(0, 255, 255, 0.15);
-            border-color: #00ffff;
-            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2));
-        }
-
-        .level-btn.locked {
-            opacity: 0.25;
-            cursor: not-allowed;
-            filter: grayscale(0.8);
-        }
-
-        .level-btn.locked:hover {
-            transform: none;
-            box-shadow: 0 3px 12px rgba(255, 0, 255, 0.2);
-            border-color: #ff00ff;
-            background: linear-gradient(135deg, rgba(26, 0, 51, 0.8), rgba(51, 0, 102, 0.8));
-        }
-
-        .close-level-selector {
-            position: absolute;
-            top: clamp(8px, 1.5vh, 14px);
-            right: clamp(8px, 1.5vw, 14px);
-            background: linear-gradient(135deg, rgba(255, 0, 0, 0.9), rgba(200, 0, 0, 0.9));
-            border: 2px solid rgba(255, 0, 0, 0.6);
-            color: #fff;
-            font-size: clamp(18px, 3.5vh, 26px); /* Basado en altura */
-            width: clamp(34px, 6.5vh, 44px); /* Basado en altura */
-            height: clamp(34px, 6.5vh, 44px);
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: 900;
-            box-shadow:
-                0 3px 18px rgba(255, 0, 0, 0.5),
-                inset 0 0 12px rgba(255, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 8002; /* Above menu screens */
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .close-level-selector:hover {
-            background: linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 50, 50, 1));
-            transform: scale(1.12) rotate(90deg);
-            box-shadow: 0 0 35px rgba(255, 0, 0, 0.8);
-        }
-
         /* Stats & Ranking Page */
         .stats-page {
             position: fixed;
@@ -1902,42 +1706,8 @@
             transform: scale(1.1);
         }
 
-        /* ===========================
-           SETTINGS MENU - MODERN MINIMAL DESIGN
-        =========================== */
-        .settings-menu {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 8002; /* Above menu screens */
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
 
-        .settings-menu.active {
-            display: flex;
-        }
 
-        /* Settings Panel */
-        .settings-panel {
-            background: linear-gradient(135deg, rgba(10, 10, 30, 0.95) 0%, rgba(20, 10, 40, 0.95) 100%);
-            border: 1px solid rgba(0, 255, 255, 0.2);
-            border-radius: 14px;
-            max-width: 450px;
-            max-height: 90vh;
-            width: 100%;
-            overflow: hidden;
-            box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5), 0 0 80px rgba(0, 255, 255, 0.1);
-            animation: slideIn 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
 
         @keyframes slideIn {
             from {
@@ -1949,270 +1719,6 @@
                 transform: translateY(0);
             }
         }
-
-        /* Header */
-        .settings-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: clamp(16px, 3vh, 20px);
-            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.2);
-            flex-shrink: 0;
-        }
-
-        .settings-panel-title {
-            font-size: clamp(16px, 3.5vw, 18px);
-            font-weight: 700;
-            color: #00ffff;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin: 0;
-        }
-
-        .settings-close-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.5);
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .settings-close-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .settings-close-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #ff0055;
-        }
-
-        /* Settings List */
-        .settings-list {
-            padding: 6px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .settings-list::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .settings-list::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .settings-list::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        /* Settings Item */
-        .settings-item {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: clamp(14px, 2.5vh, 16px);
-            margin-bottom: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .settings-item:hover {
-            background: rgba(0, 0, 0, 0.3);
-            border-color: rgba(0, 255, 255, 0.2);
-        }
-
-        .settings-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .settings-item-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .settings-item-icon {
-            width: 18px;
-            height: 18px;
-            color: #00ffff;
-            flex-shrink: 0;
-        }
-
-        .settings-item-label {
-            font-size: clamp(12px, 2.4vw, 13px);
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-
-        .settings-item-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* Slider */
-        .settings-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            flex: 1;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            outline: none;
-        }
-
-        .settings-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #00ffff;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-            transition: all 0.2s ease;
-        }
-
-        .settings-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-        }
-
-        .settings-slider::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: #00ffff;
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-        }
-
-        .settings-value {
-            font-size: 13px;
-            font-weight: 600;
-            color: #00ffff;
-            min-width: 45px;
-            text-align: right;
-        }
-
-        /* Toggle Switch */
-        .settings-toggle {
-            width: 48px;
-            height: 26px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 13px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .settings-toggle.active {
-            background: linear-gradient(135deg, #00ffff, #00aa99);
-        }
-
-        .settings-toggle-slider {
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .settings-toggle.active .settings-toggle-slider {
-            left: 25px;
-        }
-
-        /* Size Buttons */
-        .settings-size-group {
-            display: flex;
-            gap: 8px;
-            flex: 1;
-        }
-
-        .settings-size-btn {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.5);
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .settings-size-btn.active {
-            background: rgba(0, 255, 255, 0.15);
-            border-color: #00ffff;
-            color: #00ffff;
-            box-shadow: 0 0 12px rgba(0, 255, 255, 0.3);
-        }
-
-        .settings-size-btn:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        /* Logout Item */
-        .settings-item-logout {
-            background: rgba(255, 0, 0, 0.05);
-            border-color: rgba(255, 0, 0, 0.2);
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .settings-item-logout:hover {
-            background: rgba(255, 0, 0, 0.1);
-            border-color: rgba(255, 0, 0, 0.3);
-        }
-
-        .settings-logout-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 20px;
-            background: transparent;
-            border: none;
-            color: #ff6666;
-            font-size: 14px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .settings-logout-btn svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .settings-logout-btn:hover {
-            color: #ff0000;
-        }
-
-
 
         /* ===========================
            CONTROL SIZE VARIATIONS
@@ -3225,8 +2731,12 @@
     <span class="platform-specific mobile" style="display:none"></span>
     <!-- Start Menu / Login Screen -->
     <div class="start-menu" id="startMenu">
+        <!-- Background image with high transparency -->
+        <div style="position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;">
+            <img src="settings-icons/app_logo_transparent.png" alt="Game Logo" style="width:70vw;max-width:700px;min-width:320px;opacity:0.13;display:block;margin:0 auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 40px #00ffff);">
+        </div>
         <!-- Hero Section -->
-        <div class="menu-hero">
+        <div class="menu-hero" style="position:relative;z-index:1;">
             <div class="menu-logo">NEON SURVIVOR</div>
             <div class="menu-subtitle">Battle Royale Arena</div>
         </div>
@@ -3300,7 +2810,7 @@
                     </div>
                 </button>
 
-                <!-- Secondary Actions -->
+                <!-- Secondary Actions
                 <button class="action-card secondary-action" id="levelSelectBtn">
                     <div class="action-icon-small">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3315,6 +2825,7 @@
                         <div class="action-subtitle">Choose starting wave</div>
                     </div>
                 </button>
+                -->
 
                 <button class="action-card secondary-action" id="statsBtn">
                     <div class="action-icon-small">
@@ -3331,6 +2842,7 @@
                     </div>
                 </button>
 
+                <!-- Settings Button
                 <button class="action-card secondary-action" id="settingsBtn">
                     <div class="action-icon-small">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3343,6 +2855,7 @@
                         <div class="action-subtitle">Controls & preferences</div>
                     </div>
                 </button>
+                -->
 
                 <!-- Login Button (for guests) -->
                 <button class="action-card login-action" id="loginBtn" style="display:none;">
@@ -3396,106 +2909,6 @@
 
             <div id="avatarGrid" class="avatar-grid">
                 <!-- Avatares se cargarán dinámicamente aquí -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Menu -->
-    <div class="settings-menu" id="settingsMenu">
-        <div class="settings-panel">
-
-            <!-- Header -->
-            <div class="settings-panel-header">
-                <h2 class="settings-panel-title">SETTINGS</h2>
-                <button class="settings-close-btn" id="closeSettingsBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Settings List -->
-            <div class="settings-list">
-
-                <!-- Volume -->
-                <div class="settings-item">
-                    <div class="settings-item-header">
-                        <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                        </svg>
-                        <span class="settings-item-label">Volume</span>
-                    </div>
-                    <div class="settings-item-content">
-                        <input type="range" class="settings-slider" id="masterVolume" min="0" max="100" value="70">
-                        <span class="settings-value" id="masterVolumeValue">70%</span>
-                    </div>
-                </div>
-
-                <!-- Haptic Feedback -->
-                <div class="settings-item">
-                    <div class="settings-item-header">
-                        <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                        </svg>
-                        <span class="settings-item-label">Haptic Feedback</span>
-                    </div>
-                    <div class="settings-item-content">
-                        <div class="settings-toggle active" id="hapticToggle">
-                            <div class="settings-toggle-slider"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Control Size -->
-                <div class="settings-item">
-                    <div class="settings-item-header">
-                        <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <path d="M16 10a4 4 0 0 1-8 0"></path>
-                        </svg>
-                        <span class="settings-item-label">Control Size</span>
-                    </div>
-                    <div class="settings-item-content">
-                        <div class="settings-size-group">
-                            <button class="settings-size-btn" id="sizeSmall" data-size="small">S</button>
-                            <button class="settings-size-btn active" id="sizeNormal" data-size="normal">M</button>
-                            <button class="settings-size-btn" id="sizeLarge" data-size="large">L</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Logout (si está logueado) -->
-                <div class="settings-item settings-item-logout" id="logoutItem" style="display:none;">
-                    <button class="settings-logout-btn" id="logoutBtn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                            <polyline points="16 17 21 12 16 7"></polyline>
-                            <line x1="21" y1="12" x2="9" y2="12"></line>
-                        </svg>
-                        <span>Logout</span>
-                    </button>
-                </div>
-
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Level Selector Modal -->
-    <div class="level-selector" id="levelSelector">
-        <button class="close-level-selector" id="closeLevelSelector">×</button>
-        <div class="level-selector-title">SELECT WAVE</div>
-        <div class="level-grid-wrapper">
-            <div class="level-grid" id="levelGrid"></div>
-            <div class="level-pagination">
-                <button class="level-page-btn" id="prevPageBtn">◀</button>
-                <span class="level-page-indicator" id="pageIndicator">1 / 1</span>
-                <button class="level-page-btn" id="nextPageBtn">▶</button>
             </div>
         </div>
     </div>
@@ -3600,8 +3013,7 @@
 
     <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
-        <div class="loading-logo">NEON SURVIVOR</div>
-        <div class="loading-subtitle">Battle Royale Arena</div>
+    <img src="settings-icons/app_logo_transparent.png" alt="Game Logo" style="display:block;margin:0 auto;max-width:220px;width:60vw;height:auto;filter:drop-shadow(0 0 30px #00ffff);">
         <div class="loading-bar">
             <div class="loading-progress"></div>
         </div>
@@ -3636,7 +3048,7 @@
     </div>
 
     <!-- DEBUG BUTTON - TOP RIGHT -->
-    <button id="debugPauseBtn" style="position:fixed!important;top:90%!important;right:43%!important;width:60px!important;height:60px!important;background:red!important;color:white!important;border:3px solid yellow!important;border-radius:50%!important;z-index:99999!important;font-size:24px!important;font-weight:bold!important;cursor:pointer!important;">⏸</button>
+    <button id="debugPauseBtn" style="position:unset!important;top:90%!important;right:43%!important;width:60px!important;height:60px!important;background:red!important;color:white!important;border:3px solid yellow!important;border-radius:50%!important;z-index:99999!important;font-size:24px!important;font-weight:bold!important;cursor:pointer!important;">⏸</button>
 
     <!-- Mobile Controls -->
     <div class="mobile-controls" id="mobileControls">
@@ -3704,6 +3116,7 @@
 
             <!-- Ad Bonus Section -->
             <div id="adBonusSection" style="
+                display: block;
                 text-align: center;
                 margin: 8px 0;
                 padding: 10px;
@@ -3727,7 +3140,7 @@
                     transition: all 0.3s ease;
                     display: inline-block;
                 ">
-                    Watch Ad for x3 Upgrade Bonus
+                    📺 Watch Ad (1 per wave) for x3 Bonus
                 </button>
                 <div id="bonusActiveIndicator" style="
                     display: none;
@@ -3738,7 +3151,7 @@
                     text-shadow: 0 0 10px #FFD700;
                     animation: pulse-glow 1.5s ease-in-out infinite;
                 ">
-                    x3 BONUS ACTIVE - Next upgrade will be tripled!
+                    ✨ x3 BONUS ACTIVE - Use on all upgrades this wave!
                 </div>
             </div>
 
@@ -3800,7 +3213,7 @@
 
             <!-- Botones de acción -->
             <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap;">
-                <button class="btn-game-over-primary" onclick="location.reload()" style="
+                <button class="btn-game-over-primary" onclick="vibrateButton(50); location.reload()" style="
                     background: linear-gradient(135deg, #00ffff, #00cccc);
                     border: 2px solid #00ffff;
                     color: #000;
@@ -3818,7 +3231,7 @@
                     max-width: 200px;
                 ">▶ PLAY AGAIN</button>
 
-                <button id="continueWithAdBtn" onclick="if(typeof window.showAdForContinue === 'function') window.showAdForContinue();" style="
+                <button id="continueWithAdBtn" onclick="vibrateButton(50); if(typeof window.showAdForContinue === 'function') window.showAdForContinue();" style="
                     background: linear-gradient(135deg, #FFD700, #FFA500);
                     border: 2px solid #FFD700;
                     color: #000;
@@ -4077,6 +3490,7 @@
 
                 // Event listener para selección (solo para desbloqueados)
                 avatarDiv.addEventListener('click', async function() {
+                    vibrateButton(50); // ✅ Vibración al seleccionar avatar
                     if (!currentUser) return;
 
                     // Remover selección previa
@@ -4223,10 +3637,6 @@
     const googleSignInBtn = document.getElementById('googleSignInBtn');
     const guestPlayBtn = document.getElementById('guestPlayBtn');
     const startGameBtn = document.getElementById('startGameBtn');
-    const levelSelectBtn = document.getElementById('levelSelectBtn');
-    const levelSelector = document.getElementById('levelSelector');
-    const closeLevelSelector = document.getElementById('closeLevelSelector');
-    const levelGrid = document.getElementById('levelGrid');
     const loadingScreen = document.getElementById('loadingScreen');
     const guestIndicator = document.getElementById('guestIndicator');
     const loginBtn = document.getElementById('loginBtn');
@@ -4394,30 +3804,35 @@
       loginContainer.style.display = 'none';
       userMenuContainer.style.display = 'block';
 
-      if (window.isGuestMode) {
-        // Modo invitado
-        document.getElementById('userName').textContent = 'Guest Player';
-        // Usar solo el nombre del archivo si está en la misma carpeta que index.html
-        document.getElementById('userAvatar').src = 'guest_user_logo.png';
-        document.getElementById('userAvatar').alt = 'Guest Avatar';
-        guestIndicator.style.display = 'inline-flex';
-        loginBtn.style.display = 'flex';
-        // Ocultar mejor puntuación para invitados
-        if (window.showUserBestScore) {
-            window.showUserBestScore(0);
-        }
-      } else {
-        // Usuario logueado
-        document.getElementById('userName').textContent = user.displayName || 'Player';
 
-        // Cargar avatar personalizado
-        loadUserAvatar(user.uid);
+            // Re-attach click event to userAvatar (profile card)
+            const userAvatar = document.getElementById('userAvatar');
+            if (userAvatar) {
+                userAvatar.style.cursor = 'pointer';
+                userAvatar.onclick = showUserOptionsModal;
+            }
 
-        guestIndicator.style.display = 'none';
-        loginBtn.style.display = 'none';
-        // Cargar y mostrar mejor puntuación
-        loadBestScore(user.uid);
-      }
+            // Update avatar UI after login/logout
+            updateAvatarUI();
+
+            if (window.isGuestMode) {
+                // Modo invitado
+                document.getElementById('userName').textContent = 'Guest Player';
+                document.getElementById('userAvatar').src = 'guest_user_logo.png';
+                document.getElementById('userAvatar').alt = 'Guest Avatar';
+                guestIndicator.style.display = 'inline-flex';
+                loginBtn.style.display = 'flex';
+                if (window.showUserBestScore) {
+                        window.showUserBestScore(0);
+                }
+            } else {
+                // Usuario logueado
+                document.getElementById('userName').textContent = user.displayName || 'Player';
+                loadUserAvatar(user.uid);
+                guestIndicator.style.display = 'none';
+                loginBtn.style.display = 'none';
+                loadBestScore(user.uid);
+            }
 
       // Actualizar visibilidad del botón de logout
       if (typeof updateLogoutButtonVisibility === 'function') {
@@ -4470,93 +3885,6 @@
     startGameBtn.onclick = function() {
       startGame(1);
     };
-
-    // Abrir selector de niveles
-    levelSelectBtn.onclick = function() {
-      renderLevelSelector();
-      levelSelector.classList.add('active');
-    };
-
-    // Cerrar selector de niveles
-    closeLevelSelector.onclick = function() {
-      levelSelector.classList.remove('active');
-    };
-
-    // Variables de paginación
-    let currentLevelPage = 1;
-    const levelsPerPage = 9; // 3x3 grid
-
-    // Renderizar selector de niveles con paginación
-    function renderLevelSelector() {
-      const maxLevel = Math.max(10, maxLevelReached); // Mínimo 10 niveles
-      const totalPages = Math.ceil(maxLevel / levelsPerPage);
-
-      // Asegurar que currentLevelPage esté en rango
-      if (currentLevelPage < 1) currentLevelPage = 1;
-      if (currentLevelPage > totalPages) currentLevelPage = totalPages;
-
-      // Calcular inicio y fin de niveles para la página actual
-      const startIdx = (currentLevelPage - 1) * levelsPerPage + 1;
-      const endIdx = Math.min(startIdx + levelsPerPage - 1, maxLevel);
-
-      // Limpiar grid
-      levelGrid.innerHTML = '';
-
-      // Renderizar niveles de la página actual
-      for (let i = startIdx; i <= endIdx; i++) {
-        const btn = document.createElement('button');
-        btn.className = 'level-btn';
-        btn.textContent = i;
-
-        if (i <= maxLevelReached) {
-          btn.onclick = () => {
-            startGame(i);
-            levelSelector.classList.remove('active');
-          };
-        } else {
-          btn.classList.add('locked');
-          btn.textContent = '🔒';
-        }
-
-        levelGrid.appendChild(btn);
-      }
-
-      // Actualizar indicador de página
-      const pageIndicator = document.getElementById('pageIndicator');
-      if (pageIndicator) {
-        pageIndicator.textContent = `${currentLevelPage} / ${totalPages}`;
-      }
-
-      // Actualizar estado de botones de navegación
-      const prevBtn = document.getElementById('prevPageBtn');
-      const nextBtn = document.getElementById('nextPageBtn');
-      if (prevBtn) prevBtn.disabled = currentLevelPage === 1;
-      if (nextBtn) nextBtn.disabled = currentLevelPage === totalPages;
-    }
-
-    // Botones de paginación
-    const prevPageBtn = document.getElementById('prevPageBtn');
-    const nextPageBtn = document.getElementById('nextPageBtn');
-
-    if (prevPageBtn) {
-      prevPageBtn.onclick = function() {
-        if (currentLevelPage > 1) {
-          currentLevelPage--;
-          renderLevelSelector();
-        }
-      };
-    }
-
-    if (nextPageBtn) {
-      nextPageBtn.onclick = function() {
-        const maxLevel = Math.max(10, maxLevelReached);
-        const totalPages = Math.ceil(maxLevel / levelsPerPage);
-        if (currentLevelPage < totalPages) {
-          currentLevelPage++;
-          renderLevelSelector();
-        }
-      };
-    }
 
     // Iniciar juego desde un nivel específico
         function startGame(startLevel) {
@@ -4676,171 +4004,6 @@
     };
 
     // ===================================
-    // SETTINGS MENU - COMPLETE SYSTEM
-    // ===================================
-    const settingsMenu = document.getElementById('settingsMenu');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-
-    // Default settings object (SIMPLIFIED)
-    const defaultSettings = {
-        masterVolume: 70,
-        hapticFeedback: true,
-        controlSize: 'normal'
-    };
-
-    // Current settings (loaded from localStorage or defaults)
-    let currentSettings = { ...defaultSettings };
-
-    // Initialize all settings controls
-    function initializeSettings() {
-        // Load saved settings
-        loadSettings();
-
-        // === 1. VOLUME CONTROL ===
-        const masterVolumeSlider = document.getElementById('masterVolume');
-        masterVolumeSlider.addEventListener('input', function() {
-            currentSettings.masterVolume = parseInt(this.value);
-            document.getElementById('masterVolumeValue').textContent = this.value + '%';
-            saveSettings();
-            applyVolumeSettings();
-        });
-
-        // === 2. HAPTIC FEEDBACK ===
-        const hapticToggle = document.getElementById('hapticToggle');
-        hapticToggle.addEventListener('click', function() {
-            currentSettings.hapticFeedback = !currentSettings.hapticFeedback;
-            this.classList.toggle('active');
-            saveSettings();
-            // Test vibration
-            if (currentSettings.hapticFeedback && navigator.vibrate) {
-                navigator.vibrate(50);
-            }
-        });
-
-        // === 3. CONTROLS SIZE ===
-        const sizeSmall = document.getElementById('sizeSmall');
-        const sizeNormal = document.getElementById('sizeNormal');
-        const sizeLarge = document.getElementById('sizeLarge');
-
-        sizeSmall.addEventListener('click', function() {
-            currentSettings.controlSize = 'small';
-            updateSizeButtons();
-            saveSettings();
-            applyControlSize('small');
-        });
-
-        sizeNormal.addEventListener('click', function() {
-            currentSettings.controlSize = 'normal';
-            updateSizeButtons();
-            saveSettings();
-            applyControlSize('normal');
-        });
-
-        sizeLarge.addEventListener('click', function() {
-            currentSettings.controlSize = 'large';
-            updateSizeButtons();
-            saveSettings();
-            applyControlSize('large');
-        });
-
-        function updateSizeButtons() {
-            sizeSmall.classList.toggle('active', currentSettings.controlSize === 'small');
-            sizeNormal.classList.toggle('active', currentSettings.controlSize === 'normal');
-            sizeLarge.classList.toggle('active', currentSettings.controlSize === 'large');
-        }
-    }
-
-    // Load settings from localStorage
-    function loadSettings() {
-        const saved = localStorage.getItem('gameSettings');
-        if (saved) {
-            currentSettings = { ...defaultSettings, ...JSON.parse(saved) };
-        }
-
-        // Apply loaded values to UI
-        document.getElementById('masterVolume').value = currentSettings.masterVolume;
-        document.getElementById('masterVolumeValue').textContent = currentSettings.masterVolume + '%';
-
-        document.getElementById('hapticToggle').classList.toggle('active', currentSettings.hapticFeedback);
-
-        // Control size UI
-        const sizeSmall = document.getElementById('sizeSmall');
-        const sizeNormal = document.getElementById('sizeNormal');
-        const sizeLarge = document.getElementById('sizeLarge');
-
-        if (sizeSmall) sizeSmall.classList.toggle('active', currentSettings.controlSize === 'small');
-        if (sizeNormal) sizeNormal.classList.toggle('active', currentSettings.controlSize === 'normal');
-        if (sizeLarge) sizeLarge.classList.toggle('active', currentSettings.controlSize === 'large');
-
-        // Apply all settings
-        applyAllSettings();
-    }
-
-    // Save settings to localStorage
-    function saveSettings() {
-        localStorage.setItem('gameSettings', JSON.stringify(currentSettings));
-    }
-
-    // Apply all settings at once
-    function applyAllSettings() {
-        applyVolumeSettings();
-        applyControlSize(currentSettings.controlSize);
-    }
-
-    // === APPLY FUNCTIONS ===
-
-    // Volume Settings
-    function applyVolumeSettings() {
-        window.gameSettings = window.gameSettings || {};
-        window.gameSettings.masterVolume = currentSettings.masterVolume / 100;
-
-        // If audioContext exists, apply volumes
-        if (window.audioContext) {
-            if (window.musicGainNode) {
-                window.musicGainNode.gain.value = currentSettings.masterVolume / 100;
-            }
-            if (window.effectsGainNode) {
-                window.effectsGainNode.gain.value = currentSettings.masterVolume / 100;
-            }
-        }
-    }
-
-    // Haptic Feedback
-    window.vibrate = function(duration = 50) {
-        if (currentSettings.hapticFeedback && navigator.vibrate) {
-            navigator.vibrate(duration);
-        }
-    };
-
-    // Control Size
-    function applyControlSize(size) {
-        window.gameSettings = window.gameSettings || {};
-        window.gameSettings.controlSize = size;
-
-        const mobileControls = document.getElementById('mobileControls');
-        if (mobileControls) {
-            mobileControls.classList.remove('size-small', 'size-normal', 'size-large');
-            mobileControls.classList.add('size-' + size);
-        }
-    }
-
-    // Open settings
-    settingsBtn.onclick = function() {
-        settingsMenu.classList.add('active');
-        settingsMenu.style.display = 'block';
-    };
-
-    // Close settings
-    closeSettingsBtn.onclick = function() {
-        settingsMenu.classList.remove('active');
-        settingsMenu.style.display = 'none';
-    };
-
-    // Initialize settings on page load
-    initializeSettings();
-
-    // ===================================
     // LOGOUT BUTTON
     // ===================================
 
@@ -4866,11 +4029,6 @@
                     // Reset UI to login screen
                     document.getElementById('loginContainer').style.display = 'block';
                     document.getElementById('userMenuContainer').style.display = 'none';
-                    const settingsMenu = document.getElementById('settingsMenu');
-                    if (settingsMenu) {
-                        settingsMenu.style.display = 'none';
-                        settingsMenu.classList.remove('active');
-                    }
                     currentUser = null;
                     window.isGuestMode = false;
                 }).catch((error) => {
@@ -5144,6 +4302,7 @@
         userAvatar.style.cursor = 'pointer';
         userAvatar.addEventListener('click', (e) => {
             e.preventDefault();
+            vibrateButton(50); // ✅ Vibración al abrir opciones de usuario
             console.log('🖱️ Avatar clicked, currentUser:', currentUser);
             console.log('🖱️ isGuestMode:', window.isGuestMode);
             if (currentUser && !window.isGuestMode) {
@@ -5159,13 +4318,17 @@
 
     // Event listener: Botón de cerrar modal
     if (closeUserOptionsBtn) {
-        closeUserOptionsBtn.addEventListener('click', hideUserOptionsModal);
+        closeUserOptionsBtn.addEventListener('click', () => {
+            vibrateButton(50); // ✅ Vibración al cerrar
+            hideUserOptionsModal();
+        });
     }
 
     // Event listener: Hacer clic fuera del modal
     if (userOptionsModal) {
         userOptionsModal.addEventListener('click', (e) => {
             if (e.target === userOptionsModal) {
+                vibrateButton(50); // ✅ Vibración al cerrar
                 hideUserOptionsModal();
             }
         });
@@ -5174,6 +4337,7 @@
     // Event listener: Botón de Logout
     if (logoutModalBtn) {
         logoutModalBtn.addEventListener('click', async () => {
+            vibrateButton(50); // ✅ Vibración al hacer logout
             try {
                 console.log('Logging out...');
 
@@ -5220,6 +4384,7 @@
     if (modalUserAvatar) {
         modalUserAvatar.addEventListener('click', (e) => {
             e.stopPropagation(); // Evitar que cierre el modal de usuario
+            vibrateButton(50); // ✅ Vibración al abrir selección de avatar
             if (currentUser && !window.isGuestMode) {
                 console.log('🎨 Opening avatar selection modal...');
                 openAvatarSelectionModal();
@@ -5231,6 +4396,7 @@
     if (avatarSelectionModal) {
         avatarSelectionModal.addEventListener('click', (e) => {
             if (e.target === avatarSelectionModal) {
+                vibrateButton(50); // ✅ Vibración al cerrar
                 closeAvatarSelectionModal();
             }
         });
@@ -5369,6 +4535,7 @@
 
         if (prevPageBtn) {
             prevPageBtn.addEventListener('click', () => {
+                vibrateButton(50); // ✅ Vibración al cambiar página
                 if (window.currentStatsPage > 1) {
                     window.currentStatsPage--;
                     updatePauseStats();
@@ -5378,6 +4545,7 @@
 
         if (nextPageBtn) {
             nextPageBtn.addEventListener('click', () => {
+                vibrateButton(50); // ✅ Vibración al cambiar página
                 const statsArray = Object.entries(window.playerStats || {});
                 const totalPages = Math.ceil(statsArray.length / window.STATS_PER_PAGE);
                 if (window.currentStatsPage < totalPages) {
@@ -5392,6 +4560,7 @@
 
         if (resumeBtn) {
             resumeBtn.addEventListener('click', () => {
+                vibrateButton(50); // ✅ Vibración al resumir
                 if (window.gameState && window.gameState.isPaused) {
                     window.gameState.isPaused = false;
                     if (pauseOverlay) pauseOverlay.style.display = 'none';
@@ -5404,6 +4573,7 @@
         // Botón abandonar partida
         if (abortBtn) {
             abortBtn.addEventListener('click', () => {
+                vibrateButton(70); // ✅ Vibración más fuerte para acción destructiva
                 if (window.gameState && window.gameState.isPlaying && !window.gameState.isGameOver) {
                     // Guardar la partida como ABORTED
                     if (typeof window.guardarPartida === 'function') {
@@ -5542,23 +4712,38 @@
             const bonusActiveIndicator = document.getElementById('bonusActiveIndicator');
             const adBonusSection = document.getElementById('adBonusSection');
 
-            if (!watchAdBtn || !bonusActiveIndicator || !adBonusSection) return;
+            if (!watchAdBtn || !bonusActiveIndicator || !adBonusSection) {
+                console.warn('⚠️ Ad bonus UI elements not found');
+                return;
+            }
 
             const bonusState = window.adBonusState;
+
+            // Verificar si bonusState existe y está inicializado
+            if (!bonusState) {
+                console.warn('⚠️ adBonusState not initialized yet, hiding ad section');
+                adBonusSection.style.display = 'none';
+                return;
+            }
+
+            console.log('🎁 Updating bonus UI - active:', bonusState.active, 'canWatch:', bonusState.canWatch);
 
             if (bonusState.active) {
                 // Bonus activo (anuncio visto, esperando a ser usado) - mostrar indicador
                 watchAdBtn.style.display = 'none';
                 bonusActiveIndicator.style.display = 'block';
                 adBonusSection.style.display = 'block';
+                console.log('✅ Showing active bonus indicator');
             } else if (bonusState.canWatch) {
                 // Puede ver un anuncio - mostrar botón
                 watchAdBtn.style.display = 'inline-block';
                 bonusActiveIndicator.style.display = 'none';
                 adBonusSection.style.display = 'block';
+                console.log('✅ Showing watch ad button');
             } else {
-                // No puede ver anuncio (raro, pero por seguridad)
+                // No puede ver anuncio porque ya hay uno pendiente de consumir
                 adBonusSection.style.display = 'none';
+                console.log('⚠️ Hiding ad section - cannot watch (bonus pending consumption)');
             }
         }
 
@@ -5569,6 +4754,7 @@
         const watchAdBtn = document.getElementById('watchAdBtn');
         if (watchAdBtn) {
             watchAdBtn.addEventListener('click', () => {
+                vibrateButton(50); // ✅ Vibración al solicitar anuncio
                 console.log('📺 Watch Ad button clicked');
                 if (typeof window.activateTripleBonus === 'function') {
                     window.activateTripleBonus();
@@ -5617,40 +4803,23 @@
                 const cost = stat.cost();
                 const canAfford = window.gameState.experience >= cost;
                 const currentValue = stat.currentValue;
+                const bonusMultiplier = bonusActive ? 3 : 1;
 
                 // Calcular siguiente valor
                 // Siempre subimos 1 nivel, pero con bonus aplicamos el incremento 3 veces
                 let nextValue;
                 const nextLevel = stat.level + 1;
 
-                if (statName === 'regeneration' || statName === 'criticalChance') {
+                if (statName === 'regeneration'){
+                    // Regeneración aumenta en valores fijos
+                    nextValue = currentValue + (stat.increment * bonusMultiplier);
+                } else if (statName === 'criticalChance') {
                     // Valores fijos (no porcentuales)
-                    nextValue = stat.baseValue + (stat.increment * nextLevel);
+                    nextValue = Math.min(currentValue + (stat.increment * bonusMultiplier), 1);
 
-                    // Si hay bonus, añadir 2 incrementos más
-                    if (bonusActive) {
-                        nextValue += stat.increment * 2;
-                    }
                 } else {
-                    // Incremento compuesto
-                    // Calcular valor normal (1 nivel)
-                    const normalValue = stat.baseValue * Math.pow(1 + Math.abs(stat.increment), nextLevel);
+                        nextValue = currentValue * Math.pow(1 + stat.increment, bonusMultiplier);
 
-                    if (bonusActive) {
-                        // Con bonus: aplicar el incremento 2 veces más
-                        if (stat.increment < 0) {
-                            nextValue = normalValue * Math.pow(1 + stat.increment, 2);
-                        } else {
-                            nextValue = normalValue * Math.pow(1 + stat.increment, 2);
-                        }
-                    } else {
-                        // Sin bonus: valor normal
-                        if (stat.increment < 0) {
-                            nextValue = stat.baseValue * Math.pow(1 + stat.increment, nextLevel);
-                        } else {
-                            nextValue = normalValue;
-                        }
-                    }
                 }
 
                 // Formatear valores según el tipo de stat
@@ -5729,6 +4898,7 @@
                 // Event listener para el botón
                 const btn = row.querySelector('.upgrade-btn-compact');
                 btn.addEventListener('click', () => {
+                    vibrateButton(50); // ✅ Vibración al mejorar stat
                     if (canAfford && typeof window.upgradePlayerStat === 'function') {
                         const success = window.upgradePlayerStat(statName);
                         if (success) {
@@ -5770,6 +4940,7 @@
 
         // Botón de deshacer
         undoUpgradesBtn.addEventListener('click', () => {
+            vibrateButton(50); // ✅ Vibración al deshacer
             if (typeof window.restoreStatsSnapshot === 'function') {
                 window.restoreStatsSnapshot();
                 updateXPBar();
@@ -5779,6 +4950,7 @@
 
         // Botón de aceptar
         acceptUpgradesBtn.addEventListener('click', () => {
+            vibrateButton(70); // ✅ Vibración más fuerte para confirmar upgrades
             upgradeModal.classList.remove('active');
 
             // Resetear el tracking de XP de la oleada
@@ -5800,6 +4972,17 @@
 
         // Confirm modal function is available
         console.log('✅ showUpgradeModal function registered:', typeof window.showUpgradeModal);
+
+        // Verificar que adBonusState esté disponible
+        console.log('🎁 Checking adBonusState initialization...');
+        if (typeof window.adBonusState !== 'undefined') {
+            console.log('✅ adBonusState available:', JSON.stringify(window.adBonusState));
+        } else {
+            console.error('❌ adBonusState NOT available! This will cause issues.');
+            // Crear un estado temporal por seguridad
+            window.adBonusState = { active: false, canWatch: true };
+            console.log('⚠️ Created temporary adBonusState as fallback');
+        }
 
     </script>
 
@@ -5857,7 +5040,6 @@
                 `;
 
                 statCard.innerHTML = `
-                    <div style="font-size: clamp(16px, 3vw, 20px); margin-bottom: 2px;">${icon}</div>
                     <div style="font-size: clamp(9px, 1.6vw, 11px); color: #00ffff; text-transform: uppercase; margin-bottom: 2px;">${name}</div>
                     <div style="font-size: clamp(11px, 2vw, 14px); color: #fff; font-weight: 600;">Lv ${stat.level}</div>
                     <div style="font-size: clamp(10px, 1.8vw, 12px); color: #ffff00; font-weight: 500;">${displayValue}</div>
@@ -5919,6 +5101,7 @@
         let debugPaused = false;
 
         debugPauseBtn.addEventListener('click', () => {
+            vibrateButton(50); // ✅ Vibración al pausar debug
             debugPaused = !debugPaused;
 
             if (debugPaused) {
@@ -5947,7 +5130,6 @@
                     { id: 'upgradeModal', name: 'MODAL UPGRADES', cssFile: 'index.html (inline)', cssSelector: '.upgrade-modal', htmlLine: '~3752' },
                     { id: 'loadingScreen', name: 'PANTALLA CARGA', cssFile: 'css/game-ui.css', cssSelector: '.loading-screen', htmlLine: '~3663' },
                     { id: 'levelSelector', name: 'SELECTOR NIVELES', cssFile: 'index.html (inline)', cssSelector: '.level-selector', htmlLine: '~3551' },
-                    { id: 'settingsMenu', name: 'MENÚ CONFIGURACIÓN', cssFile: 'index.html (inline)', cssSelector: '.settings-menu', htmlLine: '~3465' },
                     { id: 'statsPage', name: 'PÁGINA ESTADÍSTICAS', cssFile: 'index.html (inline)', cssSelector: '.stats-page', htmlLine: '~3564' },
                     { id: 'userOptionsModal', name: 'MODAL OPCIONES USUARIO', cssFile: 'index.html (inline)', cssSelector: '.modal-overlay', htmlLine: '~3424' },
                     { id: 'avatarSelectionModal', name: 'MODAL SELECCIÓN AVATAR', cssFile: 'index.html (inline)', cssSelector: '.avatar-modal-overlay', htmlLine: '~3450' },

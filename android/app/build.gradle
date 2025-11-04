@@ -17,8 +17,17 @@ android {
         multiDexEnabled true
     }
 
+    signingConfigs {
+        release {
+            storeFile file('../key_store/keystore')
+            storePassword 'NeonSurvivor2025!'
+            keyAlias 'neon-survivor'
+            keyPassword 'NeonSurvivor2025!'
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

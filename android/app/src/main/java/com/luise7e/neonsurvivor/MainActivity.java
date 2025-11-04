@@ -11,6 +11,8 @@ import android.util.Log;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.annotation.NonNull;
 
@@ -52,13 +54,14 @@ public class MainActivity extends Activity {
     private FirebaseAuth firebaseAuth;
 
     // ID de anuncio intersticial (cambiar a producción en release)
-    private static final String AD_UNIT_ID = "ca-app-pub-4698386674302808/7423787962"; // Test ID
+    private static final String AD_UNIT_ID = "ca-app-pub-4698386674302808/7423787962";
     // Para producción: "ca-app-pub-4698386674302808/7423787962"
     // para debug: "ca-app-pub-3940256099942544/1033173712";
 
     // ID de anuncio con recompensa (test)
-    private static final String REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"; // Test ID
-    // Para producción: usar tu propio ID de AdMob
+    private static final String REWARDED_AD_UNIT_ID = "ca-app-pub-4698386674302808/6466954585";
+    //"ca-app-pub-3940256099942544/5224354917"; // Test ID
+    // Para producción: usar tu propio ID de AdMob "ca-app-pub-4698386674302808/6466954585";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -327,12 +330,12 @@ public class MainActivity extends Activity {
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 Log.d(TAG, "✅ Google Sign In successful: " + account.getEmail());
-                
+
                 // Enviar el Google ID Token directamente al WebView (NO el Firebase token)
                 String googleIdToken = account.getIdToken();
                 Log.d(TAG, "🔑 Google ID Token obtained (length: " + googleIdToken.length() + ")");
                 notifyWebViewWithGoogleToken(googleIdToken);
-                
+
             } catch (ApiException e) {
                 Log.e(TAG, "❌ Google Sign In failed: " + e.getMessage());
                 notifyWebViewAuthResult(false, "Google Sign In failed: " + e.getMessage());
@@ -415,6 +418,30 @@ public class MainActivity extends Activity {
 
     // Interface para JavaScript
     public class AdMobInterface {
+        @JavascriptInterface
+        public void vibrate(int duration) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                        if (vibrator != null && vibrator.hasVibrator()) {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                // API 26+: Usar VibrationEffect
+                                vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE));
+                            } else {
+                                // API < 26: Método legacy
+                                vibrator.vibrate(duration);
+                            }
+                            Log.d(TAG, "📳 Vibration triggered: " + duration + "ms");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Error vibrating: " + e.getMessage());
+                    }
+                }
+            });
+        }
+
         @JavascriptInterface
         public void showInterstitial() {
             runOnUiThread(new Runnable() {
