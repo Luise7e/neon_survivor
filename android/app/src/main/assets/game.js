@@ -25,7 +25,7 @@ let continueAdState = {
 // Función llamada desde Android cuando AdMob está listo
 function onAdMobReady() {
     admobReady = true;
-    console.log('✅ AdMob Native Android Ready');
+    //console.log('✅ AdMob Native Android Ready');
 }
 
 // Exponer el estado del bonus para el UI
@@ -79,34 +79,34 @@ function shouldShowAdForWave(wave) {
 async function showInterstitialAd() {
     if (typeof Android !== 'undefined') {
         try {
-            console.log('📺 Showing AdMob Native Interstitial Ad...');
+            //console.log('📺 Showing AdMob Native Interstitial Ad...');
             Android.showInterstitial();
         } catch (error) {
             console.error('❌ Error showing interstitial ad:', error);
         }
     } else {
-        console.log('⚠️ AdMob not available (running in browser)');
+        //console.log('⚠️ AdMob not available (running in browser)');
     }
 }
 
 // Función para activar bonus x3 después de ver anuncio
 function activateTripleBonus() {
-    console.log('📺 activateTripleBonus called - current state:', JSON.stringify(adBonusState));
+    //console.log('📺 activateTripleBonus called - current state:', JSON.stringify(adBonusState));
 
     if (adBonusState.active) {
-        console.log('⚠️ Bonus x3 already active - consume it first');
+        //console.log('⚠️ Bonus x3 already active - consume it first');
         showNotification('❌ Use current bonus first!');
         return false;
     }
 
     if (!adBonusState.canWatch) {
-        console.log('⚠️ Cannot watch ad - bonus already pending');
+        //console.log('⚠️ Cannot watch ad - bonus already pending');
         showNotification('⚠️ Bonus already pending!');
         return false;
     }
 
     if (adBonusState.isLoading) {
-        console.log('⚠️ Ad already loading - please wait');
+        //console.log('⚠️ Ad already loading - please wait');
         showNotification('⏳ Loading ad...');
         return false;
     }
@@ -120,12 +120,12 @@ function activateTripleBonus() {
                 return false;
             }
 
-            console.log('📺 Calling Android.showRewardedAd()...');
+            //console.log('📺 Calling Android.showRewardedAd()...');
             adBonusState.isLoading = true; // Prevenir clics múltiples
             showNotification('⏳ Loading ad...');
 
             Android.showRewardedAd(); // Usar anuncio con recompensa
-            console.log('✅ Android.showRewardedAd() called successfully');
+            //console.log('✅ Android.showRewardedAd() called successfully');
 
             // Timeout de seguridad: si no hay respuesta en 3 segundos, resetear estado
             setTimeout(() => {
@@ -146,10 +146,10 @@ function activateTripleBonus() {
         }
     } else {
         // Modo prueba en navegador
-        console.log('⚠️ AdMob not available (Android object not found) - Activating bonus for testing');
-        console.log('   - typeof Android:', typeof Android);
+        //console.log('⚠️ AdMob not available (Android object not found) - Activating bonus for testing');
+        //console.log('   - typeof Android:', typeof Android);
         if (typeof Android !== 'undefined') {
-            console.log('   - typeof Android.showRewardedAd:', typeof Android.showRewardedAd);
+            //console.log('   - typeof Android.showRewardedAd:', typeof Android.showRewardedAd);
         }
         onAdRewarded();
         return true;
@@ -158,15 +158,15 @@ function activateTripleBonus() {
 
 // Callback llamado desde Android cuando el usuario completa el anuncio con recompensa
 function onAdRewarded() {
-    console.log('🎁 onAdRewarded called!');
-    console.log('   - State BEFORE:', JSON.stringify(adBonusState));
+    //console.log('🎁 onAdRewarded called!');
+    //console.log('   - State BEFORE:', JSON.stringify(adBonusState));
 
     adBonusState.active = true;
     adBonusState.canWatch = false; // No puede ver otro anuncio en esta wave
     adBonusState.isLoading = false; // Resetear estado de loading
     adBonusState.usesRemaining = 999; // Usos ilimitados durante esta wave
 
-    console.log('   - State AFTER:', JSON.stringify(adBonusState));
+    //console.log('   - State AFTER:', JSON.stringify(adBonusState));
 
     // Notificar al usuario
     if (typeof showNotification === 'function') {
@@ -174,24 +174,24 @@ function onAdRewarded() {
     }
 
     // Actualizar el UI del modal si está abierto
-    console.log('   - Updating upgrade modal UI...');
+    //console.log('   - Updating upgrade modal UI...');
     if (typeof window.updateUpgradeModalBonusUI === 'function') {
         window.updateUpgradeModalBonusUI();
-        console.log('   - ✅ UI updated');
+        //console.log('   - ✅ UI updated');
     } else {
         console.warn('   - ⚠️ updateUpgradeModalBonusUI not available');
     }
 
     // Re-renderizar la tabla para mostrar los valores con bonus
-    console.log('   - Re-rendering upgrades grid...');
+    //console.log('   - Re-rendering upgrades grid...');
     if (typeof window.renderUpgradesGrid === 'function') {
         window.renderUpgradesGrid();
-        console.log('   - ✅ Grid re-rendered');
+        //console.log('   - ✅ Grid re-rendered');
     } else {
         console.warn('   - ⚠️ renderUpgradesGrid not available');
     }
 
-    console.log('🎁 onAdRewarded complete!');
+    //console.log('🎁 onAdRewarded complete!');
 }
 
 // Callback llamado desde Android si el anuncio falla o se cancela
@@ -270,6 +270,7 @@ const ViewportScale = {
     playerSize: 20,
     bulletSize: 5,
     enemySize: 18,
+    cameraZoom: 2.0,  // Factor de zoom de cámara (2.0 = ver el doble de mapa)
 
     update() {
         const screenWidth = window.innerWidth;
@@ -280,15 +281,25 @@ const ViewportScale = {
 
         // Tamaños adaptativos (% del viewport)
         if (isMobileDevice) {
-            this.playerSize = screenWidth * 0.05; // 5% del ancho de pantalla
+            this.playerSize = screenWidth * 0.02; // 5% del ancho de pantalla
             this.bulletSize = screenWidth * 0.01; // 0.6% del ancho
-            this.enemySize = screenWidth * 0.045; // 1.9% del ancho
+            this.enemySize = screenWidth * 0.02; // 1.9% del ancho
         } else {
             this.playerSize = screenWidth * 0.025; // 2.5% del ancho
             this.bulletSize = screenWidth * 0.008; // 0.8% del ancho
             this.enemySize = screenWidth * 0.03; // 3% del ancho
         }
 
+    },
+    
+    // Control de altura de cámara
+    getCameraZoom() {
+        return this.cameraZoom;
+    },
+    
+    setCameraZoom(zoom) {
+        this.cameraZoom = Math.max(1.0, Math.min(4.0, zoom)); // Entre 1.0 y 4.0
+        console.log('📷 Camera Zoom changed to:', this.cameraZoom);
     }
 };
 
@@ -318,18 +329,31 @@ function resizeCanvas() {
 
     ViewportScale.update(); // Actualizar escalas
     updateGameAreaLimits(); // Actualizar límites del área de juego
+    updateMinimapPosition(); // Actualizar posición del minimapa según orientación
 
-    console.log('📐 Canvas Resized (HIGH QUALITY):', {
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height,
-        styleWidth: canvas.style.width,
-        styleHeight: canvas.style.height,
-        dpr: dpr,
-        logicalWidth: window.innerWidth,
-        logicalHeight: window.innerHeight,
-        note: 'DPR scaling ENABLED for crisp graphics',
-        viewportScale: ViewportScale.scale
-    });
+}
+
+function updateMinimapPosition() {
+    const minimapCanvas = document.getElementById('minimapCanvas');
+    if (!minimapCanvas) return;
+    
+    const isPortrait = window.innerHeight > window.innerWidth;
+    
+    if (isPortrait) {
+        // Modo vertical: esquina superior derecha
+        minimapCanvas.style.top = '18px';
+        minimapCanvas.style.right = '18px';
+        minimapCanvas.style.bottom = 'auto';
+        minimapCanvas.style.left = 'auto';
+        minimapCanvas.style.transform = 'none';
+    } else {
+        // Modo horizontal: centrado en la parte inferior entre joysticks
+        minimapCanvas.style.top = 'auto';
+        minimapCanvas.style.right = 'auto';
+        minimapCanvas.style.bottom = '20px';
+        minimapCanvas.style.left = '50%';
+        minimapCanvas.style.transform = 'translateX(-50%)';
+    }
 }
 
 // El listener de resize se agregará después de inicializar el canvas
@@ -355,6 +379,7 @@ const gameState = {
     lastEnemySpawn: 0,
     enemySpawnRate: 1000,
     difficultyMultiplier: 1,
+    mapType: 'maze', // Tipo de mapa seleccionado
     // Sistema de experiencia
     experience: 0,
     experienceThisWave: {
@@ -618,11 +643,11 @@ function initializeMobileControls() {
 
     if (mobileControlsEl) {
         mobileControlsEl.classList.add('active');
-        console.log('📱 mobileControls activated');
+        //console.log('📱 mobileControls activated');
     }
     if (platformMobile) {
         platformMobile.classList.add('active');
-        console.log('📱 platformMobile activated');
+        //console.log('📱 platformMobile activated');
     }
 
     // Joystick - FIXED: Solo la base captura eventos
@@ -639,7 +664,7 @@ function initializeMobileControls() {
     // FORZAR pointer-events en joystick base
     joystickBase.style.pointerEvents = 'all';
     joystickStick.style.pointerEvents = 'none';
-    console.log('✅ Joystick pointer-events set: base=all, stick=none');
+    //console.log('✅ Joystick pointer-events set: base=all, stick=none');
 
     let joystickTouchId = null;
 
@@ -716,19 +741,19 @@ function initializeMobileControls() {
     const shootJoystickStick = document.getElementById('shootJoystickStick');
     let shootJoystickTouchId = null;
 
-    console.log('📱 Shoot Joystick Elements:');
-    console.log('   - shootJoystickBase:', shootJoystickBase ? '✅ Found' : '❌ NOT FOUND');
-    console.log('   - shootJoystickStick:', shootJoystickStick ? '✅ Found' : '❌ NOT FOUND');
+    //console.log('📱 Shoot Joystick Elements:');
+    //console.log('   - shootJoystickBase:', shootJoystickBase ? '✅ Found' : '❌ NOT FOUND');
+    //console.log('   - shootJoystickStick:', shootJoystickStick ? '✅ Found' : '❌ NOT FOUND');
 
     if (shootJoystickBase) {
-        console.log('📱 Setting up shoot joystick event listeners...');
+        //console.log('📱 Setting up shoot joystick event listeners...');
 
         // FORZAR pointer-events en shoot joystick base
         shootJoystickBase.style.pointerEvents = 'all';
         if (shootJoystickStick) {
             shootJoystickStick.style.pointerEvents = 'none';
         }
-        console.log('✅ Shoot joystick pointer-events set: base=all, stick=none');
+        //console.log('✅ Shoot joystick pointer-events set: base=all, stick=none');
         shootJoystickBase.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -822,20 +847,20 @@ function initializeMobileControls() {
 
     // Pause button
     const pauseBtnMobile = document.getElementById('pauseBtnMobile');
-    console.log('🔍 Pause button mobile found in initMobileControls:', pauseBtnMobile);
+    //console.log('🔍 Pause button mobile found in initMobileControls:', pauseBtnMobile);
     if (pauseBtnMobile) {
         const pauseHandler = function(e) {
             e.preventDefault();
             e.stopPropagation();
             vibrateButton(50); // ✅ Vibración al pulsar pause
-            console.log('⏸️ Pause button activated! Game state:', gameState.isPlaying, gameState.isGameOver);
+            //console.log('⏸️ Pause button activated! Game state:', gameState.isPlaying, gameState.isGameOver);
             if (gameState.isPlaying && !gameState.isGameOver) {
                 gameState.isPaused = true;
                 const pauseOverlay = document.getElementById('pauseOverlay');
-                console.log('📱 Pause overlay:', pauseOverlay);
+                //console.log('📱 Pause overlay:', pauseOverlay);
                 if (pauseOverlay) {
                     pauseOverlay.style.display = 'flex';
-                    console.log('✅ Pause overlay displayed');
+                    //console.log('✅ Pause overlay displayed');
                 }
 
                 // Reset page to 1 when opening pause menu
@@ -846,14 +871,14 @@ function initializeMobileControls() {
                 // Update pause stats
                 if (typeof window.updatePauseStats === 'function') {
                     window.updatePauseStats();
-                    console.log('📊 Pause stats updated');
+                    //console.log('📊 Pause stats updated');
                 }
             }
         };
 
         pauseBtnMobile.addEventListener('touchstart', pauseHandler, { passive: false });
         pauseBtnMobile.addEventListener('click', pauseHandler);
-        console.log('✅ Pause button event listeners registered (touch + click)');
+        //console.log('✅ Pause button event listeners registered (touch + click)');
     }
 
     // Inicializar audio en primer touch
@@ -862,7 +887,7 @@ function initializeMobileControls() {
     }, { once: true });
 
     mobileControlsInitialized = true;
-    console.log('✅ Mobile controls initialized successfully');
+    //console.log('✅ Mobile controls initialized successfully');
 }
 
 // ===================================
@@ -1108,32 +1133,33 @@ function selectEnemyType() {
 }
 
 function getSpawnPosition() {
+    // Si existe MapSystem, usar spawn inteligente en el mapa procedural
+    if (window.gameMapSystem && typeof window.gameMapSystem.getSmartEnemySpawnPosition === 'function') {
+        return window.gameMapSystem.getSmartEnemySpawnPosition();
+    }
+    // Fallback clásico: spawn fuera de pantalla
     const side = Math.floor(Math.random() * 4);
     let x, y;
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-
-    // CRITICAL FIX: Los enemigos deben aparecer FUERA de la pantalla visible
-    // pero respetando el área del HUD (gameAreaTop)
     switch(side) {
-        case 0: // Top - fuera de la pantalla, no debajo del HUD
+        case 0:
             x = Math.random() * screenWidth;
-            y = -60; // Muy arriba, completamente fuera de vista
+            y = -60;
             break;
-        case 1: // Right
+        case 1:
             x = screenWidth + 40;
             y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop);
             break;
-        case 2: // Bottom
+        case 2:
             x = Math.random() * screenWidth;
             y = screenHeight + 40;
             break;
-        case 3: // Left
+        case 3:
             x = -40;
             y = gameAreaTop + Math.random() * (screenHeight - gameAreaTop);
             break;
     }
-
     return { x, y };
 }
 
@@ -1250,7 +1276,7 @@ function createPlayerBullet(angle) {
     }
 
     // Debug log (descomenta para depurar)
-    // console.log('🔫 Bullet created at', Date.now(), 'Cooldown:', getShootCooldown());
+    // //console.log('🔫 Bullet created at', Date.now(), 'Cooldown:', getShootCooldown());
 
     bullets.push({
         x: player.x,
@@ -1269,7 +1295,7 @@ function createPlayerBullet(angle) {
 // Obtener cooldown de disparo actual
 function getShootCooldown() {
     const cooldown = Math.max(50, playerStats.fireRate.currentValue);
-    // console.log('🎯 Shoot cooldown:', cooldown, 'ms'); // Debug log
+    // //console.log('🎯 Shoot cooldown:', cooldown, 'ms'); // Debug log
     return cooldown;
 }
 
@@ -1376,10 +1402,10 @@ function upgradePlayerStat(statName) {
         if (adBonusState.usesRemaining > 0) {
             adBonusState.usesRemaining--;
         }
-        
+
         showNotification('🎁 x3 BONUS APPLIED! Still active for more upgrades');
-        console.log('✨ Bonus used - Remaining uses:', adBonusState.usesRemaining);
-        
+        //console.log('✨ Bonus used - Remaining uses:', adBonusState.usesRemaining);
+
         // NO desactivar el bonus - se mantiene activo para más upgrades
         // adBonusState.active = false; // ❌ ELIMINADO
         // adBonusState.canWatch = true; // ❌ ELIMINADO
@@ -1503,7 +1529,7 @@ function showWaveCountdown(callback) {
             clearInterval(interval);
             countdownEl.style.display = 'none';
             gameState.isCountdown = false;
-            console.log('⏰ Countdown finished! isCountdown:', gameState.isCountdown, 'enemiesToSpawn:', gameState.enemiesToSpawn);
+            //console.log('⏰ Countdown finished! isCountdown:', gameState.isCountdown, 'enemiesToSpawn:', gameState.enemiesToSpawn);
             if (callback) callback();
         }
     }, 1000);
@@ -1519,7 +1545,7 @@ function nextWave() {
     adBonusState.active = false;
     adBonusState.canWatch = true;
     adBonusState.usesRemaining = 0;
-    console.log('🔄 Bonus state reset for new wave:', JSON.stringify(adBonusState));
+    //console.log('🔄 Bonus state reset for new wave:', JSON.stringify(adBonusState));
 
     // Wave de jefe (múltiplos de 5)
     const isBossWave = gameState.wave % 5 === 0;
@@ -1613,7 +1639,7 @@ function gameOver() {
 
 // Función para continuar la partida después de ver anuncio
 function continueGameAfterAd() {
-    console.log('🎮 Continue game after ad');
+    //console.log('🎮 Continue game after ad');
 
     // Restaurar 25% de vida
     player.health = player.maxHealth * 0.25;
@@ -1646,7 +1672,7 @@ function continueGameAfterAd() {
 // Función para activar continue después de ver anuncio
 function showAdForContinue() {
     if (continueAdState.isLoading) {
-        console.log('⚠️ Continue ad already loading - please wait');
+        //console.log('⚠️ Continue ad already loading - please wait');
         showNotification('⏳ Loading ad...');
         return false;
     }
@@ -1660,7 +1686,7 @@ function showAdForContinue() {
                 return false;
             }
 
-            console.log('📺 Showing Ad for Continue Game...');
+            //console.log('📺 Showing Ad for Continue Game...');
             continueAdState.isLoading = true;
             showNotification('⏳ Loading ad...');
 
@@ -1684,7 +1710,7 @@ function showAdForContinue() {
         }
     } else {
         // Modo prueba en navegador
-        console.log('⚠️ AdMob not available (running in browser) - Continue for testing');
+        //console.log('⚠️ AdMob not available (running in browser) - Continue for testing');
         onAdRewardedContinue();
         return true;
     }
@@ -1692,7 +1718,7 @@ function showAdForContinue() {
 
 // Callback llamado desde Android cuando se completa el anuncio de continue
 function onAdRewardedContinue() {
-    console.log('🎁 Ad watched! Continuing game...');
+    //console.log('🎁 Ad watched! Continuing game...');
     continueAdState.isLoading = false; // Resetear estado de loading
     continueGameAfterAd();
 }
@@ -1736,11 +1762,15 @@ function updatePlayerMovement() {
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
 
+    // Calculate velocity
+    let vx = 0;
+    let vy = 0;
+
     // MOVE PLAYER
     if (isMobileDevice) {
         if (input.joystick.active) {
-            player.x += input.joystick.x * player.speed;
-            player.y += input.joystick.y * player.speed;
+            vx = input.joystick.x * player.speed;
+            vy = input.joystick.y * player.speed;
         }
     } else {
         if (player.moving) {
@@ -1749,16 +1779,29 @@ function updatePlayerMovement() {
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist > 8) {
-                player.x += (dx / dist) * player.speed;
-                player.y += (dy / dist) * player.speed;
+                vx = (dx / dist) * player.speed;
+                vy = (dy / dist) * player.speed;
             } else {
                 player.moving = false;
             }
         }
     }
 
-    player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
-    player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
+    // Apply movement with collision detection
+    if (window.gameMapSystem) {
+        // Use sliding collision system
+        const newPos = window.gameMapSystem.moveWithCollision(
+            player.x, player.y, vx, vy, player.radius
+        );
+        player.x = newPos.x;
+        player.y = newPos.y;
+    } else {
+        // Fallback: simple bounds clamping
+        player.x += vx;
+        player.y += vy;
+        player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
+        player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
+    }
 }
 
 // Update ability pickups only (for countdown mode)
@@ -1842,13 +1885,29 @@ function update() {
     }
 
     // MOVE PLAYER - Mobile only (Joystick)
+    let vx = 0;
+    let vy = 0;
+
     if (input.joystick.active) {
-        player.x += input.joystick.x * player.speed;
-        player.y += input.joystick.y * player.speed;
+        vx = input.joystick.x * player.speed;
+        vy = input.joystick.y * player.speed;
     }
 
-    player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
-    player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
+    // Apply movement with collision detection
+    if (window.gameMapSystem) {
+        // Use sliding collision system
+        const newPos = window.gameMapSystem.moveWithCollision(
+            player.x, player.y, vx, vy, player.radius
+        );
+        player.x = newPos.x;
+        player.y = newPos.y;
+    } else {
+        // Fallback: simple bounds clamping
+        player.x += vx;
+        player.y += vy;
+        player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
+        player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
+    }
 
     // SHOOTING - Mobile only (Joystick)
     if (input.shootJoystick.active) {
@@ -1864,20 +1923,10 @@ function update() {
     // Spawn enemies (skip in boss wave and countdown)
     const isBossWave = gameState.wave % 5 === 0;
 
-    // DEBUG: Log spawn conditions every 60 frames (~1 second)
-    if (Math.random() < 0.016) {
-        console.log('🔍 Spawn Check:', {
-            isCountdown: gameState.isCountdown,
-            isBossWave: isBossWave,
-            enemiesToSpawn: gameState.enemiesToSpawn,
-            timeSinceLastSpawn: now - gameState.lastEnemySpawn,
-            spawnRate: gameState.enemySpawnRate,
-            canSpawn: !gameState.isCountdown && !isBossWave && gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate
-        });
-    }
+
 
     if (!gameState.isCountdown && !isBossWave && gameState.enemiesToSpawn > 0 && now - gameState.lastEnemySpawn > gameState.enemySpawnRate) {
-        console.log('✅ Spawning enemy! Remaining:', gameState.enemiesToSpawn - 1);
+        //console.log('✅ Spawning enemy! Remaining:', gameState.enemiesToSpawn - 1);
         spawnEnemy();
         gameState.enemiesToSpawn--;
         gameState.lastEnemySpawn = now;
@@ -1885,15 +1934,12 @@ function update() {
 
     if (!gameState.isCountdown && enemies.length === 0 && gameState.enemiesToSpawn === 0) {
         // Oleada completada - mostrar modal de upgrades
-        console.log(`🎉 Wave ${gameState.wave} completed!`);
-        console.log('🎁 Ad Bonus State:', JSON.stringify(adBonusState));
 
         // Verificar si debemos mostrar anuncio en este nivel
         const shouldShowAd = shouldShowAdForWave(gameState.wave);
 
         if (shouldShowAd && gameState.wave !== lastBossWaveCompleted) {
             lastBossWaveCompleted = gameState.wave;
-            console.log('📺 Showing interstitial ad for wave', gameState.wave);
             // Mostrar anuncio intersticial
             showInterstitialAd();
         }
@@ -1905,12 +1951,12 @@ function update() {
         let attempts = 0;
         const checkModal = () => {
             attempts++;
-            console.log(`🔍 Checking for showUpgradeModal (attempt ${attempts})...`);
+            //console.log(`🔍 Checking for showUpgradeModal (attempt ${attempts})...`);
             if (typeof window.showUpgradeModal === 'function') {
-                console.log('✅ showUpgradeModal found, calling it...');
+                //console.log('✅ showUpgradeModal found, calling it...');
                 window.showUpgradeModal();
             } else if (attempts < 50) { // Check for up to 5 seconds
-                console.log('⏳ showUpgradeModal not ready yet, retrying...');
+                //console.log('⏳ showUpgradeModal not ready yet, retrying...');
                 setTimeout(checkModal, 100);
             } else {
                 // Fallback si el modal no está disponible
@@ -1922,13 +1968,117 @@ function update() {
         setTimeout(checkModal, 1000);
     }    // Update enemies
     enemies.forEach(enemy => {
-        const dx = player.x - enemy.x;
-        const dy = player.y - enemy.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist > 0) {
-            enemy.x += (dx / dist) * enemy.speed;
-            enemy.y += (dy / dist) * enemy.speed;
+        if (window.gameMapSystem) {
+            const enemyTile = window.gameMapSystem.worldToTile(enemy.x, enemy.y);
+            const playerTile = window.gameMapSystem.worldToTile(player.x, player.y);
+            // Si el jugador está en bush, modo random walk
+            if (window.gameMapSystem.isInBush(player.x, player.y)) {
+                if (!enemy.randomWalk) {
+                    enemy.randomWalk = {
+                        lastDir: null,
+                        targetTile: enemyTile
+                    };
+                }
+                // Si llegó al tile objetivo o no tiene objetivo
+                if (!enemy.randomWalk.targetTile || (enemyTile.x === enemy.randomWalk.targetTile.x && enemyTile.y === enemy.randomWalk.targetTile.y)) {
+                    // Buscar intersección
+                    const dirs = [
+                        { x: 0, y: -1 }, // N
+                        { x: 1, y: 0 },  // E
+                        { x: 0, y: 1 },  // S
+                        { x: -1, y: 0 }  // W
+                    ];
+                    const validDirs = [];
+                    for (const dir of dirs) {
+                        const nx = enemyTile.x + dir.x;
+                        const ny = enemyTile.y + dir.y;
+                        if (window.gameMapSystem.isWalkable(nx, ny)) {
+                            // Evitar la dirección de la que venía
+                            if (!enemy.randomWalk.lastDir || dir.x !== -enemy.randomWalk.lastDir.x || dir.y !== -enemy.randomWalk.lastDir.y) {
+                                validDirs.push(dir);
+                            }
+                        }
+                    }
+                    // Si solo hay una dirección disponible, tomarla aunque sea la que venía
+                    let chosenDir = null;
+                    if (validDirs.length === 1) {
+                        chosenDir = validDirs[0];
+                    } else if (validDirs.length > 1) {
+                        chosenDir = validDirs[Math.floor(Math.random() * validDirs.length)];
+                    } else {
+                        // Si no hay ninguna dirección válida, retroceder por la que venía
+                        if (enemy.randomWalk.lastDir) {
+                            chosenDir = { x: -enemy.randomWalk.lastDir.x, y: -enemy.randomWalk.lastDir.y };
+                        }
+                    }
+                    if (chosenDir) {
+                        enemy.randomWalk.lastDir = chosenDir;
+                        enemy.randomWalk.targetTile = {
+                            x: enemyTile.x + chosenDir.x,
+                            y: enemyTile.y + chosenDir.y
+                        };
+                    }
+                }
+                // Mover hacia el tile objetivo
+                const target = enemy.randomWalk.targetTile;
+                const targetWorld = window.gameMapSystem.tileToWorld(target.x, target.y);
+                const dx = targetWorld.x - enemy.x;
+                const dy = targetWorld.y - enemy.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 2) {
+                    const vx = (dx / dist) * enemy.speed;
+                    const vy = (dy / dist) * enemy.speed;
+                    const newPos = window.gameMapSystem.moveWithCollision(
+                        enemy.x, enemy.y, vx, vy, enemy.radius
+                    );
+                    enemy.x = newPos.x;
+                    enemy.y = newPos.y;
+                }
+            } else {
+                // Pathfinding A*
+                if (!enemy.path || enemy.path.length === 0 || (enemy.pathTargetX !== playerTile.x || enemy.pathTargetY !== playerTile.y)) {
+                    enemy.path = window.gameMapSystem.findPathAStar(enemyTile, playerTile);
+                    enemy.pathStep = 0;
+                    enemy.pathTargetX = playerTile.x;
+                    enemy.pathTargetY = playerTile.y;
+                }
+                // Seguir el path SOLO si existe y está activo
+                enemy.isFollowingPath = false;
+                if (enemy.path && enemy.path.length > 1 && enemy.pathStep < enemy.path.length) {
+                    const nextTile = enemy.path[enemy.pathStep + 1] || enemy.path[enemy.pathStep];
+                    const nextWorld = window.gameMapSystem.tileToWorld(nextTile.x, nextTile.y);
+                    const dx = nextWorld.x - enemy.x;
+                    const dy = nextWorld.y - enemy.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > 2) {
+                        const vx = (dx / dist) * enemy.speed;
+                        const vy = (dy / dist) * enemy.speed;
+                        const newPos = window.gameMapSystem.moveWithCollision(
+                            enemy.x, enemy.y, vx, vy, enemy.radius
+                        );
+                        enemy.x = newPos.x;
+                        enemy.y = newPos.y;
+                        enemy.isFollowingPath = true;
+                        // Si el enemigo está suficientemente cerca del tile objetivo, avanzar al siguiente paso
+                        if (Math.abs(enemy.x - nextWorld.x) < 4 && Math.abs(enemy.y - nextWorld.y) < 4) {
+                            enemy.pathStep++;
+                        }
+                    }
+                }
+                // Limpiar modo random walk si sale del bush
+                if (enemy.randomWalk) delete enemy.randomWalk;
+            }
+        } else {
+            // Fallback: movimiento directo sin pathfinding
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+                const vx = (dx / dist) * enemy.speed;
+                const vy = (dy / dist) * enemy.speed;
+                enemy.x += vx;
+                enemy.y += vy;
+            }
         }
 
         // Comportamiento de jefes
@@ -1995,7 +2145,8 @@ function update() {
         }
 
         // Colisión con el jugador - DAÑO CON FEEDBACK
-        if (dist < enemy.radius + player.radius) {
+        const distToPlayer = Math.sqrt((enemy.x - player.x) * (enemy.x - player.x) + (enemy.y - player.y) * (enemy.y - player.y));
+        if (distToPlayer < enemy.radius + player.radius) {
             const currentTime = Date.now();
             const oldHealth = player.health;
             const baseDamage = enemy.damage * 0.012;
@@ -2019,8 +2170,21 @@ function update() {
 
     // Update bullets
     bullets = bullets.filter(bullet => {
+        const oldX = bullet.x;
+        const oldY = bullet.y;
+
         bullet.x += bullet.vx;
         bullet.y += bullet.vy;
+
+        // Check wall collision with raycast
+        if (window.gameMapSystem) {
+            const raycastResult = window.gameMapSystem.raycast(oldX, oldY, bullet.x, bullet.y);
+            if (raycastResult.hit) {
+                // Bullet hit a wall, destroy it
+                createParticles(raycastResult.x, raycastResult.y, 8, bullet.color);
+                return false;
+            }
+        }
 
         bullet.trail.push({ x: bullet.x, y: bullet.y });
         if (bullet.trail.length > qualitySettings.trailLength) bullet.trail.shift();
@@ -2177,27 +2341,7 @@ function render() {
     const screenHeight = window.innerHeight;
 
     // DEBUG: Verificar estado del canvas SIEMPRE al inicio
-    if (gameState.isPlaying && enemies.length > 0 && Math.random() < 0.02) { // 2% de las veces - más frecuente
-        const canvasStyle = window.getComputedStyle(canvas);
-        console.log('🎨 RENDER DEBUG:', {
-            canvasVisible: canvas.style.display !== 'none' && canvasStyle.display !== 'none',
-            canvasOpacity: canvasStyle.opacity,
-            canvasZIndex: canvasStyle.zIndex,
-            canvasSize: { width: canvas.width, height: canvas.height },
-            screenSize: { width: screenWidth, height: screenHeight },
-            ctxAlpha: ctx.globalAlpha,
-            ctxFillStyle: ctx.fillStyle,
-            enemiesCount: enemies.length,
-            playerPos: { x: Math.round(player.x), y: Math.round(player.y), radius: Math.round(player.radius) },
-            firstEnemyPos: enemies[0] ? {
-                x: Math.round(enemies[0].x),
-                y: Math.round(enemies[0].y),
-                radius: Math.round(enemies[0].radius),
-                color: enemies[0].color
-            } : 'none',
-            gameAreaTop: gameAreaTop
-        });
-    }
+    // ...log eliminado...
 
     // Ensure globalAlpha is 1 before starting
     ctx.globalAlpha = 1;
@@ -2218,27 +2362,47 @@ function render() {
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
 
-    // Overlay oscuro sobre área del HUD para delimitar zona de juego
-    if (gameAreaTop > 0) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 0, screenWidth, gameAreaTop);
-    }
+    // ===================================
+    // SISTEMA DE TRANSFORMACIÓN GLOBAL CON ZOOM
+    // ===================================
+    
+    // Calcular offset de cámara desde el MapSystem
+    let cameraX = window.gameMapSystem?.camera.x || (player.x - screenWidth / 2);
+    let cameraY = window.gameMapSystem?.camera.y || (player.y - screenHeight / 2);
+    
+    // Obtener zoom de cámara
+    const cameraZoom = ViewportScale.getCameraZoom();
+    const zoomScale = 1 / cameraZoom;
+    
+    // Aplicar transformación global: zoom + offset de cámara
+    ctx.save();
+    ctx.scale(zoomScale, zoomScale);
+    
+    // Renderizar mapa procedural si está disponible
+    if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function') {
+        // Actualizar cámara del MapSystem con zoom
+        if (window.minimapCameraActive) {
+            window.gameMapSystem.updateCamera(
+                window.minimapCameraTarget.x,
+                window.minimapCameraTarget.y,
+                screenWidth,
+                screenHeight,
+                true,
+                cameraZoom
+            );
+        } else {
+            window.gameMapSystem.updateCamera(
+                player.x,
+                player.y,
+                screenWidth,
+                screenHeight,
+                false,
+                cameraZoom
+            );
+        }
 
-    // Grid (solo en área de juego)
-    ctx.strokeStyle = 'rgba(0, 255, 255, 0.04)';
-    ctx.lineWidth = 1;
-    const gridSize = isMobileDevice ? 70 : 55;
-    for (let x = 0; x < screenWidth; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, gameAreaTop);
-        ctx.lineTo(x, screenHeight);
-        ctx.stroke();
-    }
-    for (let y = gameAreaTop; y < screenHeight; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(screenWidth, y);
-        ctx.stroke();
+        // Renderizar mapa con cámara del sistema (ya con transformación aplicada)
+        window.gameMapSystem.render(ctx, window.gameMapSystem.camera.x, window.gameMapSystem.camera.y);
     }
 
     // Render special particles
@@ -2250,8 +2414,8 @@ function render() {
             ctx.shadowColor = p.color;
             ctx.shadowBlur = 20;
             ctx.beginPath();
-            ctx.moveTo(p.x1, p.y1);
-            ctx.lineTo(p.x2, p.y2);
+            ctx.moveTo(p.x1 - cameraX, p.y1 - cameraY);
+            ctx.lineTo(p.x2 - cameraX, p.y2 - cameraY);
             ctx.stroke();
             ctx.shadowBlur = 0;
         } else if (p.type === 'ring') {
@@ -2261,7 +2425,7 @@ function render() {
             ctx.shadowColor = p.color;
             ctx.shadowBlur = 15;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
             ctx.stroke();
             ctx.shadowBlur = 0;
         } else if (p.type === 'explosion') {
@@ -2270,7 +2434,7 @@ function render() {
             ctx.shadowColor = p.color;
             ctx.shadowBlur = 30;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
         }
@@ -2286,7 +2450,7 @@ function render() {
         ctx.shadowBlur = qualitySettings.shadowBlur * 0.5;
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
         ctx.fill();
     });
     ctx.globalAlpha = 1;
@@ -2295,7 +2459,7 @@ function render() {
     // Render ability pickups
     abilityPickups.forEach(pickup => {
         ctx.save();
-        ctx.translate(pickup.x, pickup.y);
+        ctx.translate(pickup.x - cameraX, pickup.y - cameraY);
         ctx.rotate(pickup.rotation);
 
         const pulseSize = Math.sin(pickup.pulse) * 5;
@@ -2323,7 +2487,7 @@ function render() {
             ctx.shadowBlur = qualitySettings.shadowBlur * 0.8;
             ctx.fillStyle = bullet.color;
             ctx.beginPath();
-            ctx.arc(point.x, point.y, bullet.radius * alpha, 0, Math.PI * 2);
+            ctx.arc(point.x - cameraX, point.y - cameraY, bullet.radius * alpha, 0, Math.PI * 2);
             ctx.fill();
         });
 
@@ -2332,25 +2496,13 @@ function render() {
         ctx.shadowBlur = qualitySettings.shadowBlur * 1.2;
         ctx.fillStyle = bullet.color;
         ctx.beginPath();
-        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+        ctx.arc(bullet.x - cameraX, bullet.y - cameraY, bullet.radius, 0, Math.PI * 2);
         ctx.fill();
     });
     ctx.shadowBlur = 0;
 
     // Render enemies
     enemies.forEach((enemy, idx) => {
-        // DEBUG: Log primer enemigo ocasionalmente
-        if (idx === 0 && gameState.isPlaying && Math.random() < 0.01) {
-            console.log('👾 ENEMY RENDER:', {
-                x: enemy.x,
-                y: enemy.y,
-                radius: enemy.radius,
-                color: enemy.color,
-                type: enemy.type,
-                explosive: enemy.explosive,
-                isBoss: enemy.isBoss
-            });
-        }
 
         // Efectos especiales según tipo
         if (enemy.explosive) {
@@ -2361,7 +2513,7 @@ function render() {
             ctx.fillStyle = enemy.color;
             ctx.globalAlpha = 0.3;
             ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, enemy.radius + pulseSize + 10, 0, Math.PI * 2);
+        ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + pulseSize + 10, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -2374,10 +2526,10 @@ function render() {
             ctx.shadowColor = enemy.color;
             ctx.shadowBlur = qualitySettings.shadowBlur * 3;
             ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, enemy.radius + 15, rotation, rotation + Math.PI);
+            ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + 15, rotation, rotation + Math.PI);
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, enemy.radius + 15, rotation + Math.PI, rotation + Math.PI * 2);
+            ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + 15, rotation + Math.PI, rotation + Math.PI * 2);
             ctx.stroke();
         }
 
@@ -2386,7 +2538,7 @@ function render() {
         ctx.shadowBlur = enemy.isBoss ? qualitySettings.shadowBlur * 3 : qualitySettings.shadowBlur * 1.5;
         ctx.fillStyle = enemy.color;
         ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+    ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius, 0, Math.PI * 2);
         ctx.fill();
 
         // Reset shadow for performance
@@ -2400,21 +2552,21 @@ function render() {
             ctx.font = `bold ${enemy.radius * 0.8}px Orbitron`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('»', enemy.x, enemy.y);
+            ctx.fillText('»', enemy.x - cameraX, enemy.y - cameraY);
         } else if (enemy.explosive) {
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#000000';
             ctx.font = `bold ${enemy.radius * 0.7}px Orbitron`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('💥', enemy.x, enemy.y);
+            ctx.fillText('💥', enemy.x - cameraX, enemy.y - cameraY);
         } else if (enemy.isBoss) {
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#ffffff';
             ctx.font = `bold ${enemy.radius * 0.4}px Orbitron`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('👑', enemy.x, enemy.y);
+            ctx.fillText('👑', enemy.x - cameraX, enemy.y - cameraY);
         }
 
         // Health bar
@@ -2423,33 +2575,25 @@ function render() {
         const barHeight = enemy.isBoss ? 10 : 6;
         const barOffset = enemy.isBoss ? 20 : 14;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - barOffset, enemy.radius * 2, barHeight);
-        const healthColor = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
-        ctx.fillStyle = healthColor;
-        ctx.shadowColor = healthColor;
-        ctx.shadowBlur = 8;
-        ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - barOffset, enemy.radius * 2 * healthPercent, barHeight);
+    ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2, barHeight);
+    const healthColor = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
+    ctx.fillStyle = healthColor;
+    ctx.shadowColor = healthColor;
+    ctx.shadowBlur = 8;
+    ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2 * healthPercent, barHeight);
         ctx.shadowBlur = 0;
     });
 
     // Render player
+    // Calcular offset de cámara para renderizar personajes y enemigos
     if (player.x && player.y && player.radius) {
-        // DEBUG: Log player ocasionalmente
-        if (gameState.isPlaying && Math.random() < 0.01) {
-            console.log('🎮 PLAYER RENDER:', {
-                x: player.x,
-                y: player.y,
-                radius: player.radius,
-                color: player.color,
-                health: player.health
-            });
-        }
+        // ...log eliminado...
 
         ctx.shadowColor = player.color;
         ctx.shadowBlur = qualitySettings.shadowBlur * 2;
         ctx.fillStyle = player.color;
         ctx.beginPath();
-        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.arc(player.x - cameraX, player.y - cameraY, player.radius, 0, Math.PI * 2);
         ctx.fill();
 
         // Reset shadow
@@ -2465,13 +2609,43 @@ function render() {
     ctx.shadowBlur = 15;
     ctx.shadowColor = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
+    ctx.moveTo(player.x - cameraX, player.y - cameraY);
     ctx.lineTo(
-        player.x + Math.cos(player.angle) * (player.radius + 15),
-        player.y + Math.sin(player.angle) * (player.radius + 15)
+        (player.x - cameraX) + Math.cos(player.angle) * (player.radius + 15),
+        (player.y - cameraY) + Math.sin(player.angle) * (player.radius + 15)
     );
     ctx.stroke();
     ctx.shadowBlur = 0;
+    
+    // Restaurar transformación de zoom
+    ctx.restore();
+    
+    // ===================================
+    // UI ELEMENTS (sin transformación de zoom)
+    // ===================================
+
+    // Overlay oscuro sobre área del HUD para delimitar zona de juego
+    if (gameAreaTop > 0) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, screenWidth, gameAreaTop);
+    }
+
+    // Grid (solo en área de juego) - renderizado sin zoom
+    ctx.strokeStyle = 'rgba(0, 255, 255, 0.04)';
+    ctx.lineWidth = 1;
+    const gridSize = isMobileDevice ? 70 : 55;
+    for (let x = 0; x < screenWidth; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, gameAreaTop);
+        ctx.lineTo(x, screenHeight);
+        ctx.stroke();
+    }
+    for (let y = gameAreaTop; y < screenHeight; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(screenWidth, y);
+        ctx.stroke();
+    }
 
     // Show collected ability (PC only)
     if (collectedAbility && !isMobileDevice) {
@@ -2484,6 +2658,76 @@ function render() {
         ctx.font = '18px Orbitron';
         ctx.fillText(`${collectedAbility.name} - Press SPACE`, screenWidth / 2, 105);
         ctx.shadowBlur = 0;
+    }
+
+    // Renderizar minimapa si está disponible
+    if (window.gameMapSystem && typeof window.gameMapSystem.renderMinimap === 'function') {
+        const minimapCanvas = document.getElementById('minimapCanvas');
+        if (minimapCanvas) {
+            const minimapCtx = minimapCanvas.getContext('2d');
+            if (minimapCtx) {
+                // Detectar si hay personajes u enemigos debajo del minimapa
+                const isPortrait = window.innerHeight > window.innerWidth;
+                const minimapRect = minimapCanvas.getBoundingClientRect();
+                let hasCharacterUnder = false;
+                
+                // Obtener zoom para ajustar coordenadas
+                const zoomScale = 1 / ViewportScale.cameraZoom;
+                
+                // Verificar jugador (coordenadas en espacio de pantalla con zoom aplicado)
+                const playerScreenX = (player.x - cameraX) * zoomScale;
+                const playerScreenY = (player.y - cameraY) * zoomScale;
+                if (playerScreenX >= minimapRect.left && playerScreenX <= minimapRect.right &&
+                    playerScreenY >= minimapRect.top && playerScreenY <= minimapRect.bottom) {
+                    hasCharacterUnder = true;
+                }
+                
+                // Verificar enemigos
+                if (!hasCharacterUnder) {
+                    for (const enemy of enemies) {
+                        const enemyScreenX = (enemy.x - cameraX) * zoomScale;
+                        const enemyScreenY = (enemy.y - cameraY) * zoomScale;
+                        if (enemyScreenX >= minimapRect.left && enemyScreenX <= minimapRect.right &&
+                            enemyScreenY >= minimapRect.top && enemyScreenY <= minimapRect.bottom) {
+                            hasCharacterUnder = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Actualizar opacidad según detección
+                minimapCanvas.style.opacity = gameState.isPlaying ? (hasCharacterUnder ? '0.25' : '0.80') : '0';
+
+                // Calcular viewport rect para minimapa
+                // El viewport muestra el área visible en el mapa con el zoom aplicado
+                const scaleX = minimapCanvas.width / window.gameMapSystem.width;
+                const scaleY = minimapCanvas.height / window.gameMapSystem.height;
+                
+                // Tamaño del viewport en tiles (ajustado por zoom)
+                const viewportWidthInTiles = (screenWidth * cameraZoom) / window.gameMapSystem.tileSize;
+                const viewportHeightInTiles = (screenHeight * cameraZoom) / window.gameMapSystem.tileSize;
+                
+                // Posición de la cámara en tiles
+                const cameraTileX = window.gameMapSystem.camera.x / window.gameMapSystem.tileSize;
+                const cameraTileY = window.gameMapSystem.camera.y / window.gameMapSystem.tileSize;
+                
+                window.minimapViewportRect = {
+                    x: cameraTileX * scaleX,
+                    y: cameraTileY * scaleY,
+                    width: viewportWidthInTiles * scaleX,
+                    height: viewportHeightInTiles * scaleY
+                };
+
+                // Renderizar minimapa con dimensiones correctas
+                window.gameMapSystem.renderMinimap(
+                    minimapCtx,
+                    minimapCanvas.width,
+                    minimapCanvas.height,
+                    player,
+                    enemies
+                );
+            }
+        }
     }
 
     // Reset all context state at end of render for next frame
@@ -2510,7 +2754,7 @@ function updateAimCursor() {
 
     // Solo mostrar cuando el joystick de disparo esté activo
     if (input.shootJoystick.active && gameState.isPlaying && !gameState.isPaused && !gameState.isGameOver) {
-        console.log('🎯 Aim cursor should be visible - shootJoystick active');
+        //console.log('🎯 Aim cursor should be visible - shootJoystick active');
         const angle = input.shootJoystick.angle;
 
         // Calcular distancia base
@@ -2585,16 +2829,7 @@ function updateAimCursor() {
         aimCursor.style.top = cursorY + 'px';
         aimCursor.classList.add('active');
 
-        // Log cada 30 frames (~0.5 segundos)
-        if (Math.random() < 0.033) {
-            console.log('🎯 Aim cursor positioned at:', {
-                x: cursorX,
-                y: cursorY,
-                angle,
-                hasActiveClass: aimCursor.classList.contains('active'),
-                computedStyle: window.getComputedStyle(aimCursor).visibility
-            });
-        }
+
     } else {
         // Ocultar cursor cuando no se está disparando
         aimCursor.classList.remove('active');
@@ -2611,13 +2846,13 @@ function gameLoop() {
         const currentTime = performance.now();
         const deltaTime = currentTime - (window.lastFrameTime || currentTime);
         window.lastFrameTime = currentTime;
-        
+
         window.MapMode.update(deltaTime);
         window.MapMode.render();
         requestAnimationFrame(gameLoop);
         return;
     }
-    
+
     // Lógica del juego original
     if (!gameState.isPaused) {
         if (gameState.isCountdown) {
@@ -2650,7 +2885,7 @@ function gameLoop() {
 
 // Función para resetear completamente el estado del juego
 function resetGameState() {
-    console.log('🔄 Resetting game state...');
+    //console.log('🔄 Resetting game state...');
 
     // Reset game state
     gameState.isPlaying = false;
@@ -2665,7 +2900,7 @@ function resetGameState() {
     gameState.experience = 0;
     resetWaveExperience();
 
-    console.log('✅ Game state flags reset - isPaused:', gameState.isPaused, 'isPlaying:', gameState.isPlaying);
+    //console.log('✅ Game state flags reset - isPaused:', gameState.isPaused, 'isPlaying:', gameState.isPlaying);
 
     // Reset player
     player.health = 100;
@@ -2710,7 +2945,7 @@ function resetGameState() {
     // Reset snapshot
     statsSnapshot = null;
 
-    console.log('🔄 Game state reset complete');
+    //console.log('🔄 Game state reset complete');
 }
 
 // Exportar funciones y objetos globalmente
@@ -2725,8 +2960,8 @@ window.resetWaveExperience = resetWaveExperience;
 window.ENEMY_TYPES = ENEMY_TYPES;
 
 // Función para iniciar el juego desde el menú con un nivel específico
-window.startGameFromMenu = function(startLevel) {
-    console.log('🎮 Starting game from menu, level:', startLevel);
+window.startGameFromMenu = function(startLevel, mapType = 'maze') {
+    //console.log('🎮 Starting game from menu, level:', startLevel, 'mapType:', mapType);
 
     // Initialize canvas if not done
     if (!canvas) {
@@ -2752,15 +2987,7 @@ window.startGameFromMenu = function(startLevel) {
 
         // Verificar que el canvas sea visible
         const canvasStyle = window.getComputedStyle(canvas);
-        console.log('🎨 Canvas Style Check:', {
-            display: canvasStyle.display,
-            visibility: canvasStyle.visibility,
-            opacity: canvasStyle.opacity,
-            zIndex: canvasStyle.zIndex,
-            position: canvasStyle.position,
-            width: canvasStyle.width,
-            height: canvasStyle.height
-        });
+
 
         // CRITICAL: Asegurar que el canvas sea visible
         canvas.style.display = 'block';
@@ -2776,12 +3003,7 @@ window.startGameFromMenu = function(startLevel) {
         // Add resize listener after canvas is initialized
         window.addEventListener('resize', resizeCanvas);
 
-        console.log('✅ Canvas initialized:', {
-            width: canvas.width,
-            height: canvas.height,
-            styleWidth: canvas.style.width,
-            styleHeight: canvas.style.height
-        });
+
     }
 
     // Initialize mobile controls if needed
@@ -2793,6 +3015,7 @@ window.startGameFromMenu = function(startLevel) {
     resetGameState();
 
     gameState.wave = startLevel - 1; // Se ajusta porque nextWave() incrementa
+    gameState.mapType = mapType; // Establecer tipo de mapa seleccionado
     gameState.enemiesPerWave = Math.floor(5 * Math.pow(2.25, startLevel - 1));
     gameState.enemiesToSpawn = Math.min(gameState.enemiesPerWave, qualitySettings.maxEnemies);
     gameState.totalEnemiesInWave = gameState.enemiesToSpawn;
@@ -2805,70 +3028,106 @@ window.startGameFromMenu = function(startLevel) {
     player.lastShootTime = Date.now();
     updateGameAreaLimits();
 
-    console.log('🎮 Game flags set - isPlaying:', gameState.isPlaying, 'isPaused:', gameState.isPaused, 'isGameOver:', gameState.isGameOver);
+    //console.log('🎮 Game flags set - isPlaying:', gameState.isPlaying, 'isPaused:', gameState.isPaused, 'isGameOver:', gameState.isGameOver);
 
-    // Reposicionar jugador en el centro del área de juego válida
-    player.x = window.innerWidth / 2;
-    player.y = (window.innerHeight + gameAreaTop) / 2;
-    player.targetX = player.x;
-    player.targetY = player.y;
+    // Inicializar sistema de mapas procedurales
+    if (typeof MapSystem !== 'undefined') {
+        //console.log('🗺️ Initializing procedural map system...');
+        window.gameMapSystem = new MapSystem();
+        window.gameMapSystem.init(canvas);
+        window.gameMapSystem.generateMap({ algorithm: mapType });
+
+        // Posicionar jugador en spawn del mapa
+        const spawnPos = window.gameMapSystem.getPlayerSpawnPosition();
+        player.x = spawnPos.x;
+        player.y = spawnPos.y;
+        player.targetX = player.x;
+        player.targetY = player.y;
+
+        //console.log('✅ Map system initialized with type:', mapType);
+        //console.log('   - Player spawn:', spawnPos);
+    } else {
+        console.warn('⚠️ MapSystem not loaded, using default positioning');
+        // Reposicionar jugador en el centro del área de juego válida
+        player.x = window.innerWidth / 2;
+        player.y = (window.innerHeight + gameAreaTop) / 2;
+        player.targetX = player.x;
+        player.targetY = player.y;
+    }
 
     updateHUD();
     nextWave(); // Inicia la primera wave
 
-    console.log('🎮 === GAME START DEBUG INFO ===');
-    console.log('   - Canvas:', canvas ? 'EXISTS' : 'NULL');
-    console.log('   - Canvas width:', canvas ? canvas.width : 'N/A');
-    console.log('   - Canvas height:', canvas ? canvas.height : 'N/A');
-    console.log('   - Context:', ctx ? 'EXISTS' : 'NULL');
-    console.log('   - Player:', player);
-    console.log('   - Enemies count:', enemies.length);
-    console.log('   - Bullets count:', bullets.length);
-    console.log('   - Viewport scale:', ViewportScale);
-    console.log('   - isMobileDevice:', isMobileDevice);
-    console.log('🎮 ===============================');
+    //console.log('🎮 === GAME START DEBUG INFO ===');
+    //console.log('   - Canvas:', canvas ? 'EXISTS' : 'NULL');
+    //console.log('   - Canvas width:', canvas ? canvas.width : 'N/A');
+    //console.log('   - Canvas height:', canvas ? canvas.height : 'N/A');
+    //console.log('   - Context:', ctx ? 'EXISTS' : 'NULL');
+    //console.log('   - Player:', player);
+    //console.log('   - Enemies count:', enemies.length);
+    //console.log('   - Bullets count:', bullets.length);
+    //console.log('   - Viewport scale:', ViewportScale);
+    //console.log('   - isMobileDevice:', isMobileDevice);
+    //console.log('🎮 ===============================');
 
     gameLoop();
 
     // Ensure both joysticks are visible on mobile
     if (isMobileDevice) {
-        console.log('📱 Ensuring joysticks are visible...');
+        //console.log('📱 Ensuring joysticks are visible...');
         const shootJoystickContainer = document.getElementById('shootJoystickContainer');
         const joystickContainer = document.getElementById('joystickContainer');
 
-        console.log('   - shootJoystickContainer:', shootJoystickContainer ? '✅ Found' : '❌ NOT FOUND');
-        console.log('   - joystickContainer:', joystickContainer ? '✅ Found' : '❌ NOT FOUND');
+        //console.log('   - shootJoystickContainer:', shootJoystickContainer ? '✅ Found' : '❌ NOT FOUND');
+        //console.log('   - joystickContainer:', joystickContainer ? '✅ Found' : '❌ NOT FOUND');
 
         if (shootJoystickContainer) {
             shootJoystickContainer.style.display = 'block';
-            console.log('   - shootJoystickContainer display set to block');
-            console.log('   - Computed style:', window.getComputedStyle(shootJoystickContainer).display);
+            //console.log('   - shootJoystickContainer display set to block');
+            //console.log('   - Computed style:', window.getComputedStyle(shootJoystickContainer).display);
         }
         if (joystickContainer) {
             joystickContainer.style.display = 'block';
-            console.log('   - joystickContainer display set to block');
-            console.log('   - Computed style:', window.getComputedStyle(joystickContainer).display);
+            //console.log('   - joystickContainer display set to block');
+            //console.log('   - Computed style:', window.getComputedStyle(joystickContainer).display);
         }
     }
 
-    console.log('🎮 Game Started!');
-    console.log('Device:', isMobileDevice ? '📱 Mobile' : '🖥️ PC');
-    console.log('Controls: Dual Joystick (Wild Rift Style)');
-    console.log('Quality:', qualitySettings);
-    console.log('Game Area Top:', gameAreaTop);
+    //console.log('🎮 Game Started!');
+    //console.log('Device:', isMobileDevice ? '📱 Mobile' : '🖥️ PC');
+    //console.log('Controls: Dual Joystick (Wild Rift Style)');
+    //console.log('Quality:', qualitySettings);
+    //console.log('Game Area Top:', gameAreaTop);
 
     // Diagnóstico de calidad gráfica
-    console.log('🎨 GRAPHICS QUALITY DIAGNOSTIC:');
-    console.log('   - Device Pixel Ratio (DPR):', window.devicePixelRatio);
-    console.log('   - Canvas Physical Size:', canvas.width, 'x', canvas.height);
-    console.log('   - Canvas CSS Size:', canvas.style.width, 'x', canvas.style.height);
-    console.log('   - Window Size:', window.innerWidth, 'x', window.innerHeight);
-    console.log('   - imageSmoothingEnabled:', ctx.imageSmoothingEnabled);
-    console.log('   - imageSmoothingQuality:', ctx.imageSmoothingQuality);
-    console.log('   - Alpha channel:', ctx.getContextAttributes().alpha);
-    console.log('   - Desynchronized:', ctx.getContextAttributes().desynchronized);
-    console.log('   - Quality multiplier:', qualitySettings.effectsMultiplier);
+    //console.log('🎨 GRAPHICS QUALITY DIAGNOSTIC:');
+    //console.log('   - Device Pixel Ratio (DPR):', window.devicePixelRatio);
+    //console.log('   - Canvas Physical Size:', canvas.width, 'x', canvas.height);
+    //console.log('   - Canvas CSS Size:', canvas.style.width, 'x', canvas.style.height);
+    //console.log('   - Window Size:', window.innerWidth, 'x', window.innerHeight);
+    //console.log('   - imageSmoothingEnabled:', ctx.imageSmoothingEnabled);
+    //console.log('   - imageSmoothingQuality:', ctx.imageSmoothingQuality);
+    //console.log('   - Alpha channel:', ctx.getContextAttributes().alpha);
+    //console.log('   - Desynchronized:', ctx.getContextAttributes().desynchronized);
+    //console.log('   - Quality multiplier:', qualitySettings.effectsMultiplier);
 };
 
 // Pause button event listeners
 // Note: Pause, resume and abort button event listeners are handled in initializeMobileControls() and index.html
+
+// ===================================
+// GLOBAL API - Camera Zoom Control
+// ===================================
+// Exponer control de zoom de cámara para uso externo
+window.setCameraZoom = function(zoom) {
+    ViewportScale.setCameraZoom(zoom);
+};
+
+window.getCameraZoom = function() {
+    return ViewportScale.getCameraZoom();
+};
+
+// Ejemplo de uso:
+// window.setCameraZoom(2.0); // Ver el doble de mapa
+// window.setCameraZoom(1.0); // Zoom normal
+// window.setCameraZoom(3.0); // Ver el triple de mapa

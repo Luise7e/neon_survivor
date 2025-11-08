@@ -2724,6 +2724,204 @@
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.8) !important;
         }
 
+        /* ===========================
+           MAP SELECTOR MODAL
+        =========================== */
+        .map-selector-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .map-selector-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-selector-content {
+            background: linear-gradient(135deg, rgba(10, 10, 40, 0.95) 0%, rgba(26, 0, 51, 0.95) 100%);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 20px;
+            padding: clamp(20px, 4vh, 40px) clamp(15px, 3vw, 30px);
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow:
+                0 10px 40px rgba(0, 0, 0, 0.5),
+                inset 0 0 40px rgba(0, 255, 255, 0.1),
+                0 0 60px rgba(0, 255, 255, 0.3);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .map-selector-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(20px, 4vw, 32px);
+            font-weight: 900;
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: clamp(15px, 3vh, 25px);
+            text-shadow:
+                0 0 20px rgba(0, 255, 255, 0.8),
+                0 0 40px rgba(0, 255, 255, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .map-selector-subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(12px, 2.5vw, 16px);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-bottom: clamp(20px, 4vh, 30px);
+        }
+
+        .map-types-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: clamp(12px, 2vw, 20px);
+            margin-bottom: clamp(20px, 3vh, 30px);
+        }
+
+        .map-type-card {
+            background: linear-gradient(135deg, rgba(26, 0, 51, 0.6) 0%, rgba(10, 10, 40, 0.6) 100%);
+            border: 2px solid rgba(255, 0, 255, 0.3);
+            border-radius: 12px;
+            padding: clamp(12px, 2vh, 18px);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-type-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .map-type-card:hover::before {
+            opacity: 1;
+        }
+
+        .map-type-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 255, 255, 0.6);
+            box-shadow:
+                0 8px 25px rgba(0, 0, 0, 0.4),
+                inset 0 0 30px rgba(0, 255, 255, 0.15),
+                0 0 40px rgba(0, 255, 255, 0.4);
+        }
+
+        .map-type-card.selected {
+            border-color: rgba(0, 255, 0, 0.8);
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 255, 0.2) 100%);
+            box-shadow:
+                0 8px 25px rgba(0, 0, 0, 0.4),
+                inset 0 0 30px rgba(0, 255, 0, 0.2),
+                0 0 40px rgba(0, 255, 0, 0.5);
+        }
+
+        .map-type-icon {
+            font-size: clamp(32px, 6vw, 48px);
+            text-align: center;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.6));
+        }
+
+        .map-type-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(14px, 2.5vw, 18px);
+            font-weight: 700;
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .map-type-description {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(11px, 2vw, 14px);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .map-type-card.selected .map-type-name {
+            color: #00ff55;
+        }
+
+        .map-selector-actions {
+            display: flex;
+            gap: clamp(10px, 2vw, 15px);
+            margin-top: clamp(20px, 3vh, 30px);
+        }
+
+        .map-selector-btn {
+            flex: 1;
+            padding: clamp(12px, 2vh, 16px) clamp(20px, 3vw, 30px);
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(14px, 2.5vw, 18px);
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .map-selector-btn.primary {
+            background: linear-gradient(135deg, rgba(0, 255, 85, 0.8) 0%, rgba(0, 255, 255, 0.8) 100%);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 255, 85, 0.4);
+        }
+
+        .map-selector-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 85, 0.6);
+        }
+
+        .map-selector-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .map-selector-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -2827,6 +3025,22 @@
                 </button>
                 -->
 
+                <button class="action-card secondary-action" id="mapTestBtn">
+                    <div class="action-icon-small">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                            <path d="M10 6h4M10 18h4M6 10v4M18 10v4"></path>
+                        </svg>
+                    </div>
+                    <div class="action-content">
+                        <div class="action-title">MAP TEST</div>
+                        <div class="action-subtitle">Procedural generation demo</div>
+                    </div>
+                </button>
+
                 <button class="action-card secondary-action" id="statsBtn">
                     <div class="action-icon-small">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2909,6 +3123,63 @@
 
             <div id="avatarGrid" class="avatar-grid">
                 <!-- Avatares se cargarán dinámicamente aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Selector Modal -->
+    <div class="map-selector-modal" id="mapSelectorModal">
+        <div class="map-selector-content">
+            <div class="map-selector-title">🗺️ SELECT MAP TYPE</div>
+            <div class="map-selector-subtitle">Choose the procedural generation algorithm for your battlefield</div>
+
+            <div class="map-types-grid" id="mapTypesGrid">
+                <!-- Maze -->
+                <div class="map-type-card" data-map-type="maze">
+                    <div class="map-type-icon">🌀</div>
+                    <div class="map-type-name">Maze</div>
+                    <div class="map-type-description">Complex labyrinth with narrow corridors and dead ends. Perfect for ambushes.</div>
+                </div>
+
+                <!-- Rooms -->
+                <div class="map-type-card" data-map-type="rooms">
+                    <div class="map-type-icon">🏛️</div>
+                    <div class="map-type-name">Rooms</div>
+                    <div class="map-type-description">Connected chambers with strategic chokepoints. Balanced tactical gameplay.</div>
+                </div>
+
+                <!-- Cellular -->
+                <div class="map-type-card" data-map-type="cellular">
+                    <div class="map-type-icon">🌿</div>
+                    <div class="map-type-name">Cellular</div>
+                    <div class="map-type-description">Organic cave-like structures. Natural and unpredictable terrain.</div>
+                </div>
+
+                <!-- Arena -->
+                <div class="map-type-card" data-map-type="arena">
+                    <div class="map-type-icon">⚔️</div>
+                    <div class="map-type-name">Arena</div>
+                    <div class="map-type-description">Open central battlefield with perimeter walls. Pure combat focus.</div>
+                </div>
+
+                <!-- Symmetrical -->
+                <div class="map-type-card" data-map-type="symmetrical">
+                    <div class="map-type-icon">🔷</div>
+                    <div class="map-type-name">Symmetrical</div>
+                    <div class="map-type-description">Mirrored layout for balanced competitive matches. Fair positioning.</div>
+                </div>
+
+                <!-- Jungla -->
+                <div class="map-type-card" data-map-type="jungla">
+                    <div class="map-type-icon">🌳</div>
+                    <div class="map-type-name">Jungla</div>
+                    <div class="map-type-description">Dense vegetation with scattered clearings. Stealth and cover tactics.</div>
+                </div>
+            </div>
+
+            <div class="map-selector-actions">
+                <button class="map-selector-btn secondary" id="mapSelectorCancelBtn">Cancel</button>
+                <button class="map-selector-btn primary" id="mapSelectorStartBtn">Start Game</button>
             </div>
         </div>
     </div>
@@ -3046,6 +3317,21 @@
             <div class="hud-value" id="scoreDisplay">0</div>
         </div>
     </div>
+
+    <!-- MINIMAP - Top Right Corner -->
+    <canvas id="minimapCanvas" width="180" height="180" style="
+        position: fixed;
+        top: 18px;
+        right: 18px;
+        z-index: 1100;
+        border-radius: 16px;
+        box-shadow: 0 0 24px rgba(0, 255, 255, 0.5);
+        background: rgba(10, 10, 26, 0.95);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: auto;
+        border: 2px solid rgba(0, 255, 255, 0.6);
+    "></canvas>
 
     <!-- DEBUG BUTTON - TOP RIGHT -->
     <button id="debugPauseBtn" style="position:unset!important;top:90%!important;right:43%!important;width:60px!important;height:60px!important;background:red!important;color:white!important;border:3px solid yellow!important;border-radius:50%!important;z-index:99999!important;font-size:24px!important;font-weight:bold!important;cursor:pointer!important;">⏸</button>
@@ -3318,6 +3604,93 @@
     <canvas id="gameCanvas" ></canvas>
 
         <script>
+    // Variables globales para control de cámara en minimapa
+    window.minimapCameraActive = false;
+    window.minimapCameraTarget = { x: 0, y: 0 };
+    window.minimapViewportRect = { x: 0, y: 0, width: 0, height: 0 };
+    var minimapCanvas = document.getElementById('minimapCanvas');
+    
+    // ================= MINIMAP CAMERA TOUCH/MOUSE =================
+    function setMinimapCameraFromEvent(e) {
+        var minimapCanvas = document.getElementById('minimapCanvas');
+        if (!minimapCanvas) {
+            console.warn('⚠️ minimapCanvas not found');
+            return;
+        }
+        
+        const rect = minimapCanvas.getBoundingClientRect();
+        let mx, my;
+        if (e.touches && e.touches.length > 0) {
+            mx = e.touches[0].clientX - rect.left;
+            my = e.touches[0].clientY - rect.top;
+        } else {
+            mx = e.clientX - rect.left;
+            my = e.clientY - rect.top;
+        }
+        
+        const mapSystem = window.gameMapSystem || window.mapSystem;
+        if (!mapSystem) {
+            console.warn('⚠️ mapSystem not found');
+            return;
+        }
+        
+        // Convert minimap coords to map coords
+        const mapX = Math.floor(mx * mapSystem.width / minimapCanvas.width);
+        const mapY = Math.floor(my * mapSystem.height / minimapCanvas.height);
+        window.minimapCameraTarget.x = mapX * mapSystem.tileSize + mapSystem.tileSize / 2;
+        window.minimapCameraTarget.y = mapY * mapSystem.tileSize + mapSystem.tileSize / 2;
+        window.minimapCameraActive = true;
+        
+        console.log('📍 MINIMAP CLICK:', {
+            minimapCoords: { mx, my },
+            minimapSize: { w: minimapCanvas.width, h: minimapCanvas.height },
+            mapSize: { w: mapSystem.width, h: mapSystem.height },
+            tileSize: mapSystem.tileSize,
+            tileCoords: { x: mapX, y: mapY },
+            worldTarget: { x: window.minimapCameraTarget.x, y: window.minimapCameraTarget.y },
+            cameraActive: window.minimapCameraActive
+        });
+    }
+
+    if (minimapCanvas) {
+        // Touch events
+        minimapCanvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            setMinimapCameraFromEvent(e);
+        }, { passive: false });
+        
+        minimapCanvas.addEventListener('touchmove', function(e) {
+            if (window.minimapCameraActive) {
+                e.preventDefault();
+                setMinimapCameraFromEvent(e);
+            }
+        }, { passive: false });
+        
+        minimapCanvas.addEventListener('touchend', function(e) {
+            window.minimapCameraActive = false;
+            console.log('📍 MINIMAP TOUCH END');
+        });
+        
+        // Mouse events
+        minimapCanvas.addEventListener('mousedown', function(e) {
+            setMinimapCameraFromEvent(e);
+        });
+        
+        minimapCanvas.addEventListener('mousemove', function(e) {
+            if (window.minimapCameraActive && e.buttons) {
+                setMinimapCameraFromEvent(e);
+            }
+        });
+        
+        minimapCanvas.addEventListener('mouseup', function(e) {
+            window.minimapCameraActive = false;
+            console.log('📍 MINIMAP MOUSE UP');
+        });
+        
+        minimapCanvas.addEventListener('mouseleave', function(e) {
+            window.minimapCameraActive = false;
+        });
+    }
     // --- LOGIN CON GOOGLE Y GESTIÓN DE USUARIO ---
     // NOTA: Variables ahora definidas en config.js y firebase-handler.js
     // Mantener referencias locales para compatibilidad
@@ -3881,13 +4254,265 @@
         });
     }
 
-    // Iniciar partida desde nivel 1
+    // ==================== MAP SELECTOR MODAL ====================
+    const mapSelectorModal = document.getElementById('mapSelectorModal');
+    const mapTypesGrid = document.getElementById('mapTypesGrid');
+    const mapSelectorCancelBtn = document.getElementById('mapSelectorCancelBtn');
+    const mapSelectorStartBtn = document.getElementById('mapSelectorStartBtn');
+    let selectedMapType = 'maze'; // Default
+
+    // Abrir modal de selección de mapa
     startGameBtn.onclick = function() {
-      startGame(1);
+        vibrateButton(30);
+        mapSelectorModal.classList.add('active');
+        // Seleccionar el primer tipo por defecto
+        const firstCard = mapTypesGrid.querySelector('.map-type-card');
+        if (firstCard) {
+            firstCard.classList.add('selected');
+            selectedMapType = firstCard.getAttribute('data-map-type');
+        }
     };
 
+    // Selección de tipo de mapa
+    mapTypesGrid.addEventListener('click', function(e) {
+        const card = e.target.closest('.map-type-card');
+        if (card) {
+            vibrateButton(20);
+            // Remover selección anterior
+            mapTypesGrid.querySelectorAll('.map-type-card').forEach(c => c.classList.remove('selected'));
+            // Seleccionar nueva
+            card.classList.add('selected');
+            selectedMapType = card.getAttribute('data-map-type');
+            console.log('🗺️ Map type selected:', selectedMapType);
+        }
+    });
+
+    // Cancelar selección
+    mapSelectorCancelBtn.onclick = function() {
+        vibrateButton(20);
+        mapSelectorModal.classList.remove('active');
+    };
+
+    // Iniciar juego con mapa seleccionado
+    mapSelectorStartBtn.onclick = function() {
+        vibrateButton(30);
+        mapSelectorModal.classList.remove('active');
+        console.log('🎮 Starting game with map type:', selectedMapType);
+        startGame(1, selectedMapType);
+    };
+
+    // ==================== GAME START ====================
+    // MAP TEST - Demostración del sistema de mapas procedurales
+    const mapTestBtn = document.getElementById('mapTestBtn');
+    if (mapTestBtn) {
+        mapTestBtn.onclick = function() {
+            console.log('🗺️ Starting Map System Test...');
+            vibrateButton(30);
+            // Ocultar menú
+            startMenu.classList.add('hidden');
+
+            // Obtener el canvas principal correctamente
+            const canvas = document.getElementById('gameCanvas');
+            if (!canvas) {
+                alert('No se encontró el canvas principal.');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+
+            // Obtener minimapa
+            const minimapCanvas = document.getElementById('minimapCanvas');
+            const minimapCtx = minimapCanvas ? minimapCanvas.getContext('2d') : null;
+
+            // Mostrar minimapa
+            if (minimapCanvas) {
+                minimapCanvas.style.opacity = '0.92';
+            }
+
+            // Crear instancia del sistema de mapas
+            const mapSystem = new MapSystem();
+            mapSystem.init(canvas);
+
+            // Generar mapa con diferentes algoritmos (prueba aleatoria)
+            const algorithms = ['maze', 'rooms', 'cellular'];
+            const randomAlgo = algorithms[Math.floor(Math.random() * algorithms.length)];
+
+            console.log('🎲 Using algorithm:', randomAlgo);
+            mapSystem.generateMap({ algorithm: randomAlgo });
+
+            // Estado de la demo
+            let demoActive = true;
+            let playerX = canvas.width / 2;
+            let playerY = canvas.height / 2;
+            let playerVelX = 0;
+            let playerVelY = 0;
+            const playerRadius = 20;
+            const playerSpeed = 5;
+
+            // Posicionar jugador en spawn
+            const spawnPos = mapSystem.getPlayerSpawnPosition();
+            playerX = spawnPos.x;
+            playerY = spawnPos.y;
+
+            // Crear algunos enemigos de prueba
+            const demoEnemies = [];
+            for (let i = 0; i < 10; i++) {
+                const enemySpawn = mapSystem.getRandomEnemySpawnPosition();
+                demoEnemies.push({
+                    x: enemySpawn.x,
+                    y: enemySpawn.y,
+                    health: 100
+                });
+            }
+
+            // Controles táctiles simplificados
+            const keys = { w: false, a: false, s: false, d: false };
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key in keys) keys[e.key] = true;
+            });
+            window.addEventListener('keyup', (e) => {
+                if (e.key in keys) keys[e.key] = false;
+                if (e.key === 'Escape') {
+                    demoActive = false;
+                    startMenu.classList.remove('hidden');
+                    // Ocultar minimapa
+                    if (minimapCanvas) {
+                        minimapCanvas.style.opacity = '0';
+                    }
+                }
+            });
+
+            // Loop de renderizado
+            function mapDemoLoop() {
+                if (!demoActive) return;
+
+                // Input
+                playerVelX = 0;
+                playerVelY = 0;
+                if (keys.w) playerVelY = -playerSpeed;
+                if (keys.s) playerVelY = playerSpeed;
+                if (keys.a) playerVelX = -playerSpeed;
+                if (keys.d) playerVelX = playerSpeed;
+
+                // Normalizar diagonal
+                if (playerVelX !== 0 && playerVelY !== 0) {
+                    const len = Math.sqrt(playerVelX ** 2 + playerVelY ** 2);
+                    playerVelX = (playerVelX / len) * playerSpeed;
+                    playerVelY = (playerVelY / len) * playerSpeed;
+                }
+
+                // Movimiento con colisiones
+                const nextX = playerX + playerVelX;
+                const nextY = playerY + playerVelY;
+
+                const collisionX = mapSystem.checkCollision(nextX, playerY, playerRadius);
+                if (!collisionX.collision) {
+                    playerX = nextX;
+                }
+
+                const collisionY = mapSystem.checkCollision(playerX, nextY, playerRadius);
+                if (!collisionY.collision) {
+                    playerY = nextY;
+                }
+
+                // Actualizar cámara
+                const zoom = window.getCameraZoom ? window.getCameraZoom() : 2.0;
+                if (window.minimapCameraActive) {
+                    // Usar updateCamera con suavizado rápido para animación fluida
+                    mapSystem.updateCamera(window.minimapCameraTarget.x, window.minimapCameraTarget.y, canvas.width, canvas.height, true, zoom);
+                    console.log('📷 CAMERA UPDATE (MINIMAP):', {
+                        target: { x: window.minimapCameraTarget.x, y: window.minimapCameraTarget.y },
+                        camera: { x: mapSystem.camera.x, y: mapSystem.camera.y },
+                        canvasSize: { w: canvas.width, h: canvas.height },
+                        zoom: zoom
+                    });
+                } else {
+                    mapSystem.updateCamera(playerX, playerY, canvas.width, canvas.height, false, zoom);
+                }
+                
+                // Calcular viewport rect para minimapa con zoom
+                const scaleX = minimapCanvas.width / mapSystem.width;
+                const scaleY = minimapCanvas.height / mapSystem.height;
+                const zoomedWidth = (canvas.width * zoom) / mapSystem.tileSize;
+                const zoomedHeight = (canvas.height * zoom) / mapSystem.tileSize;
+                
+                window.minimapViewportRect = {
+                    x: (mapSystem.camera.x / mapSystem.tileSize) * scaleX,
+                    y: (mapSystem.camera.y / mapSystem.tileSize) * scaleY,
+                    width: zoomedWidth * scaleX,
+                    height: zoomedHeight * scaleY
+                };
+
+                // Render
+                ctx.fillStyle = '#0a0a1a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Renderizar mapa
+                mapSystem.render(ctx, mapSystem.camera.x, mapSystem.camera.y);
+
+                // Renderizar enemigos de prueba
+                for (const enemy of demoEnemies) {
+                    const enemyScreenX = enemy.x - mapSystem.camera.x;
+                    const enemyScreenY = enemy.y - mapSystem.camera.y;
+
+                    ctx.fillStyle = '#ff00ff';
+                    ctx.beginPath();
+                    ctx.arc(enemyScreenX, enemyScreenY, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Renderizar jugador
+                const screenX = playerX - mapSystem.camera.x;
+                const screenY = playerY - mapSystem.camera.y;
+
+                ctx.fillStyle = '#00ff88';
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, playerRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Renderizar minimapa
+                if (minimapCtx) {
+                    mapSystem.renderMinimap(
+                        minimapCtx,
+                        minimapCanvas.width,
+                        minimapCanvas.height,
+                        { x: playerX, y: playerY },
+                        demoEnemies
+                    );
+                }
+
+                // UI Info
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Algorithm: ${randomAlgo}`, 20, 30);
+                ctx.fillText(`Player: (${Math.floor(playerX)}, ${Math.floor(playerY)})`, 20, 60);
+                ctx.fillText(`Enemies: ${demoEnemies.length}`, 20, 90);
+                ctx.fillText(`Press ESC to exit`, 20, canvas.height - 20);
+
+                // Check bush
+                if (mapSystem.isInBush(playerX, playerY)) {
+                    ctx.fillStyle = 'rgba(45, 80, 22, 0.7)';
+                    ctx.fillRect(canvas.width - 200, 20, 180, 40);
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillText('🌿 IN COVER', canvas.width - 180, 45);
+                }
+
+                requestAnimationFrame(mapDemoLoop);
+            }
+
+            mapDemoLoop();
+
+            console.log('✅ Map demo started - Use WASD to move, ESC to exit');
+            console.log('📍 Minimapa activado en la esquina superior derecha');
+        };
+    }
+
     // Iniciar juego desde un nivel específico
-        function startGame(startLevel) {
+        function startGame(startLevel, mapType = 'maze') {
             gameStartTime = Date.now(); // Registrar inicio de partida
             startMenu.classList.add('hidden');
             // loadingScreen.style.display = 'flex'; // Ya no se muestra loadingScreen en cada partida
@@ -3902,9 +4527,13 @@
                 window.gameState.wave = startLevel;
             }
 
+            // Guardar el tipo de mapa seleccionado globalmente
+            window.selectedMapType = mapType;
+            console.log('🗺️ Map type for game:', mapType);
+
             // Iniciar el juego inmediatamente (sin mostrar loadingScreen)
             if (window.startGameFromMenu) {
-                window.startGameFromMenu(startLevel);
+                window.startGameFromMenu(startLevel, mapType);
             }
         }
 
@@ -5343,6 +5972,7 @@
     <script src="js/config.js"></script>
     <script src="js/ui-manager.js"></script>
     <script src="js/firebase-handler.js"></script>
+    <script src="js/map-system.js"></script>
     <script src="game.js"></script>
 
     <script>

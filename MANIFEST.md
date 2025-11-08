@@ -1,8 +1,8 @@
 # 🎮 MANIFIESTO DEL PROGRAMADOR DE VIDEOJUEGOS PROFESIONAL
 
-> **Basado en el análisis del proyecto Neon Survivor Arena**  
-> **Autor Original:** Luis Castellano Guzmán  
-> **Versión:** 1.0 | **Fecha:** Noviembre 2025  
+> **Basado en el análisis del proyecto Neon Survivor Arena**
+> **Autor Original:** Luis Castellano Guzmán
+> **Versión:** 1.0 | **Fecha:** Noviembre 2025
 > **Propósito:** Plantilla maestra para desarrollo de videojuegos con IA
 
 ---
@@ -79,7 +79,7 @@ proyecto/
 └── MANIFEST.md                      # Este documento (plantilla base)
 ```
 
-**Regla de Oro:** 
+**Regla de Oro:**
 - `index.html` = UI + Estilo + Lógica de Presentación
 - `game.js` = Motor de juego + Física + Rendering
 - `MainActivity.java` = Puente nativo (solo si híbrido)
@@ -362,10 +362,10 @@ const gameState = {
 function setGameState(newState) {
     const oldState = { ...gameState };
     Object.assign(gameState, newState);
-    
+
     // Logging para debug
     console.log('🔄 State change:', oldState, '→', gameState);
-    
+
     // Trigger side effects
     if (gameState.isPaused !== oldState.isPaused) {
         togglePauseUI(gameState.isPaused);
@@ -388,14 +388,14 @@ setGameState({ isPaused: true, isPlaying: false });
 const ViewportScale = {
     baseWidth: 1920,
     baseHeight: 1080,
-    
+
     get scale() {
         return Math.min(
             canvas.width / this.baseWidth,
             canvas.height / this.baseHeight
         );
     },
-    
+
     // Tamaños escalados dinámicamente
     get playerSize() { return canvas.width * 0.02; },
     get bulletSize() { return canvas.width * 0.008; },
@@ -432,10 +432,10 @@ function renderPlayer() {
 function functionName() {
     // Comentario inline para lógica compleja
     const result = complexCalculation();
-    
+
     // ❌ EVITAR: Comentarios obvios
     // player.x += 1; // Incrementar x
-    
+
     // ✅ CORRECTO: Comentarios explicativos
     // Normalizar velocidad según deltaTime para 60 FPS
     player.x += player.speed * (deltaTime / 16.67);
@@ -497,13 +497,13 @@ console.log('✅ Config loaded');
 (function() {
     const auth = firebase.auth();
     const db = firebase.firestore();
-    
+
     window.firebaseHandler = {
         signInWithGoogle: () => { /* ... */ },
         signOut: () => { /* ... */ },
         saveGameData: (data) => { /* ... */ }
     };
-    
+
     console.log('✅ Firebase handler loaded');
 })();
 ```
@@ -521,7 +521,7 @@ console.log('✅ Config loaded');
 const DeviceDetector = {
     isMobile: /Android|iPhone|iPad|iPod/i.test(navigator.userAgent),
     isTablet: /iPad|Android.*(?!Mobile)/i.test(navigator.userAgent),
-    
+
     getQualitySettings() {
         if (this.isMobile && !this.isTablet) {
             return { maxParticles: 80, maxEnemies: 40, shadowBlur: 15 };
@@ -593,21 +593,21 @@ canvas.height = window.innerHeight * Math.min(window.devicePixelRatio, 2);
 // Ejecutar en consola para validación rápida
 function runDeviceTests() {
     console.log('=== DEVICE TESTS ===');
-    
+
     // Test 1: Canvas visibility
     const canvas = document.getElementById('gameCanvas');
     const canvasZ = parseInt(window.getComputedStyle(canvas).zIndex);
     console.log(canvasZ === 1 ? '✅' : '❌', 'Canvas z-index:', canvasZ);
-    
+
     // Test 2: Responsive sizing
     const menu = document.getElementById('startMenu');
     const menuHeight = menu.offsetHeight;
     console.log(menuHeight <= window.innerHeight ? '✅' : '❌', 'Menu fits viewport:', menuHeight, '/', window.innerHeight);
-    
+
     // Test 3: Touch controls
     const controls = document.getElementById('mobileControls');
     console.log(controls ? '✅' : '❌', 'Mobile controls present');
-    
+
     // Test 4: Firebase connection
     console.log(typeof firebase !== 'undefined' ? '✅' : '❌', 'Firebase loaded');
 }
@@ -715,7 +715,7 @@ function updateEnemies() {
 function updateEnemies(deltaTime) {
     // Filtrar enemigos muertos (correcto)
     enemies = enemies.filter(enemy => enemy.health > 0);
-    
+
     // Actualizar posición (escalado con deltaTime)
     enemies.forEach(enemy => {
         enemy.x += enemy.speed * (deltaTime / 16.67);
@@ -808,7 +808,7 @@ Este archivo es la "memoria" del proyecto. Debe contener:
 function updateEnemy(enemy, deltaTime) {
     enemy.x += enemy.velocity.x * (deltaTime / 16.67);
     enemy.y += enemy.velocity.y * (deltaTime / 16.67);
-    
+
     // Colisión con player
     const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
     if (dist < enemy.size + player.size) {
@@ -822,7 +822,7 @@ function updateEnemy(enemy, deltaTime) {
 void Update() {
     // Movement (Time.deltaTime reemplaza deltaTime / 16.67)
     transform.position += velocity * Time.deltaTime;
-    
+
     // Collision con player
     float dist = Vector2.Distance(transform.position, player.transform.position);
     if (dist < (enemySize + playerSize)) {
@@ -861,7 +861,7 @@ function updatePlayer(deltaTime) {
 ```gdscript
 func _process(delta):
     var velocity = Vector2.ZERO
-    
+
     if Input.is_action_pressed("ui_up"):
         velocity.y -= 1
     if Input.is_action_pressed("ui_down"):
@@ -870,7 +870,7 @@ func _process(delta):
         velocity.x -= 1
     if Input.is_action_pressed("ui_right"):
         velocity.x += 1
-    
+
     velocity = velocity.normalized()
     position += velocity * speed * delta
 ```
@@ -885,7 +885,7 @@ func _process(delta):
    function calculateDamage(attack, defense) {
        return Math.max(1, attack - defense * 0.5);
    }
-   
+
    // ❌ NO PORTABLE: Mezclado con rendering
    function calculateDamage(attack, defense) {
        const damage = Math.max(1, attack - defense * 0.5);
@@ -921,10 +921,10 @@ func _process(delta):
            "spawnChance": 0.50
        }
    };
-   
+
    // Unity C#:
    // var enemyTypes = JsonUtility.FromJson<EnemyTypes>(jsonString);
-   
+
    // Godot GDScript:
    // var enemy_types = JSON.parse(json_string)
    ```
@@ -993,15 +993,15 @@ const renderer = new Renderer(ctx);
 let lastTime = 0;
 function gameLoop(currentTime) {
     requestAnimationFrame(gameLoop);
-    
+
     const deltaTime = currentTime - lastTime;
     lastTime = currentTime;
-    
+
     if (gameState.isPlaying && !gameState.isPaused) {
         input.update();
         physics.update(deltaTime);
     }
-    
+
     renderer.render();
 }
 
@@ -1287,7 +1287,7 @@ function gameLoop(currentTime) {
     requestAnimationFrame(gameLoop);
     const deltaTime = currentTime - lastTime;
     lastTime = currentTime;
-    
+
     if (gameState.isPlaying && !gameState.isPaused) {
         updateGame(deltaTime);
     }
@@ -1327,7 +1327,7 @@ const DeviceDetector = {
     isMobile: /Android|iPhone|iPad|iPod/i.test(navigator.userAgent),
     isTablet: /iPad|Android.*(?!Mobile)/i.test(navigator.userAgent),
     isTouch: 'ontouchstart' in window,
-    
+
     getQualitySettings() {
         if (this.isMobile && !this.isTablet) {
             return { maxParticles: 80, maxEnemies: 40 };
@@ -1365,7 +1365,7 @@ function verifyZIndexHierarchy() {
         hud: document.getElementById('gameHUD'),
         menu: document.getElementById('startMenu')
     };
-    
+
     Object.entries(elements).forEach(([name, el]) => {
         if (el) {
             const z = window.getComputedStyle(el).zIndex;
@@ -1431,10 +1431,10 @@ Este manifiesto es el resultado de analizar más de 10,000 líneas de código pr
 
 ## 📄 LICENCIA Y ATRIBUCIÓN
 
-**Autor Original:** Luis Castellano Guzmán  
-**Proyecto Base:** Neon Survivor Arena  
-**Versión del Manifiesto:** 1.0  
-**Fecha de Creación:** Noviembre 2025  
+**Autor Original:** Luis Castellano Guzmán
+**Proyecto Base:** Neon Survivor Arena
+**Versión del Manifiesto:** 1.0
+**Fecha de Creación:** Noviembre 2025
 
 **Licencia:** Creative Commons Attribution 4.0 International (CC BY 4.0)
 
@@ -1494,9 +1494,9 @@ A todos los que usen este manifiesto para crear experiencias increíbles.
 
 ---
 
-**Versión del Documento:** 1.0  
-**Última Actualización:** Noviembre 2025  
-**Mantenido por:** Luis Castellano Guzmán  
+**Versión del Documento:** 1.0
+**Última Actualización:** Noviembre 2025
+**Mantenido por:** Luis Castellano Guzmán
 **Contacto:** [Agregar si aplica]
 
 *Este documento es un trabajo vivo. Si encuentras mejoras, errores o tienes sugerencias, contribuye al proyecto.*
