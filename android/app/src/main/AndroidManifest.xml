@@ -15,6 +15,19 @@
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true">
 
+        <!--
+        MODO MAPA INTEGRADO
+        - Assets requeridos:
+            - maps/shooter/prueba 1.xml (mapa TMX)
+            - maps/shooter/spritesheet_tiles.tsx (tileset externo)
+            - maps/shooter/Tilesheet/tilesheet_complete_2X.png (imagen tileset)
+        - Controles virtuales tipo Brawl Stars (joystick izquierdo: movimiento, derecho: disparo/apuntar, botón SUPER)
+        - Renderizado y lógica en canvas principal (gameCanvas)
+        - Soporte para carga dinámica de mapas TMX/TSX
+        - Acceso a assets desde WebView/HTML5
+        - No requiere actividad separada, se ejecuta en MainActivity
+        -->
+
         <!-- AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

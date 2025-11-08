@@ -11,8 +11,8 @@ android {
         applicationId "com.luise7e.neonsurvivor"
         minSdk 21
         targetSdk 35
-        versionCode 16
-        versionName "4.0.1"
+    versionCode 17
+    versionName "4.0.2"
 
         multiDexEnabled true
     }

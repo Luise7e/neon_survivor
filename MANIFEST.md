@@ -9,7 +9,7 @@
 
 ## 📋 RESUMEN EJECUTIVO
 
-Este manifiesto define los principios, patrones y metodologías extraídos del desarrollo profesional de Neon Survivor Arena, un juego móvil HTML5 híbrido para Android con más de 7,000 líneas de código, integración Firebase, monetización AdMob y arquitectura escalable.
+Este manifiesto define los principios, patrones y metodologías extraídos del desarrollo profesiona un juego móvil HTML5 híbrido para Android con más de 7,000 líneas de código, integración Firebase, monetización AdMob y arquitectura escalable.
 
 **Stack Tecnológico:**
 - **Frontend:** HTML5 Canvas, CSS3 (Grid/Flexbox), JavaScript Vanilla (ES6+)
@@ -117,7 +117,7 @@ ctx.drawImage(playerSprite, playerX, playerY, playerWidth, playerHeight);
    GLOBAL CONFIGURATION
    ================================== */
 
-// Firebase Configuration
+// Firebase Configuration. Para futuros proyectos, crea datos ficticios para el test inicial y pide que se completen a la hora de crear el proyecto
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyCUwlvMjqBljR68JlBYGzJwvttWg2AvEdM",
     authDomain: "neon-survivor-fdb4c.firebaseapp.com",

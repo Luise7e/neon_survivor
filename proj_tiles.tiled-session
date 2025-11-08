@@ -1,0 +1,105 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "",
+    "expandedProjectPaths": [
+        ".",
+        "shooter",
+        "shooter/Spritesheet",
+        "kenney_space-shooter-redux/Spritesheet"
+    ],
+    "fileStates": {
+        "#agua": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/LuisCastellanoGuzman/proyectos_1/brawl/assets/tilesets_maps/mapa_prueba.xml": {
+            "scale": 0.33,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 1359.090909090909,
+                "y": 1022.7272727272729
+            }
+        },
+        "pr_tileset/Foam_agua.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "pr_tileset/Rocks_01.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "pr_tileset/Tile.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "pr_tileset/agua.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "pr_tileset/elevaciones_terreno.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "pr_tileset/foam.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "pr_tileset/simpleSpace_tilesheet.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "pr_tileset/terreno_basico.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "shooter/json.json": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "shooter/spritesheet_tiles.tsx": {
+            "scaleInDock": 0.25,
+            "scaleInEditor": 0.75
+        }
+    },
+    "frame.defaultDuration": 100,
+    "last.exportedFilePath": "C:/Users/LuisCastellanoGuzman/proyectos_1/brawl/assets/tilesets_maps",
+    "last.imagePath": "C:/Users/LuisCastellanoGuzman/neon_survivor/shooter/Tilesheet",
+    "lastUsedTilesetExportFilter": "JSON tileset files (*.tsj *.json)",
+    "map.lastUsedExportFilter": "Archivos de mapas de Tiled (*.tmx *.xml)",
+    "map.lastUsedFormat": "tmx",
+    "map.orientation": "1",
+    "map.tileHeight": 64,
+    "map.tileWidth": 64,
+    "openFiles": [
+    ],
+    "project": "proj_tiles.tiled-project",
+    "recentFiles": [
+        "shooter/spritesheet_tiles.tsx",
+        "shooter/json.json",
+        "C:/Users/LuisCastellanoGuzman/proyectos_1/brawl/assets/tilesets_maps/mapa_prueba.xml",
+        "pr_tileset/agua.tsx",
+        "pr_tileset/Rocks_01.tsx",
+        "pr_tileset/foam.tsx",
+        "pr_tileset/simpleSpace_tilesheet.tsx",
+        "pr_tileset/Foam_agua.tsx",
+        "pr_tileset/elevaciones_terreno.tsx",
+        "pr_tileset/terreno_basico.tsx",
+        "pr_tileset/Tile.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.margin": 0,
+    "tileset.spacing": 0,
+    "tileset.tileSize": {
+        "height": 64,
+        "width": 64
+    },
+    "tileset.transparentColor": "#000000",
+    "tileset.type": 0,
+    "tileset.useTransparentColor": false
+}

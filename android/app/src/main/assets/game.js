@@ -2606,6 +2606,19 @@ function updateAimCursor() {
 // ===================================
 
 function gameLoop() {
+    // Si Map Mode está activo, usar su lógica
+    if (window.MapMode && window.MapMode.isActive) {
+        const currentTime = performance.now();
+        const deltaTime = currentTime - (window.lastFrameTime || currentTime);
+        window.lastFrameTime = currentTime;
+        
+        window.MapMode.update(deltaTime);
+        window.MapMode.render();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    // Lógica del juego original
     if (!gameState.isPaused) {
         if (gameState.isCountdown) {
             // Durante countdown: permitir movimiento del jugador y recoger items
