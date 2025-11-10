@@ -1,0 +1,201 @@
+{
+  "id": "arena_electric_storm",
+  "name": "Electric Storm",
+  "description": "High-energy arena with electric barriers and energy cores",
+  "width": 2240,
+  "height": 2240,
+  "theme": {
+    "primary": "#ffff00",
+    "secondary": "#00ffff",
+    "background": "#0a0a2a",
+    "grid": "#ffff00",
+    "walls": "#00ffff"
+  },
+  "background": {
+    "type": "neon-grid",
+    "gridSize": 48,
+    "lineWidth": 3,
+    "glowIntensity": 0.8,
+    "animated": true
+  },
+  "tiles": {
+    "type": "electric",
+    "pattern": "lightning",
+    "density": 0.4
+  },
+  "walls": [
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 2240,
+      "height": 64,
+      "style": "energy-field",
+      "color": "#00ffff",
+      "animated": true
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 2176,
+      "width": 2240,
+      "height": 64,
+      "style": "energy-field",
+      "color": "#00ffff",
+      "animated": true
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 64,
+      "height": 2240,
+      "style": "energy-field",
+      "color": "#00ffff",
+      "animated": true
+    },
+    {
+      "type": "rect",
+      "x": 2176,
+      "y": 0,
+      "width": 64,
+      "height": 2240,
+      "style": "energy-field",
+      "color": "#00ffff",
+      "animated": true
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "circle",
+      "x": 1120,
+      "y": 1120,
+      "radius": 192,
+      "style": "energy-core",
+      "color": "#ffff00",
+      "glow": 3.0,
+      "pulsate": true
+    },
+    {
+      "type": "rect",
+      "x": 560,
+      "y": 496,
+      "width": 64,
+      "height": 384,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    },
+    {
+      "type": "rect",
+      "x": 1616,
+      "y": 496,
+      "width": 64,
+      "height": 384,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    },
+    {
+      "type": "rect",
+      "x": 560,
+      "y": 1360,
+      "width": 64,
+      "height": 384,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    },
+    {
+      "type": "rect",
+      "x": 1616,
+      "y": 1360,
+      "width": 64,
+      "height": 384,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    },
+    {
+      "type": "rect",
+      "x": 496,
+      "y": 560,
+      "width": 384,
+      "height": 64,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    },
+    {
+      "type": "rect",
+      "x": 1360,
+      "y": 560,
+      "width": 384,
+      "height": 64,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    },
+    {
+      "type": "rect",
+      "x": 496,
+      "y": 1616,
+      "width": 384,
+      "height": 64,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    },
+    {
+      "type": "rect",
+      "x": 1360,
+      "y": 1616,
+      "width": 384,
+      "height": 64,
+      "style": "barrier",
+      "color": "#00ffff",
+      "alpha": 0.5
+    }
+  ],
+  "spawnPoints": {
+    "player": {
+      "x": 1120,
+      "y": 1120
+    },
+    "enemies": [
+      { "x": 320, "y": 320 },
+      { "x": 1920, "y": 320 },
+      { "x": 320, "y": 1920 },
+      { "x": 1920, "y": 1920 },
+      { "x": 768, "y": 768 },
+      { "x": 1472, "y": 768 },
+      { "x": 768, "y": 1472 },
+      { "x": 1472, "y": 1472 }
+    ]
+  },
+  "effects": {
+    "glow": {
+      "enabled": true,
+      "distance": 20,
+      "outerStrength": 3,
+      "quality": 0.6
+    },
+    "blur": {
+      "enabled": true,
+      "background": 1,
+      "midground": 0
+    },
+    "particles": {
+      "ambient": true,
+      "type": "lightning",
+      "count": 100
+    },
+    "screenShake": {
+      "enabled": true,
+      "interval": 5000,
+      "intensity": 2
+    }
+  },
+  "music": "electric_storm.mp3",
+  "ambientSound": "thunder_distant.mp3"
+}

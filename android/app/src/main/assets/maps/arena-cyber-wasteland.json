@@ -1,0 +1,184 @@
+{
+  "id": "arena_cyber_wasteland",
+  "name": "Cyber Wasteland",
+  "description": "Ruined arena with scattered debris and broken walls",
+  "width": 2240,
+  "height": 2240,
+  "theme": {
+    "primary": "#00ff88",
+    "secondary": "#ff8800",
+    "background": "#1a0a0a",
+    "grid": "#00ff88",
+    "walls": "#ff8800"
+  },
+  "background": {
+    "type": "neon-grid",
+    "gridSize": 80,
+    "lineWidth": 1,
+    "glowIntensity": 0.3,
+    "damaged": true
+  },
+  "tiles": {
+    "type": "wasteland",
+    "pattern": "cracks",
+    "density": 0.5
+  },
+  "walls": [
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 2240,
+      "height": 80,
+      "style": "damaged",
+      "color": "#ff8800"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 2160,
+      "width": 2240,
+      "height": 80,
+      "style": "damaged",
+      "color": "#ff8800"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 2240,
+      "style": "damaged",
+      "color": "#ff8800"
+    },
+    {
+      "type": "rect",
+      "x": 2160,
+      "y": 0,
+      "width": 80,
+      "height": 2240,
+      "style": "damaged",
+      "color": "#ff8800"
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "rect",
+      "x": 400,
+      "y": 600,
+      "width": 200,
+      "height": 400,
+      "style": "debris",
+      "color": "#666666",
+      "rotation": 15
+    },
+    {
+      "type": "rect",
+      "x": 1640,
+      "y": 600,
+      "width": 200,
+      "height": 400,
+      "style": "debris",
+      "color": "#666666",
+      "rotation": -15
+    },
+    {
+      "type": "rect",
+      "x": 600,
+      "y": 1240,
+      "width": 400,
+      "height": 200,
+      "style": "debris",
+      "color": "#666666",
+      "rotation": 0
+    },
+    {
+      "type": "rect",
+      "x": 1240,
+      "y": 1240,
+      "width": 400,
+      "height": 200,
+      "style": "debris",
+      "color": "#666666",
+      "rotation": 0
+    },
+    {
+      "type": "circle",
+      "x": 1120,
+      "y": 650,
+      "radius": 96,
+      "style": "crater",
+      "color": "#333333"
+    },
+    {
+      "type": "circle",
+      "x": 1120,
+      "y": 1590,
+      "radius": 96,
+      "style": "crater",
+      "color": "#333333"
+    },
+    {
+      "type": "polygon",
+      "points": [
+        { "x": 300, "y": 300 },
+        { "x": 400, "y": 250 },
+        { "x": 450, "y": 350 },
+        { "x": 350, "y": 400 }
+      ],
+      "style": "debris",
+      "color": "#555555"
+    },
+    {
+      "type": "polygon",
+      "points": [
+        { "x": 1840, "y": 1840 },
+        { "x": 1940, "y": 1790 },
+        { "x": 1990, "y": 1890 },
+        { "x": 1890, "y": 1940 }
+      ],
+      "style": "debris",
+      "color": "#555555"
+    }
+  ],
+  "spawnPoints": {
+    "player": {
+      "x": 1120,
+      "y": 1120
+    },
+    "enemies": [
+      { "x": 200, "y": 200 },
+      { "x": 2040, "y": 200 },
+      { "x": 200, "y": 2040 },
+      { "x": 2040, "y": 2040 },
+      { "x": 1120, "y": 200 },
+      { "x": 1120, "y": 2040 },
+      { "x": 200, "y": 1120 },
+      { "x": 2040, "y": 1120 },
+      { "x": 800, "y": 400 },
+      { "x": 1440, "y": 400 },
+      { "x": 800, "y": 1840 },
+      { "x": 1440, "y": 1840 }
+    ]
+  },
+  "effects": {
+    "glow": {
+      "enabled": true,
+      "distance": 10,
+      "outerStrength": 1.5,
+      "quality": 0.4
+    },
+    "blur": {
+      "enabled": true,
+      "background": 2,
+      "midground": 0.5
+    },
+    "particles": {
+      "ambient": true,
+      "type": "dust",
+      "count": 80
+    }
+  },
+  "music": "wasteland_ambience.mp3",
+  "ambientSound": "wind_debris.mp3"
+}

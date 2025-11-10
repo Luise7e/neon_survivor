@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixiJS Test - Neon Survivor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            color: #0ff;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #0ff;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        #info h2 {
+            margin: 0 0 10px 0;
+            color: #f0f;
+        }
+        #info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h2>🧪 PixiJS Test Suite</h2>
+        <p id="status">⏳ Cargando...</p>
+        <p id="renderer">Renderer: <span id="rendererType">-</span></p>
+        <p id="layers">Layers: <span id="layerCount">-</span></p>
+        <p id="camera">Camera: <span id="cameraPos">-</span></p>
+        <p id="fps">FPS: <span id="fpsCount">-</span></p>
+    </div>
+
+
+    <!-- PixiJS local bundle (incluye filtros) -->
+    <script src="dist/pixi-bundle.dist.js"></script>
+
+    <!-- Módulos PixiJS -->
+    <script src="js/pixi/renderer-adapter.js"></script>
+    <script src="js/pixi/layer-manager.js"></script>
+    <script src="js/pixi/camera-controller.js"></script>
+    <script src="js/pixi/collision-map.js"></script>
+    <script src="js/pixi/arena-scene.js"></script>
+    <script src="js/pixi/map-loader.js"></script>
+    <script src="js/pixi/texture-generator.js"></script>
+
+    <script>
+        // Test Suite
+        let arenaScene = null;
+        let testPlayer = { x: 1120, y: 1120 };
+        let lastTime = Date.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        async function runTests() {
+            const status = document.getElementById('status');
+            try {
+                // Test 1: PixiJS loaded
+                if (typeof PIXI === 'undefined') {
+                    throw new Error('PixiJS no está disponible.');
+                }
+                console.log('✅ Test 1: PixiJS loaded');
+
+                // Test 2: ArenaScene (async init)
+                arenaScene = new ArenaScene({ width: window.innerWidth, height: window.innerHeight });
+                await arenaScene.initAsync();
+                if (!arenaScene) throw new Error('ArenaScene no se pudo crear.');
+                console.log('✅ Test 2: ArenaScene creado');
+
+                // Test 3: Textures
+                const bgTexture = TextureGenerator.createNeonGrid(2240, 2240);
+                const tilesTexture = TextureGenerator.createArenaTiles(2240, 2240);
+                const wallsTexture = TextureGenerator.createNeonWalls(2240, 2240);
+                console.log('✅ Test 3: Textures generated');
+
+                // Test 4: Add textures to layers
+                const bgSprite = new PIXI.Sprite(bgTexture);
+                const tilesSprite = new PIXI.Sprite(tilesTexture);
+                const wallsSprite = new PIXI.Sprite(wallsTexture);
+
+                arenaScene.layerManager.addToLayer('background', bgSprite, 0);
+                arenaScene.layerManager.addToLayer('midground', tilesSprite, 0);
+                arenaScene.layerManager.addToLayer('foreground', wallsSprite, 0);
+
+                // Set parallax
+                arenaScene.layerManager.setParallax('background', 0.3);
+                arenaScene.layerManager.setParallax('midground', 0.6);
+                arenaScene.layerManager.setParallax('foreground', 1.0);
+                console.log('✅ Test 4: Layers configured');
+
+                // Test 5: Apply effects
+                if (PIXI.filters && typeof PIXI.filters.GlowFilter === 'function') {
+                    const glowFilter = new PIXI.filters.GlowFilter({
+                        distance: 15,
+                        outerStrength: 2,
+                        color: 0x00ffff,
+                        quality: 0.5
+                    });
+                    wallsSprite.filters = [glowFilter];
+                } else {
+                    throw new Error('GlowFilter no está disponible. Revisa el CDN o la versión de PixiJS.');
+                }
+
+                const blurFilter = new PIXI.filters.BlurFilter();
+                blurFilter.blur = 1.5;
+                bgSprite.filters = [blurFilter];
+                console.log('✅ Test 5: Effects applied');
+
+                // Test 6: Add test player sprite
+                const playerTexture = TextureGenerator.createPlayerSprite(32, 0xff00ff);
+                const playerSprite = new PIXI.Sprite(playerTexture);
+                playerSprite.anchor.set(0.5);
+                playerSprite.x = testPlayer.x;
+                playerSprite.y = testPlayer.y;
+
+                if (PIXI.filters && typeof PIXI.filters.GlowFilter === 'function') {
+                    const playerGlow = new PIXI.filters.GlowFilter({
+                        distance: 20,
+                        outerStrength: 3,
+                        color: 0xff00ff
+                    });
+                    playerSprite.filters = [playerGlow];
+                }
+
+                arenaScene.layerManager.addToLayer('foreground', playerSprite, 100);
+                console.log('✅ Test 6: Player sprite added');
+
+                // Test 7: Load collision map
+                arenaScene.collisionMap.loadFromJSON({
+                    collisions: [
+                        { type: 'rect', x: 0, y: 0, width: 2240, height: 64 },
+                        { type: 'rect', x: 0, y: 2176, width: 2240, height: 64 },
+                        { type: 'rect', x: 0, y: 0, width: 64, height: 2240 },
+                        { type: 'rect', x: 2176, y: 0, width: 64, height: 2240 }
+                    ]
+                });
+                console.log('✅ Test 7: Collision map loaded');
+
+                // Update UI
+                status.innerHTML = '<span class="success">✅ Todos los tests pasados!</span>';
+                document.getElementById('rendererType').textContent = 'PixiJS WebGL';
+                document.getElementById('layerCount').textContent = Object.keys(arenaScene.layerManager.layers).length;
+
+                // Start game loop
+                gameLoop(playerSprite);
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                status.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+                // ...existing code...
+
+        function gameLoop(playerSprite) {
+            const now = Date.now();
+            const deltaTime = (now - lastTime) / 1000;
+            lastTime = now;
+
+            // Move player in circle
+            const time = now * 0.001;
+            testPlayer.x = 1120 + Math.cos(time) * 400;
+            testPlayer.y = 1120 + Math.sin(time) * 400;
+
+            // Update player sprite
+            if (playerSprite) {
+                playerSprite.x = testPlayer.x;
+                playerSprite.y = testPlayer.y;
+                playerSprite.rotation = time;
+            }
+
+            // Update arena scene (camera follows player)
+            if (arenaScene) {
+                arenaScene.update(testPlayer.x, testPlayer.y);
+            }
+
+            // Update camera position display
+            if (arenaScene && arenaScene.camera) {
+                document.getElementById('cameraPos').textContent =
+                    `${Math.round(arenaScene.camera.x)}, ${Math.round(arenaScene.camera.y)}`;
+            }
+
+            // Calculate FPS
+            frameCount++;
+            if (frameCount % 30 === 0) {
+                fps = Math.round(1 / deltaTime);
+                document.getElementById('fpsCount').textContent = fps;
+            }
+
+            requestAnimationFrame(() => gameLoop(playerSprite));
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (arenaScene) {
+                arenaScene.resize(window.innerWidth, window.innerHeight);
+            }
+        });
+    </script>
+</body>
+</html>

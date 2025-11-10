@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixiJS UI System Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #0ff;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+        
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #0ff;
+            border-radius: 8px;
+            padding: 15px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        #controls h3 {
+            margin-bottom: 10px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #0ff;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #0ff;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 10px #0ff;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+        }
+        
+        .value-display {
+            display: inline-block;
+            min-width: 50px;
+            text-align: right;
+            font-family: monospace;
+        }
+        
+        .info {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        #stats {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #0ff;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        #stats div {
+            margin: 3px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameCanvas"></div>
+    
+    <div id="controls">
+        <h3>UI SYSTEM TEST</h3>
+        
+        <div class="control-group">
+            <label>HUD Controls:</label>
+            <div class="button-row">
+                <button onclick="testHealth()">Health -20</button>
+                <button onclick="testHeal()">Heal +30</button>
+                <button onclick="testAmmo()">Shoot</button>
+                <button onclick="testReload()">Reload</button>
+            </div>
+            <div class="button-row">
+                <button onclick="testSuper()">Super +25</button>
+                <button onclick="testWave()">Next Wave</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Floating Text:</label>
+            <div class="button-row">
+                <button onclick="spawnDamageText()">Damage</button>
+                <button onclick="spawnCritical()">Critical</button>
+                <button onclick="spawnHeal()">Heal</button>
+                <button onclick="spawnPowerup()">Powerup</button>
+            </div>
+            <div class="button-row">
+                <button onclick="spawnCombo()">Combo</button>
+                <button onclick="spawnMultikill()">Multikill</button>
+                <button onclick="spawnLevelUp()">Level Up</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Minimap:</label>
+            <div class="button-row">
+                <button onclick="spawnEnemy()">Spawn Enemy</button>
+                <button onclick="clearEnemies()">Clear</button>
+                <button onclick="toggleFollow()">Toggle Follow</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Menus:</label>
+            <div class="button-row">
+                <button onclick="toggleMainMenu()">Main Menu</button>
+                <button onclick="togglePauseMenu()">Pause</button>
+                <button onclick="toggleGameOver()">Game Over</button>
+            </div>
+        </div>
+        
+        <div class="info">
+            Use WASD to move player<br>
+            Arrow keys to navigate menus<br>
+            Enter to select menu option
+        </div>
+    </div>
+    
+    <div id="stats">
+        <div>FPS: <span id="fps">0</span></div>
+        <div>Floating Texts: <span id="textCount">0</span></div>
+        <div>Enemies: <span id="enemyCount">0</span></div>
+    </div>
+    
+    <!-- PixiJS Bundle -->
+    <script src="src/pixi-bundle.js"></script>
+    
+    <!-- PixiJS Systems -->
+    <script src="js/pixi/texture-generator.js"></script>
+    <script src="js/pixi/pixi-hud.js"></script>
+    <script src="js/pixi/minimap.js"></script>
+    <script src="js/pixi/floating-text.js"></script>
+    <script src="js/pixi/ui-menu.js"></script>
+    
+    <script>
+        // ====================================================================
+        // PIXI APP SETUP
+        // ====================================================================
+        
+        const app = new PIXI.Application();
+        let hudManager, minimapManager, floatingTextManager, uiManager;
+        let player, enemies = [];
+        let lastTime = performance.now();
+        let comboCount = 1;
+        let currentWave = 1;
+        let enemiesLeft = 10;
+        
+        async function init() {
+            await app.init({
+                width: window.innerWidth,
+                height: window.innerHeight,
+                backgroundColor: 0x1a1a2e,
+                resolution: window.devicePixelRatio || 1,
+                autoDensity: true
+            });
+            
+            document.getElementById('gameCanvas').appendChild(app.canvas);
+            
+            setupScene();
+            setupHUD();
+            setupMinimap();
+            setupFloatingText();
+            setupUI();
+            setupPlayer();
+            setupControls();
+            
+            app.ticker.add(gameLoop);
+        }
+        
+        // ====================================================================
+        // SCENE SETUP
+        // ====================================================================
+        
+        function setupScene() {
+            // Fondo con grid
+            const background = new PIXI.Graphics();
+            background.beginFill(0x0a0a1e);
+            background.drawRect(0, 0, 2240, 2240);
+            background.endFill();
+            
+            // Grid lines
+            background.lineStyle(1, 0x00ffff, 0.1);
+            for (let i = 0; i <= 2240; i += 64) {
+                background.moveTo(i, 0);
+                background.lineTo(i, 2240);
+                background.moveTo(0, i);
+                background.lineTo(2240, i);
+            }
+            
+            app.stage.addChild(background);
+            
+            // Contenedor de entidades
+            app.stage.sortableChildren = true;
+        }
+        
+        // ====================================================================
+        // HUD SETUP
+        // ====================================================================
+        
+        function setupHUD() {
+            hudManager = new HUDManager(app);
+            app.stage.addChild(hudManager.getContainer());
+            
+            // Valores iniciales
+            hudManager.setHealth(100);
+            hudManager.setAmmo(30, 30);
+            hudManager.setSuper(0);
+            hudManager.setWave(1, 10);
+        }
+        
+        function testHealth() {
+            const current = hudManager.components.healthBar.currentHealth;
+            hudManager.setHealth(Math.max(0, current - 20));
+        }
+        
+        function testHeal() {
+            const current = hudManager.components.healthBar.currentHealth;
+            hudManager.setHealth(Math.min(100, current + 30));
+        }
+        
+        function testAmmo() {
+            const current = hudManager.components.ammoCounter.currentAmmo;
+            hudManager.setAmmo(Math.max(0, current - 1));
+        }
+        
+        function testReload() {
+            hudManager.setAmmo(30);
+        }
+        
+        function testSuper() {
+            const current = hudManager.components.superBar.currentCharge;
+            hudManager.setSuper(Math.min(100, current + 25));
+        }
+        
+        function testWave() {
+            currentWave++;
+            enemiesLeft = currentWave * 5;
+            hudManager.setWave(currentWave, enemiesLeft);
+        }
+        
+        // ====================================================================
+        // MINIMAP SETUP
+        // ====================================================================
+        
+        function setupMinimap() {
+            minimapManager = new Minimap({
+                size: 150,
+                mapWidth: 2240,
+                mapHeight: 2240,
+                neonColor: 0x00FFFF
+            });
+            
+            minimapManager.position.set(app.screen.width - 170, app.screen.height - 170);
+            minimapManager.setMapBackground(0x0a0a1e);
+            
+            // Crear algunas paredes de ejemplo
+            const walls = [
+                { x: 800, y: 800, width: 200, height: 200 },
+                { x: 1200, y: 400, width: 150, height: 150 },
+                { x: 400, y: 1500, isCircle: true, x: 500, y: 1500, radius: 100 }
+            ];
+            minimapManager.setWalls(walls);
+            
+            app.stage.addChild(minimapManager);
+        }
+        
+        // ====================================================================
+        // FLOATING TEXT SETUP
+        // ====================================================================
+        
+        function setupFloatingText() {
+            floatingTextManager = new FloatingTextManager(app.stage);
+        }
+        
+        function getRandomScreenPos() {
+            return {
+                x: app.screen.width / 2 + (Math.random() - 0.5) * 400,
+                y: app.screen.height / 2 + (Math.random() - 0.5) * 300
+            };
+        }
+        
+        function spawnDamageText() {
+            const pos = getRandomScreenPos();
+            const damage = Math.floor(Math.random() * 50) + 10;
+            floatingTextManager.showDamage(pos.x, pos.y, damage, false);
+        }
+        
+        function spawnCritical() {
+            const pos = getRandomScreenPos();
+            const damage = Math.floor(Math.random() * 100) + 50;
+            floatingTextManager.showDamage(pos.x, pos.y, damage, true);
+        }
+        
+        function spawnHeal() {
+            const pos = getRandomScreenPos();
+            const amount = Math.floor(Math.random() * 30) + 10;
+            floatingTextManager.showHeal(pos.x, pos.y, amount);
+        }
+        
+        function spawnPowerup() {
+            const pos = getRandomScreenPos();
+            const powerups = ['SPEED BOOST!', 'DAMAGE UP!', 'SHIELD!', 'MULTI-SHOT!'];
+            const powerup = powerups[Math.floor(Math.random() * powerups.length)];
+            floatingTextManager.showPowerUp(pos.x, pos.y, powerup);
+        }
+        
+        function spawnCombo() {
+            const pos = getRandomScreenPos();
+            floatingTextManager.presets.combo(floatingTextManager, pos.x, pos.y, comboCount);
+            comboCount++;
+        }
+        
+        function spawnMultikill() {
+            const pos = getRandomScreenPos();
+            const kills = Math.floor(Math.random() * 5) + 2;
+            floatingTextManager.presets.multiKill(floatingTextManager, pos.x, pos.y, kills);
+        }
+        
+        function spawnLevelUp() {
+            const pos = getRandomScreenPos();
+            const level = Math.floor(Math.random() * 10) + 1;
+            floatingTextManager.presets.levelUp(floatingTextManager, pos.x, pos.y, level);
+        }
+        
+        // ====================================================================
+        // UI MENU SETUP
+        // ====================================================================
+        
+        function setupUI() {
+            uiManager = new UIManager(app);
+            app.stage.addChild(uiManager.getContainer());
+            
+            // Main Menu
+            uiManager.createMenu('mainMenu', {
+                width: 400,
+                height: 400,
+                title: 'NEON SURVIVOR',
+                neonColor: 0x00FFFF,
+                options: [
+                    {
+                        text: 'PLAY',
+                        color: 0x00FF00,
+                        onClick: () => {
+                            console.log('Starting game...');
+                            uiManager.hideMenu('mainMenu');
+                        }
+                    },
+                    {
+                        text: 'OPTIONS',
+                        color: 0x00FFFF,
+                        onClick: () => console.log('Opening options...')
+                    },
+                    {
+                        text: 'CREDITS',
+                        color: 0xFF00FF,
+                        onClick: () => console.log('Showing credits...')
+                    },
+                    {
+                        text: 'EXIT',
+                        color: 0xFF0000,
+                        onClick: () => console.log('Exiting game...')
+                    }
+                ]
+            });
+            
+            // Pause Menu
+            uiManager.createMenu('pauseMenu', {
+                width: 350,
+                height: 350,
+                title: 'PAUSED',
+                neonColor: 0xFFFF00,
+                options: [
+                    {
+                        text: 'RESUME',
+                        color: 0x00FF00,
+                        onClick: () => {
+                            console.log('Resuming...');
+                            uiManager.hideMenu('pauseMenu');
+                        }
+                    },
+                    {
+                        text: 'RESTART',
+                        color: 0x00FFFF,
+                        onClick: () => console.log('Restarting...')
+                    },
+                    {
+                        text: 'MAIN MENU',
+                        color: 0xFF0000,
+                        onClick: () => {
+                            uiManager.hideMenu('pauseMenu');
+                            uiManager.showMenu('mainMenu');
+                        }
+                    }
+                ]
+            });
+            
+            // Game Over Menu
+            uiManager.createMenu('gameOverMenu', {
+                width: 400,
+                height: 400,
+                title: 'GAME OVER',
+                neonColor: 0xFF0000,
+                options: [
+                    {
+                        text: 'RETRY',
+                        color: 0x00FF00,
+                        onClick: () => {
+                            console.log('Retrying...');
+                            uiManager.hideMenu('gameOverMenu');
+                        }
+                    },
+                    {
+                        text: 'MAIN MENU',
+                        color: 0x00FFFF,
+                        onClick: () => {
+                            uiManager.hideMenu('gameOverMenu');
+                            uiManager.showMenu('mainMenu');
+                        }
+                    }
+                ]
+            });
+        }
+        
+        function toggleMainMenu() {
+            uiManager.toggleMenu('mainMenu');
+        }
+        
+        function togglePauseMenu() {
+            uiManager.toggleMenu('pauseMenu');
+        }
+        
+        function toggleGameOver() {
+            uiManager.toggleMenu('gameOverMenu');
+        }
+        
+        // ====================================================================
+        // PLAYER SETUP
+        // ====================================================================
+        
+        function setupPlayer() {
+            player = {
+                x: 1120,
+                y: 1120,
+                vx: 0,
+                vy: 0,
+                speed: 200,
+                sprite: new PIXI.Graphics()
+            };
+            
+            player.sprite.beginFill(0x00FF00);
+            player.sprite.drawCircle(0, 0, 20);
+            player.sprite.endFill();
+            player.sprite.position.set(player.x, player.y);
+            
+            app.stage.addChild(player.sprite);
+            minimapManager.setPlayer(player);
+        }
+        
+        // ====================================================================
+        // ENEMY MANAGEMENT
+        // ====================================================================
+        
+        function spawnEnemy() {
+            const enemy = {
+                x: Math.random() * 2240,
+                y: Math.random() * 2240,
+                active: true,
+                sprite: new PIXI.Graphics()
+            };
+            
+            enemy.sprite.beginFill(0xFF0000);
+            enemy.sprite.drawCircle(0, 0, 15);
+            enemy.sprite.endFill();
+            enemy.sprite.position.set(enemy.x, enemy.y);
+            
+            app.stage.addChild(enemy.sprite);
+            enemies.push(enemy);
+            minimapManager.setEnemies(enemies);
+        }
+        
+        function clearEnemies() {
+            enemies.forEach(enemy => {
+                if (enemy.sprite) {
+                    app.stage.removeChild(enemy.sprite);
+                    enemy.sprite.destroy();
+                }
+            });
+            enemies = [];
+            minimapManager.setEnemies(enemies);
+        }
+        
+        function toggleFollow() {
+            const isFollowing = minimapManager.config.followPlayer;
+            minimapManager.setFollowPlayer(!isFollowing);
+            console.log('Minimap follow:', !isFollowing);
+        }
+        
+        // ====================================================================
+        // CONTROLS
+        // ====================================================================
+        
+        const keys = {};
+        
+        function setupControls() {
+            window.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+            });
+            
+            // Esc para pausar
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    togglePauseMenu();
+                }
+            });
+        }
+        
+        // ====================================================================
+        // GAME LOOP
+        // ====================================================================
+        
+        function gameLoop() {
+            const currentTime = performance.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            updatePlayer(deltaTime);
+            updateStats();
+            
+            // Update systems
+            if (hudManager) hudManager.update(deltaTime);
+            if (minimapManager) minimapManager.update(deltaTime);
+            if (floatingTextManager) floatingTextManager.update(deltaTime);
+        }
+        
+        function updatePlayer(deltaTime) {
+            player.vx = 0;
+            player.vy = 0;
+            
+            if (keys['w']) player.vy = -player.speed;
+            if (keys['s']) player.vy = player.speed;
+            if (keys['a']) player.vx = -player.speed;
+            if (keys['d']) player.vx = player.speed;
+            
+            // Normalizar diagonal
+            if (player.vx !== 0 && player.vy !== 0) {
+                const factor = Math.sqrt(2) / 2;
+                player.vx *= factor;
+                player.vy *= factor;
+            }
+            
+            player.x += player.vx * deltaTime;
+            player.y += player.vy * deltaTime;
+            
+            // Clamp to map bounds
+            player.x = Math.max(0, Math.min(2240, player.x));
+            player.y = Math.max(0, Math.min(2240, player.y));
+            
+            player.sprite.position.set(player.x, player.y);
+        }
+        
+        function updateStats() {
+            document.getElementById('fps').textContent = Math.round(app.ticker.FPS);
+            document.getElementById('textCount').textContent = floatingTextManager.texts.length;
+            document.getElementById('enemyCount').textContent = enemies.length;
+        }
+        
+        // ====================================================================
+        // START
+        // ====================================================================
+        
+        init();
+    </script>
+</body>
+</html>

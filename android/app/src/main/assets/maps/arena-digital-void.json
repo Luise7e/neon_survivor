@@ -1,0 +1,211 @@
+{
+  "id": "arena_digital_void",
+  "name": "Digital Void",
+  "description": "Minimalist arena with floating platforms in digital space",
+  "width": 2240,
+  "height": 2240,
+  "theme": {
+    "primary": "#ff00ff",
+    "secondary": "#00ff00",
+    "background": "#000000",
+    "grid": "#ff00ff",
+    "walls": "#00ff00"
+  },
+  "background": {
+    "type": "void",
+    "gridSize": 128,
+    "lineWidth": 1,
+    "glowIntensity": 0.2,
+    "stars": true
+  },
+  "tiles": {
+    "type": "digital",
+    "pattern": "hexagons",
+    "density": 0.2
+  },
+  "walls": [
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 2240,
+      "height": 32,
+      "style": "digital",
+      "color": "#00ff00",
+      "alpha": 0.6
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 2208,
+      "width": 2240,
+      "height": 32,
+      "style": "digital",
+      "color": "#00ff00",
+      "alpha": 0.6
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 32,
+      "height": 2240,
+      "style": "digital",
+      "color": "#00ff00",
+      "alpha": 0.6
+    },
+    {
+      "type": "rect",
+      "x": 2208,
+      "y": 0,
+      "width": 32,
+      "height": 2240,
+      "style": "digital",
+      "color": "#00ff00",
+      "alpha": 0.6
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "circle",
+      "x": 560,
+      "y": 560,
+      "radius": 160,
+      "style": "platform",
+      "color": "#ff00ff",
+      "alpha": 0.3,
+      "floating": true
+    },
+    {
+      "type": "circle",
+      "x": 1680,
+      "y": 560,
+      "radius": 160,
+      "style": "platform",
+      "color": "#ff00ff",
+      "alpha": 0.3,
+      "floating": true
+    },
+    {
+      "type": "circle",
+      "x": 560,
+      "y": 1680,
+      "radius": 160,
+      "style": "platform",
+      "color": "#ff00ff",
+      "alpha": 0.3,
+      "floating": true
+    },
+    {
+      "type": "circle",
+      "x": 1680,
+      "y": 1680,
+      "radius": 160,
+      "style": "platform",
+      "color": "#ff00ff",
+      "alpha": 0.3,
+      "floating": true
+    },
+    {
+      "type": "rect",
+      "x": 960,
+      "y": 960,
+      "width": 320,
+      "height": 320,
+      "style": "void-core",
+      "color": "#ffffff",
+      "alpha": 0.1,
+      "pulsate": true
+    },
+    {
+      "type": "polygon",
+      "points": [
+        { "x": 1120, "y": 400 },
+        { "x": 1220, "y": 500 },
+        { "x": 1120, "y": 600 },
+        { "x": 1020, "y": 500 }
+      ],
+      "style": "floating",
+      "color": "#00ff00",
+      "alpha": 0.4
+    },
+    {
+      "type": "polygon",
+      "points": [
+        { "x": 1120, "y": 1640 },
+        { "x": 1220, "y": 1740 },
+        { "x": 1120, "y": 1840 },
+        { "x": 1020, "y": 1740 }
+      ],
+      "style": "floating",
+      "color": "#00ff00",
+      "alpha": 0.4
+    },
+    {
+      "type": "polygon",
+      "points": [
+        { "x": 400, "y": 1120 },
+        { "x": 500, "y": 1220 },
+        { "x": 400, "y": 1320 },
+        { "x": 300, "y": 1220 }
+      ],
+      "style": "floating",
+      "color": "#00ff00",
+      "alpha": 0.4
+    },
+    {
+      "type": "polygon",
+      "points": [
+        { "x": 1840, "y": 1120 },
+        { "x": 1940, "y": 1220 },
+        { "x": 1840, "y": 1320 },
+        { "x": 1740, "y": 1220 }
+      ],
+      "style": "floating",
+      "color": "#00ff00",
+      "alpha": 0.4
+    }
+  ],
+  "spawnPoints": {
+    "player": {
+      "x": 1120,
+      "y": 1120
+    },
+    "enemies": [
+      { "x": 280, "y": 280 },
+      { "x": 1960, "y": 280 },
+      { "x": 280, "y": 1960 },
+      { "x": 1960, "y": 1960 },
+      { "x": 560, "y": 560 },
+      { "x": 1680, "y": 560 },
+      { "x": 560, "y": 1680 },
+      { "x": 1680, "y": 1680 }
+    ]
+  },
+  "effects": {
+    "glow": {
+      "enabled": true,
+      "distance": 25,
+      "outerStrength": 2.5,
+      "quality": 0.7
+    },
+    "blur": {
+      "enabled": false,
+      "background": 0,
+      "midground": 0
+    },
+    "particles": {
+      "ambient": true,
+      "type": "digital-particles",
+      "count": 120
+    },
+    "colorMatrix": {
+      "enabled": true,
+      "hue": 0,
+      "saturation": 1.2,
+      "brightness": 1.1
+    }
+  },
+  "music": "digital_void.mp3",
+  "ambientSound": "void_ambience.mp3"
+}

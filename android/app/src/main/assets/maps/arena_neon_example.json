@@ -1,0 +1,100 @@
+{
+  "name": "Neon Brawl Arena - Example",
+  "version": "1.0",
+  "description": "Arena tipo Brawl Stars con estilo neon cyberpunk",
+  
+  "dimensions": {
+    "width": 35,
+    "height": 35,
+    "tileSize": 64
+  },
+
+  "layers": [
+    {
+      "name": "background",
+      "texture": "textures/bg_neon_grid.png",
+      "parallax": 0.3,
+      "zIndex": 0
+    },
+    {
+      "name": "midground",
+      "texture": "textures/arena_tiles.png",
+      "parallax": 0.6,
+      "zIndex": 1
+    },
+    {
+      "name": "foreground",
+      "texture": "textures/walls_neon.png",
+      "parallax": 1.0,
+      "zIndex": 2
+    }
+  ],
+
+  "collisions": [
+    {
+      "type": "rect",
+      "name": "top_wall",
+      "x": 0,
+      "y": 0,
+      "width": 2240,
+      "height": 64
+    },
+    {
+      "type": "rect",
+      "name": "bottom_wall",
+      "x": 0,
+      "y": 2176,
+      "width": 2240,
+      "height": 64
+    },
+    {
+      "type": "rect",
+      "name": "left_wall",
+      "x": 0,
+      "y": 0,
+      "width": 64,
+      "height": 2240
+    },
+    {
+      "type": "rect",
+      "name": "right_wall",
+      "x": 2176,
+      "y": 0,
+      "width": 64,
+      "height": 2240
+    },
+    {
+      "type": "rect",
+      "name": "center_obstacle_1",
+      "x": 960,
+      "y": 960,
+      "width": 320,
+      "height": 320
+    }
+  ],
+
+  "spawns": {
+    "player": [
+      { "x": 1120, "y": 1120 }
+    ],
+    "enemies": [
+      { "x": 320, "y": 320 },
+      { "x": 1920, "y": 320 },
+      { "x": 320, "y": 1920 },
+      { "x": 1920, "y": 1920 }
+    ]
+  },
+
+  "effects": {
+    "neonGlow": true,
+    "blur": true,
+    "particles": [
+      {
+        "type": "electric",
+        "position": [400, 300],
+        "color": "0x00ffff",
+        "intensity": 0.5
+      }
+    ]
+  }
+}

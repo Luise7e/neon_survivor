@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixiJS Performance Test - Neon Survivor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            color: #0ff;
+        }
+        #performance-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border: 2px solid #0ff;
+            border-radius: 8px;
+            z-index: 1000;
+            min-width: 320px;
+        }
+        #performance-panel h2 {
+            margin: 0 0 10px 0;
+            color: #f0f;
+        }
+        #performance-panel p {
+            margin: 3px 0;
+            font-size: 13px;
+        }
+        .stat-label {
+            display: inline-block;
+            width: 140px;
+            color: #888;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #0ff;
+        }
+        .quality-low { color: #ff4444; }
+        .quality-medium { color: #ffaa00; }
+        .quality-high { color: #00ff00; }
+        
+        #quality-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border: 2px solid #ff00ff;
+            border-radius: 8px;
+            z-index: 1000;
+            min-width: 250px;
+        }
+        #quality-controls h3 {
+            margin: 0 0 10px 0;
+            color: #ff00ff;
+        }
+        .quality-button {
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+            color: #000;
+            border: none;
+            padding: 8px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+        .quality-button:hover {
+            transform: scale(1.05);
+        }
+        .quality-button.active {
+            box-shadow: 0 0 15px #ff00ff;
+        }
+        
+        #stress-test {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px;
+            border: 2px solid #ffff00;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        #stress-test h3 {
+            margin: 0 0 10px 0;
+            color: #ffff00;
+        }
+        .stress-button {
+            background: #ffff00;
+            color: #000;
+            border: none;
+            padding: 8px 12px;
+            margin: 3px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="performance-panel">
+        <h2>⚡ Performance Monitor</h2>
+        <p><span class="stat-label">Device:</span> <span id="device" class="stat-value">-</span></p>
+        <p><span class="stat-label">GPU:</span> <span id="gpu" class="stat-value">-</span></p>
+        <p><span class="stat-label">RAM:</span> <span id="ram" class="stat-value">-</span></p>
+        <p><span class="stat-label">Quality:</span> <span id="quality" class="stat-value">-</span></p>
+        <hr style="border-color: #333; margin: 10px 0;">
+        <p><span class="stat-label">FPS:</span> <span id="fps" class="stat-value">-</span></p>
+        <p><span class="stat-label">Draw Calls:</span> <span id="drawCalls" class="stat-value">-</span></p>
+        <p><span class="stat-label">Entities:</span> <span id="entities" class="stat-value">-</span></p>
+        <p><span class="stat-label">Particles:</span> <span id="particles" class="stat-value">-</span></p>
+        <p><span class="stat-label">Culled:</span> <span id="culled" class="stat-value">-</span></p>
+        <hr style="border-color: #333; margin: 10px 0;">
+        <p><span class="stat-label">Adaptive:</span> <span id="adaptive" class="stat-value">ON</span></p>
+        <p style="font-size: 11px; color: #666; margin-top: 10px;">
+            Quality auto-adjusts if FPS drops below target
+        </p>
+    </div>
+
+    <div id="quality-controls">
+        <h3>🎨 Quality Settings</h3>
+        <button class="quality-button" onclick="setQuality('low')">LOW (30 FPS target)</button>
+        <button class="quality-button" onclick="setQuality('medium')">MEDIUM (45 FPS target)</button>
+        <button class="quality-button" onclick="setQuality('high')">HIGH (60 FPS target)</button>
+        <hr style="border-color: #333; margin: 10px 0;">
+        <button class="quality-button" onclick="toggleAdaptive()" style="background: #00ff00;">
+            Toggle Adaptive
+        </button>
+    </div>
+
+    <div id="stress-test">
+        <h3>🔥 Stress Test</h3>
+        <button class="stress-button" onclick="spawnEnemies(10)">+10 Enemies</button>
+        <button class="stress-button" onclick="spawnEnemies(50)">+50 Enemies</button>
+        <button class="stress-button" onclick="spawnEnemies(100)">+100 Enemies</button>
+        <button class="stress-button" onclick="clearAll()">Clear All</button>
+    </div>
+
+    <!-- PixiJS local bundle -->
+    <script src="dist/pixi-bundle.dist.js"></script>
+
+    <!-- Módulos PixiJS Base -->
+    <script src="js/pixi/renderer-adapter.js"></script>
+    <script src="js/pixi/layer-manager.js"></script>
+    <script src="js/pixi/camera-controller.js"></script>
+    <script src="js/pixi/collision-map.js"></script>
+    <script src="js/pixi/arena-scene.js"></script>
+    <script src="js/pixi/texture-generator.js"></script>
+
+    <!-- Sistema de entidades -->
+    <script src="js/pixi/pixi-entity.js"></script>
+    <script src="js/pixi/sprite-pool.js"></script>
+    <script src="js/pixi/pixi-player.js"></script>
+    <script src="js/pixi/pixi-enemy.js"></script>
+    <script src="js/pixi/pixi-bullet.js"></script>
+
+    <!-- FASE 3: Efectos -->
+    <script src="js/pixi/particle-system.js"></script>
+    <script src="js/pixi/depth-manager.js"></script>
+    <script src="js/pixi/camera-effects.js"></script>
+    <script src="js/pixi/lighting-system.js"></script>
+
+    <!-- FASE 5: Optimización -->
+    <script src="js/pixi/performance-manager.js"></script>
+    <script src="js/pixi/culling-manager.js"></script>
+    <script src="js/pixi/sprite-batcher.js"></script>
+
+    <script>
+        // Test Suite
+        let arenaScene = null;
+        let player = null;
+        let enemies = [];
+        let bullets = [];
+        
+        // FASE 5 Systems
+        let performanceManager = null;
+        let cullingManager = null;
+        let spriteBatcher = null;
+        
+        let lastTime = Date.now();
+        let frameCount = 0;
+
+        // Input
+        const keys = {};
+        const input = { x: 0, y: 0 };
+
+        async function runTests() {
+            try {
+                console.log('✅ Test 1: PixiJS loaded');
+
+                // ArenaScene
+                arenaScene = new ArenaScene({ width: window.innerWidth, height: window.innerHeight });
+                await arenaScene.initAsync();
+                console.log('✅ Test 2: ArenaScene created');
+
+                // Setup environment
+                setupEnvironment();
+                console.log('✅ Test 3: Environment setup');
+
+                // Create Performance Manager
+                performanceManager = new PerformanceManager(arenaScene);
+                console.log('✅ Test 4: PerformanceManager created');
+
+                // Create Culling Manager
+                cullingManager = new CullingManager(arenaScene.camera, {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                });
+                console.log('✅ Test 5: CullingManager created');
+
+                // Create Sprite Batcher
+                spriteBatcher = new SpriteBatcher(arenaScene);
+                console.log('✅ Test 6: SpriteBatcher created');
+
+                // Create player
+                player = new PixiPlayer({
+                    x: 1120,
+                    y: 1120,
+                    radius: 32,
+                    color: 0xff00ff,
+                    speed: 300,
+                    health: 200,
+                    maxHealth: 200,
+                    scene: arenaScene
+                });
+                console.log('✅ Test 7: Player created');
+
+                // Spawn initial enemies
+                spawnEnemies(20);
+                console.log('✅ Test 8: Initial enemies spawned');
+
+                // Setup input
+                setupInput();
+                console.log('✅ Test 9: Input ready');
+
+                // Update UI
+                updateDeviceInfo();
+                updateQualityButtons();
+
+                // Start game loop
+                gameLoop();
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+            }
+        }
+
+        function setupEnvironment() {
+            const bgTexture = TextureGenerator.createNeonGrid(2240, 2240);
+            const bgSprite = new PIXI.Sprite(bgTexture);
+            arenaScene.layerManager.addToLayer('background', bgSprite, 0);
+
+            const tilesTexture = TextureGenerator.createArenaTiles(2240, 2240);
+            const tilesSprite = new PIXI.Sprite(tilesTexture);
+            arenaScene.layerManager.addToLayer('midground', tilesSprite, 0);
+
+            const wallsTexture = TextureGenerator.createNeonWalls(2240, 2240);
+            const wallsSprite = new PIXI.Sprite(wallsTexture);
+            arenaScene.layerManager.addToLayer('foreground', wallsSprite, 0);
+
+            arenaScene.layerManager.setParallax('background', 0.3);
+            arenaScene.layerManager.setParallax('midground', 0.6);
+            arenaScene.layerManager.setParallax('foreground', 1.0);
+
+            arenaScene.collisionMap.loadFromJSON({
+                collisions: [
+                    { type: 'rect', x: 0, y: 0, width: 2240, height: 64 },
+                    { type: 'rect', x: 0, y: 2176, width: 2240, height: 64 },
+                    { type: 'rect', x: 0, y: 0, width: 64, height: 2240 },
+                    { type: 'rect', x: 2176, y: 0, width: 64, height: 2240 }
+                ]
+            });
+        }
+
+        function setupInput() {
+            window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+            window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+            window.addEventListener('click', e => {
+                if (player && player.alive) {
+                    const mouseX = e.clientX + arenaScene.camera.x;
+                    const mouseY = e.clientY + arenaScene.camera.y;
+                    const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+                    shootBullet(angle);
+                }
+            });
+        }
+
+        function updateInput() {
+            input.x = 0; input.y = 0;
+            if (keys['w'] || keys['arrowup']) input.y -= 1;
+            if (keys['s'] || keys['arrowdown']) input.y += 1;
+            if (keys['a'] || keys['arrowleft']) input.x -= 1;
+            if (keys['d'] || keys['arrowright']) input.x += 1;
+        }
+
+        function spawnEnemies(count) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 400 + Math.random() * 600;
+                const x = player.x + Math.cos(angle) * distance;
+                const y = player.y + Math.sin(angle) * distance;
+
+                const types = ['normal', 'fast', 'tank'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                const configs = {
+                    normal: { health: 50, speed: 150, color: 0xff0044, damage: 5 },
+                    fast: { health: 30, speed: 250, color: 0x00ff44, damage: 3 },
+                    tank: { health: 100, speed: 100, color: 0x4400ff, damage: 8 }
+                };
+                const config = configs[type];
+                const enemy = new PixiEnemy({
+                    x: x,
+                    y: y,
+                    ...config,
+                    target: player,
+                    scene: arenaScene
+                });
+                enemies.push(enemy);
+            }
+        }
+
+        function shootBullet(angle) {
+            if (!player || !player.alive) return;
+            const bullet = new PixiBullet({
+                color: 0x00ffff,
+                damage: 25,
+                speed: 600,
+                owner: player,
+                scene: arenaScene
+            });
+            bullet.shoot(player.x, player.y, angle);
+            bullets.push(bullet);
+        }
+
+        function clearAll() {
+            enemies.forEach(e => e.destroy());
+            enemies = [];
+            bullets.forEach(b => b.destroy());
+            bullets = [];
+        }
+
+        function setQuality(tier) {
+            if (performanceManager) {
+                performanceManager.setQuality(tier);
+                updateQualityButtons();
+            }
+        }
+
+        function toggleAdaptive() {
+            if (performanceManager) {
+                performanceManager.setAdaptive(!performanceManager.adaptiveEnabled);
+                document.getElementById('adaptive').textContent = 
+                    performanceManager.adaptiveEnabled ? 'ON' : 'OFF';
+            }
+        }
+
+        function updateDeviceInfo() {
+            if (!performanceManager) return;
+            const stats = performanceManager.getStats();
+            document.getElementById('device').textContent = stats.mobile ? 'Mobile' : 'Desktop';
+            document.getElementById('gpu').textContent = stats.gpu.substring(0, 30);
+            document.getElementById('ram').textContent = stats.ram + ' GB';
+        }
+
+        function updateQualityButtons() {
+            if (!performanceManager) return;
+            const buttons = document.querySelectorAll('.quality-button');
+            const quality = performanceManager.currentQuality;
+            buttons.forEach((btn, i) => {
+                if ((i === 0 && quality === 'low') ||
+                    (i === 1 && quality === 'medium') ||
+                    (i === 2 && quality === 'high')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function gameLoop() {
+            const now = Date.now();
+            const deltaTime = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+
+            // Update input
+            updateInput();
+            if (player && player.alive) player.updateMovement(deltaTime, input);
+
+            // Update enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                if (!enemy.alive) {
+                    enemies.splice(i, 1);
+                    continue;
+                }
+                enemy.updateAI(deltaTime);
+                if (player && player.alive && enemy.distanceTo(player) < (player.radius + enemy.radius)) {
+                    player.takeDamage(enemy.damage * deltaTime);
+                }
+            }
+
+            // Update bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                if (!bullet.alive) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                bullet.update(deltaTime);
+                for (const enemy of enemies) {
+                    if (bullet.checkCollision(enemy)) {
+                        enemy.takeDamage(bullet.damage);
+                        bullet.hit();
+                        break;
+                    }
+                }
+            }
+
+            // Culling
+            if (cullingManager) {
+                cullingManager.resetStats();
+                cullingManager.cullEntities(enemies);
+                cullingManager.cullEntities(bullets);
+            }
+
+            // Update camera
+            if (arenaScene && player) {
+                arenaScene.update(player.x, player.y);
+            }
+
+            // Update performance manager
+            if (performanceManager) {
+                performanceManager.updateFPS(deltaTime);
+                performanceManager.updateStats({
+                    entities: enemies.length + bullets.length + 1,
+                    particles: 0
+                });
+            }
+
+            // Update UI
+            updatePerformanceUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updatePerformanceUI() {
+            if (!performanceManager) return;
+            const stats = performanceManager.getStats();
+            const cullingStats = cullingManager ? cullingManager.getStats() : null;
+
+            document.getElementById('fps').textContent = stats.fps;
+            document.getElementById('quality').textContent = stats.quality.toUpperCase();
+            document.getElementById('quality').className = 'stat-value quality-' + stats.quality;
+            document.getElementById('drawCalls').textContent = stats.drawCalls || '-';
+            document.getElementById('entities').textContent = stats.entities;
+            document.getElementById('particles').textContent = stats.particles;
+            
+            if (cullingStats) {
+                document.getElementById('culled').textContent = 
+                    cullingStats.culled + ' (' + cullingStats.cullRate + '%)';
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (arenaScene) {
+                arenaScene.resize(window.innerWidth, window.innerHeight);
+            }
+            if (cullingManager) {
+                cullingManager.updateViewport(window.innerWidth, window.innerHeight);
+            }
+        });
+    </script>
+</body>
+</html>

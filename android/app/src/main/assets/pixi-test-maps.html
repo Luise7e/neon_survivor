@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixiJS Map System Test - Neon Survivor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            color: #0ff;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border: 2px solid #0ff;
+            border-radius: 8px;
+            z-index: 1000;
+            max-width: 350px;
+        }
+        #info h2 {
+            margin: 0 0 10px 0;
+            color: #f0f;
+        }
+        #info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        #map-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border: 2px solid #ff00ff;
+            border-radius: 8px;
+            z-index: 1000;
+            min-width: 250px;
+        }
+        #map-selector h3 {
+            margin: 0 0 10px 0;
+            color: #ff00ff;
+        }
+        .map-button {
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .map-button:hover {
+            transform: scale(1.05);
+        }
+        .map-button.active {
+            box-shadow: 0 0 15px #ff00ff;
+        }
+        .map-preview {
+            font-size: 11px;
+            color: #888;
+            margin-top: 3px;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h2>🗺️ Map System Test</h2>
+        <p id="status"><span class="warning">⏳ Loading...</span></p>
+        <p>Current Map: <span id="currentMap">-</span></p>
+        <p>Maps Loaded: <span id="mapsLoaded">0</span></p>
+        <p>FPS: <span id="fpsCount">-</span></p>
+        <p>Renderer: <span id="rendererType">-</span></p>
+        <p>Player Position: <span id="playerPosition">-</span></p>
+        <p>Enemies Alive: <span id="enemiesAlive">0</span></p>
+    </div>
+
+    <div id="map-selector">
+        <h3>🌍 Select Map</h3>
+        <div id="mapButtons"></div>
+        <button class="map-button" onclick="loadRandomMap()" style="margin-top: 15px; background: linear-gradient(135deg, #ffff00, #00ff00);">
+            🎲 Random Map
+        </button>
+    </div>
+
+    <!-- PixiJS local bundle -->
+    <script src="dist/pixi-bundle.dist.js"></script>
+
+    <!-- Módulos PixiJS -->
+    <script src="js/pixi/renderer-adapter.js"></script>
+    <script src="js/pixi/layer-manager.js"></script>
+    <script src="js/pixi/camera-controller.js"></script>
+    <script src="js/pixi/collision-map.js"></script>
+    <script src="js/pixi/arena-scene.js"></script>
+    <script src="js/pixi/texture-generator.js"></script>
+    <script src="js/pixi/map-loader.js"></script>
+    <script src="js/pixi/pixi-player.js"></script>
+    <script src="js/pixi/pixi-enemy.js"></script>
+    <script src="js/pixi/pixi-bullet.js"></script>
+
+    <!-- Sistema de entidades -->
+    <script src="js/pixi/pixi-entity.js"></script>
+    <script src="js/pixi/sprite-pool.js"></script>
+    <script src="js/pixi/pixi-player.js"></script>
+    <script src="js/pixi/pixi-enemy.js"></script>
+    <script src="js/pixi/pixi-bullet.js"></script>
+
+    <script>
+        // Test Suite
+        let arenaScene = null;
+        let mapLoader = null;
+        let mapBuilder = null;
+        
+        let lastTime = Date.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        const MAP_PATHS = [
+            'maps/arena-neon-brawl.json',
+            'maps/arena-cyber-wasteland.json',
+            'maps/arena-electric-storm.json',
+            'maps/arena-digital-void.json'
+        ];
+
+        async function runTests() {
+            const status = document.getElementById('status');
+            try {
+                // Test 1: PixiJS loaded
+                if (typeof PIXI === 'undefined') {
+                    throw new Error('PixiJS no está disponible.');
+                }
+                console.log('✅ Test 1: PixiJS loaded');
+
+                // Test 2: ArenaScene (async init)
+                arenaScene = new ArenaScene({ width: window.innerWidth, height: window.innerHeight });
+                await arenaScene.initAsync();
+                console.log('✅ Test 2: ArenaScene created');
+
+                // Test 3: Create MapLoader
+                mapLoader = new MapLoader();
+                console.log('✅ Test 3: MapLoader created');
+
+                // Test 4: Load all maps
+                await mapLoader.loadMaps(MAP_PATHS);
+                console.log('✅ Test 4: Maps loaded');
+
+                // Test 5: Create MapBuilder
+                mapBuilder = new MapBuilder(arenaScene);
+                console.log('✅ Test 5: MapBuilder created');
+
+                // Test 6: Build first map
+                const firstMap = mapLoader.getAllMaps()[0];
+                mapBuilder.buildMap(firstMap);
+                mapLoader.setCurrentMap(firstMap.id);
+                setupEntities(firstMap);
+                setupInput();
+                console.log('✅ Test 6: First map built & entities setup');
+
+                // Test 7: Create map selector UI
+                createMapSelector();
+                console.log('✅ Test 7: Map selector created');
+
+                // Update UI
+                status.innerHTML = '<span class="success">✅ All tests passed!</span>';
+                document.getElementById('rendererType').textContent = 'PixiJS WebGL';
+                updateMapInfo();
+
+                // Start render loop
+                renderLoop();
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                status.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+
+        function createMapSelector() {
+            const container = document.getElementById('mapButtons');
+            const maps = mapLoader.getAllMaps();
+
+            maps.forEach((map, index) => {
+                const button = document.createElement('button');
+                button.className = 'map-button';
+                button.innerHTML = `
+                    ${map.name}
+                    <div class="map-preview">${map.description}</div>
+                `;
+                button.onclick = () => loadMap(map.id);
+                
+                if (index === 0) {
+                    button.classList.add('active');
+                }
+                
+                container.appendChild(button);
+            });
+        }
+
+        function loadMap(mapId) {
+            const map = mapLoader.getMap(mapId);
+            if (!map) {
+                console.error('❌ Map not found:', mapId);
+                return;
+            }
+
+            console.log('🗺️ Loading map:', map.name);
+            mapBuilder.buildMap(map);
+            mapLoader.setCurrentMap(mapId);
+            setupEntities(map);
+            updateMapInfo();
+            highlightActiveButton(mapId);
+        }
+
+        function loadRandomMap() {
+            const map = mapLoader.getRandomMap();
+            if (map) {
+                loadMap(map.id);
+                console.log('🎲 Random map loaded:', map.name);
+            }
+        }
+
+        function highlightActiveButton(mapId) {
+            const buttons = document.querySelectorAll('.map-button');
+            const maps = mapLoader.getAllMaps();
+            
+            buttons.forEach((button, index) => {
+                if (index < maps.length) {
+                    if (maps[index].id === mapId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        function updateMapInfo() {
+            const currentMap = mapLoader.currentMap;
+            if (currentMap) {
+                document.getElementById('currentMap').textContent = currentMap.name;
+            }
+            
+            document.getElementById('mapsLoaded').textContent = mapLoader.getAllMaps().length;
+        }
+
+        // --- ENTIDADES Y CONTROLES ---
+        let player = null;
+        let enemies = [];
+        let bullets = [];
+        let spritePool = null;
+        let isRespawning = false;
+        const keys = {};
+        const input = { x: 0, y: 0 };
+
+        function setupEntities(mapData) {
+            // Limpiar entidades previas
+            if (player && player.sprite) player.destroy();
+            enemies.forEach(e => e.destroy());
+            bullets.forEach(b => b.destroy());
+            enemies = [];
+            bullets = [];
+            isRespawning = false;
+
+            // Crear pool
+            spritePool = new SpritePool({ maxSize: 500 });
+            spritePool.createPool('enemy', 20);
+            spritePool.createPool('bullet', 100);
+
+            // Crear jugador en spawn
+            const spawn = mapData.spawnPoints?.player || { x: 1120, y: 1120 };
+            player = new PixiPlayer({
+                x: spawn.x,
+                y: spawn.y,
+                radius: 32,
+                color: 0xff00ff,
+                speed: 300,
+                health: 200,
+                maxHealth: 200,
+                scene: arenaScene
+            });
+
+            // Crear enemigos en spawn
+            const enemySpawns = mapData.spawnPoints?.enemies || [];
+            for (let i = 0; i < enemySpawns.length; i++) {
+                const pos = enemySpawns[i];
+                const types = ['normal', 'fast', 'tank'];
+                const type = types[i % types.length];
+                const configs = {
+                    normal: { health: 50, speed: 150, color: 0xff0044, damage: 5 },
+                    fast: { health: 30, speed: 250, color: 0x00ff44, damage: 3 },
+                    tank: { health: 100, speed: 100, color: 0x4400ff, damage: 8 }
+                };
+                const config = configs[type];
+                const enemy = new PixiEnemy({
+                    x: pos.x,
+                    y: pos.y,
+                    ...config,
+                    target: player,
+                    scene: arenaScene
+                });
+                enemies.push(enemy);
+            }
+        }
+
+        function setupInput() {
+            window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+            window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+            window.addEventListener('click', e => {
+                if (player && player.alive) {
+                    const mouseX = e.clientX + arenaScene.camera.x;
+                    const mouseY = e.clientY + arenaScene.camera.y;
+                    const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+                    shootBullet(angle);
+                }
+            });
+        }
+
+        function updateInput() {
+            input.x = 0; input.y = 0;
+            if (keys['w'] || keys['arrowup']) input.y -= 1;
+            if (keys['s'] || keys['arrowdown']) input.y += 1;
+            if (keys['a'] || keys['arrowleft']) input.x -= 1;
+            if (keys['d'] || keys['arrowright']) input.x += 1;
+        }
+
+        function shootBullet(angle = null) {
+            if (!player || !player.alive) return;
+            const bulletAngle = angle !== null ? angle : player.rotation;
+            const bullet = new PixiBullet({
+                color: 0x00ffff,
+                damage: 25,
+                speed: 600,
+                owner: player,
+                scene: arenaScene
+            });
+            bullet.shoot(player.x, player.y, bulletAngle);
+            bullets.push(bullet);
+        }
+
+        // --- GAME LOOP EXTENDIDO ---
+        function gameLoopEntities(deltaTime) {
+            // Auto-respawn player si muere
+            if (player && !player.alive && !isRespawning) {
+                isRespawning = true;
+                setTimeout(() => {
+                    if (player) {
+                        player.respawn(player.x, player.y);
+                        isRespawning = false;
+                    }
+                }, 2000);
+            }
+            // Input
+            updateInput();
+            if (player && player.alive) player.updateMovement(deltaTime, input);
+            // Enemigos
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                if (!enemy.alive) { enemies.splice(i, 1); continue; }
+                enemy.updateAI(deltaTime);
+                if (player && player.alive && enemy.distanceTo(player) < (player.radius + enemy.radius)) {
+                    player.takeDamage(enemy.damage * deltaTime);
+                }
+            }
+            // Bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                if (!bullet.alive) { bullets.splice(i, 1); continue; }
+                bullet.update(deltaTime);
+                for (const enemy of enemies) {
+                    if (bullet.checkCollision(enemy)) {
+                        const killed = enemy.takeDamage(bullet.damage);
+                        bullet.hit();
+                        break;
+                    }
+                }
+                if (bullet.x < 0 || bullet.x > 2240 || bullet.y < 0 || bullet.y > 2240) bullet.destroy();
+            }
+        }
+
+        function updateEntityStatsUI() {
+            const info = document.getElementById('info');
+            let stats = '';
+            if (player) {
+                const health = Math.round(player.health);
+                const healthPercent = Math.round(player.getHealthPercent());
+                stats += `<p>Player: HP ${health}/${player.maxHealth} (${healthPercent}%)</p>`;
+            }
+            stats += `<p>Enemies: ${enemies.filter(e => e.alive).length} alive</p>`;
+            stats += `<p>Bullets: ${bullets.filter(b => b.alive).length} active</p>`;
+            info.innerHTML = info.innerHTML.replace(/<p>Player:.*?<\/p>/, '')
+                .replace(/<p>Enemies:.*?<\/p>/, '')
+                .replace(/<p>Bullets:.*?<\/p>/, '') + stats;
+        }
+
+        // --- INTEGRACIÓN EN TEST SUITE ---
+        // Llamar setupEntities(mapData) después de construir el mapa
+        // Llamar setupInput() una sola vez
+        // Llamar gameLoopEntities(deltaTime) en cada frame
+        // Llamar updateEntityStatsUI() en cada frame
+
+        function renderLoop() {
+            const now = Date.now();
+            const deltaTime = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+
+            // Update camera (centered)
+            if (arenaScene && player) {
+                arenaScene.update(player.x, player.y);
+            }
+
+            // Lógica de entidades
+            gameLoopEntities(deltaTime);
+
+            // Actualizar stats
+            updateEntityStatsUI();
+
+            // Calculate FPS
+            frameCount++;
+            if (now - lastTime >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                document.getElementById('fpsCount').textContent = fps;
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        // Iniciar pruebas
+        runTests();
+    </script>
+</body>
+</html>

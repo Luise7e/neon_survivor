@@ -1,0 +1,143 @@
+{
+  "id": "arena_neon_brawl",
+  "name": "Neon Brawl",
+  "description": "Classic arena with neon grid and central obstacles",
+  "width": 2240,
+  "height": 2240,
+  "theme": {
+    "primary": "#00ffff",
+    "secondary": "#ff00ff",
+    "background": "#0a0a1a",
+    "grid": "#00ffff",
+    "walls": "#ff00ff"
+  },
+  "background": {
+    "type": "neon-grid",
+    "gridSize": 64,
+    "lineWidth": 2,
+    "glowIntensity": 0.5
+  },
+  "tiles": {
+    "type": "arena-tiles",
+    "pattern": "circuit",
+    "density": 0.3
+  },
+  "walls": [
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 2240,
+      "height": 64,
+      "style": "neon",
+      "color": "#ff00ff"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 2176,
+      "width": 2240,
+      "height": 64,
+      "style": "neon",
+      "color": "#ff00ff"
+    },
+    {
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 64,
+      "height": 2240,
+      "style": "neon",
+      "color": "#ff00ff"
+    },
+    {
+      "type": "rect",
+      "x": 2176,
+      "y": 0,
+      "width": 64,
+      "height": 2240,
+      "style": "neon",
+      "color": "#ff00ff"
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "rect",
+      "x": 896,
+      "y": 896,
+      "width": 448,
+      "height": 448,
+      "style": "glass",
+      "color": "#00ffff",
+      "alpha": 0.3
+    },
+    {
+      "type": "circle",
+      "x": 448,
+      "y": 448,
+      "radius": 128,
+      "style": "neon",
+      "color": "#ff0044"
+    },
+    {
+      "type": "circle",
+      "x": 1792,
+      "y": 448,
+      "radius": 128,
+      "style": "neon",
+      "color": "#ff0044"
+    },
+    {
+      "type": "circle",
+      "x": 448,
+      "y": 1792,
+      "radius": 128,
+      "style": "neon",
+      "color": "#ff0044"
+    },
+    {
+      "type": "circle",
+      "x": 1792,
+      "y": 1792,
+      "radius": 128,
+      "style": "neon",
+      "color": "#ff0044"
+    }
+  ],
+  "spawnPoints": {
+    "player": {
+      "x": 1120,
+      "y": 1120
+    },
+    "enemies": [
+      { "x": 320, "y": 320 },
+      { "x": 1920, "y": 320 },
+      { "x": 320, "y": 1920 },
+      { "x": 1920, "y": 1920 },
+      { "x": 1120, "y": 320 },
+      { "x": 1120, "y": 1920 },
+      { "x": 320, "y": 1120 },
+      { "x": 1920, "y": 1120 }
+    ]
+  },
+  "effects": {
+    "glow": {
+      "enabled": true,
+      "distance": 15,
+      "outerStrength": 2,
+      "quality": 0.5
+    },
+    "blur": {
+      "enabled": true,
+      "background": 1.5,
+      "midground": 0
+    },
+    "particles": {
+      "ambient": true,
+      "type": "sparkles",
+      "count": 50
+    }
+  },
+  "music": "neon_beats_01.mp3",
+  "ambientSound": "electric_hum.mp3"
+}

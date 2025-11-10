@@ -289,12 +289,12 @@ const ViewportScale = {
         }
 
     },
-    
+
     // Control de altura de cámara
     getCameraZoom() {
         return this.cameraZoom;
     },
-    
+
     setCameraZoom(zoom) {
         this.cameraZoom = Math.max(1.0, Math.min(4.0, zoom)); // Entre 1.0 y 4.0
         console.log('📷 Camera Zoom changed to:', this.cameraZoom);
@@ -334,9 +334,9 @@ function resizeCanvas() {
 function updateMinimapPosition() {
     const minimapCanvas = document.getElementById('minimapCanvas');
     if (!minimapCanvas) return;
-    
+
     const isPortrait = window.innerHeight > window.innerWidth;
-    
+
     if (isPortrait) {
         // Modo vertical: esquina superior derecha
         minimapCanvas.style.top = '18px';
@@ -1275,21 +1275,21 @@ function spawnAbilityPickup(x, y) {
  */
 function findClosestEnemy(maxRange = 600) {
     if (!enemies || enemies.length === 0) return null;
-    
+
     let closestEnemy = null;
     let closestDistance = maxRange;
-    
+
     for (const enemy of enemies) {
         const dx = enemy.x - player.x;
         const dy = enemy.y - player.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance < closestDistance) {
             closestDistance = distance;
             closestEnemy = enemy;
         }
     }
-    
+
     return closestEnemy;
 }
 
@@ -1300,24 +1300,24 @@ function findClosestEnemy(maxRange = 600) {
  */
 function calculateAimAngle(target) {
     if (!target) return player.angle;
-    
+
     // Predicción simple de movimiento
     const bulletSpeed = 14 * ViewportScale.scale;
     const dx = target.x - player.x;
     const dy = target.y - player.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    
+
     // Tiempo estimado de llegada de la bala
     const timeToHit = distance / bulletSpeed;
-    
+
     // Posición predicha del enemigo
     const predictedX = target.x + (target.vx || 0) * timeToHit;
     const predictedY = target.y + (target.vy || 0) * timeToHit;
-    
+
     // Ángulo hacia la posición predicha
     const finalDx = predictedX - player.x;
     const finalDy = predictedY - player.y;
-    
+
     return Math.atan2(finalDy, finalDx);
 }
 
@@ -1331,10 +1331,10 @@ function getShootingAngle(joystickAngle, useAutoAim = true) {
     if (!useAutoAim) {
         return joystickAngle;
     }
-    
+
     // Buscar enemigo más cercano
     const closestEnemy = findClosestEnemy(600);
-    
+
     if (closestEnemy) {
         // Auto-aim al enemigo más cercano
         return calculateAimAngle(closestEnemy);
@@ -1375,7 +1375,7 @@ function createPlayerBullet(angle) {
         glow: true,
         isCritical: isCritical
     });
-    
+
     console.log('📊 Total bullets:', bullets.length);
 }
 
@@ -1866,22 +1866,22 @@ function updatePlayerMovement() {
     if (window.gameMapSystem) {
         const oldX = player.x;
         const oldY = player.y;
-        
+
         // Use sliding collision system
         const newPos = window.gameMapSystem.moveWithCollision(
             player.x, player.y, vx, vy, player.radius
         );
-        
+
         // CRÍTICO: Detectar si moveWithCollision retornó la posición original (teleport bloqueado)
         const moveWasBlocked = (newPos.x === oldX && newPos.y === oldY && (vx !== 0 || vy !== 0));
-        
+
         player.x = newPos.x;
         player.y = newPos.y;
-        
+
         // DETECCIÓN DE TELEPORT - solo si ya hay posición previa guardada
         if (player.lastX !== undefined && player.lastY !== undefined) {
             const distMoved = Math.sqrt((player.x - oldX) ** 2 + (player.y - oldY) ** 2);
-            
+
             // También detectar si moveWithCollision bloqueó el movimiento
             if (moveWasBlocked) {
                 console.warn('⚠️ Movimiento bloqueado por moveWithCollision', {
@@ -1891,7 +1891,7 @@ function updatePlayerMovement() {
                     vy: vy
                 });
             }
-            
+
             if (distMoved > 100) {
                 console.error('⚠️ TELEPORT DETECTADO!', {
                     from: {x: oldX, y: oldY},
@@ -1904,7 +1904,7 @@ function updatePlayerMovement() {
                 });
             }
         }
-        
+
         // CRÍTICO: SIEMPRE actualizar última posición válida
         player.lastX = player.x;
         player.lastY = player.y;
@@ -1914,7 +1914,7 @@ function updatePlayerMovement() {
         player.y += vy;
         player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
         player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
-        
+
         // Actualizar última posición
         player.lastX = player.x;
         player.lastY = player.y;
@@ -1993,7 +1993,7 @@ function update() {
     if (ammoSystem) {
         ammoSystem.update(performance.now());
     }
-    
+
     // UPDATE SUPER SYSTEM (Brawl Stars super/ultimate)
     if (superSystem) {
         const deltaTime = 16; // Aproximado a 60fps
@@ -2029,14 +2029,14 @@ function update() {
     if (window.gameMapSystem) {
         const oldX = player.x;
         const oldY = player.y;
-        
+
         // Use sliding collision system
         const newPos = window.gameMapSystem.moveWithCollision(
             player.x, player.y, vx, vy, player.radius
         );
         player.x = newPos.x;
         player.y = newPos.y;
-        
+
         // DETECCIÓN DE TELEPORT - solo si ya hay posición previa guardada
         if (player.lastX !== undefined && player.lastY !== undefined) {
             const distMoved = Math.sqrt((player.x - oldX) ** 2 + (player.y - oldY) ** 2);
@@ -2052,7 +2052,7 @@ function update() {
                 });
             }
         }
-        
+
         // Actualizar última posición válida
         player.lastX = player.x;
         player.lastY = player.y;
@@ -2073,7 +2073,7 @@ function update() {
                 angle: window._joystickRightLastAngle,
                 isDrag: window._joystickRightLastStrength > 0.25
             });
-            
+
             // Si fue drag (strength > 0.25), disparar en esa dirección
             if (window._joystickRightLastStrength > 0.25) {
                 const shootAngle = window._joystickRightLastAngle;
@@ -2412,7 +2412,7 @@ function update() {
         // Check if bullet is out of world bounds (not screen bounds!)
         const worldWidth = window.gameMapSystem ? window.gameMapSystem.width * window.gameMapSystem.tileSize : 2400;
         const worldHeight = window.gameMapSystem ? window.gameMapSystem.height * window.gameMapSystem.tileSize : 2400;
-        
+
         if (bullet.x < -200 || bullet.x > worldWidth + 200 ||
             bullet.y < -200 || bullet.y > worldHeight + 200) {
             console.log('🌌 BULLET OUT OF WORLD BOUNDS:', {x: bullet.x, y: bullet.y, worldWidth, worldHeight});
@@ -2450,22 +2450,22 @@ function update() {
                 if (dist < enemy.radius + bullet.radius) {
                     enemy.health -= bullet.damage;
                     hit = true;
-                    
+
                     console.log('🎯 BULLET HIT ENEMY!', {damage: bullet.damage, enemyHealth: enemy.health});
-                    
+
                     // Cargar super con el daño infligido
                     if (superSystem) {
                         superSystem.addCharge(bullet.damage);
                     }
-                    
+
                     // FASE 5: Mostrar número de daño flotante
                     createDamageNumber(enemy.x, enemy.y, bullet.damage, bullet.isCritical);
-                    
+
                     // IMPROVED IMPACT EFFECTS (Brawl Stars style)
                     // Más partículas para críticos
                     const particleCount = bullet.isCritical ? 20 : 12;
                     createParticles(enemy.x, enemy.y, particleCount, bullet.color);
-                    
+
                     // Partículas adicionales en dirección del impacto
                     const impactAngle = Math.atan2(dy, dx);
                     for (let i = 0; i < 5; i++) {
@@ -2579,7 +2579,7 @@ function update() {
     if (particles.length > qualitySettings.maxParticles) {
         particles = particles.slice(-qualitySettings.maxParticles);
     }
-    
+
     // FASE 5: Update damage numbers (números de daño flotantes)
     damageNumbers = damageNumbers.filter(dn => {
         dn.x += dn.vx;
@@ -2630,19 +2630,19 @@ function render() {
     // ===================================
     // SISTEMA DE TRANSFORMACIÓN GLOBAL CON ZOOM
     // ===================================
-    
+
     // Calcular offset de cámara desde el MapSystem
     let cameraX = window.gameMapSystem?.camera.x || (player.x - screenWidth / 2);
     let cameraY = window.gameMapSystem?.camera.y || (player.y - screenHeight / 2);
-    
+
     // Obtener zoom de cámara
     const cameraZoom = ViewportScale.getCameraZoom();
     const zoomScale = 1 / cameraZoom;
-    
+
     // Aplicar transformación global: zoom + offset de cámara
     ctx.save();
     ctx.scale(zoomScale, zoomScale);
-    
+
     // Renderizar mapa procedural si está disponible
     if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function') {
         // Actualizar cámara del MapSystem con zoom
@@ -2720,38 +2720,38 @@ function render() {
     });
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
-    
+
     // FASE 5: Render damage numbers (números de daño flotantes)
     damageNumbers.forEach(dn => {
         ctx.save();
         ctx.translate(dn.x - cameraX, dn.y - cameraY);
         ctx.rotate(dn.rotation);
         ctx.scale(dn.scale, dn.scale);
-        
+
         const alpha = dn.life;
         ctx.globalAlpha = alpha;
-        
+
         // Sombra para legibilidad
         ctx.shadowColor = '#000000';
         ctx.shadowBlur = 8;
         ctx.lineWidth = 4;
         ctx.strokeStyle = '#000000';
-        
+
         // Texto del daño
         const fontSize = dn.isCritical ? 28 : 20;
         ctx.font = `bold ${fontSize}px Orbitron`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
+
         // Contorno negro
         ctx.strokeText(dn.damage.toString(), 0, 0);
-        
+
         // Color según tipo
         ctx.shadowBlur = dn.isCritical ? 15 : 8;
         ctx.shadowColor = dn.isCritical ? '#ff00ff' : '#ffff00';
         ctx.fillStyle = dn.isCritical ? '#ff00ff' : '#ffffff';
         ctx.fillText(dn.damage.toString(), 0, 0);
-        
+
         ctx.restore();
     });
     ctx.globalAlpha = 1;
@@ -2810,7 +2810,7 @@ function render() {
         ctx.beginPath();
         ctx.arc(bullet.x - cameraX, bullet.y - cameraY, bullet.radius, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Inner core (núcleo brillante)
         ctx.shadowBlur = 0;
         ctx.fillStyle = bullet.isCritical ? '#ffffff' : '#ffffff';
@@ -2818,7 +2818,7 @@ function render() {
         ctx.beginPath();
         ctx.arc(bullet.x - cameraX, bullet.y - cameraY, bullet.radius * 0.5, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Critical indicator (indicador de crítico)
         if (bullet.isCritical) {
             ctx.globalAlpha = 0.6;
@@ -2921,14 +2921,14 @@ function render() {
     // Auto-aim indicator (línea de mira hacia enemigo objetivo)
     if (joystickManager && joystickManager.getShootingInput().isActive) {
         const shootInput = joystickManager.getShootingInput();
-        
+
         // Si hay desplazamiento significativo, mostrar indicador de dirección manual
         if (shootInput.strength > 0.25) {
             // Línea de dirección manual desde el jugador
             const lineLength = 150;
             const endX = player.x + Math.cos(shootInput.angle) * lineLength;
             const endY = player.y + Math.sin(shootInput.angle) * lineLength;
-            
+
             ctx.strokeStyle = '#ff00ff';
             ctx.lineWidth = 3;
             ctx.globalAlpha = 0.6;
@@ -2940,7 +2940,7 @@ function render() {
             ctx.lineTo(endX - cameraX, endY - cameraY);
             ctx.stroke();
             ctx.setLineDash([]);
-            
+
             // Punta de flecha
             const arrowSize = 12;
             ctx.fillStyle = '#ff00ff';
@@ -2957,7 +2957,7 @@ function render() {
             );
             ctx.closePath();
             ctx.fill();
-            
+
             ctx.globalAlpha = 1;
             ctx.shadowBlur = 0;
         } else {
@@ -2974,7 +2974,7 @@ function render() {
                 ctx.lineTo(targetEnemy.x - cameraX, targetEnemy.y - cameraY);
                 ctx.stroke();
                 ctx.setLineDash([]);
-                
+
                 // Indicador en el enemigo objetivo
                 ctx.strokeStyle = '#ff00ff';
                 ctx.lineWidth = 3;
@@ -2982,7 +2982,7 @@ function render() {
                 ctx.beginPath();
                 ctx.arc(targetEnemy.x - cameraX, targetEnemy.y - cameraY, targetEnemy.radius + 8, 0, Math.PI * 2);
                 ctx.stroke();
-                
+
                 ctx.globalAlpha = 1;
             }
         }
@@ -3020,7 +3020,7 @@ function render() {
     );
     ctx.stroke();
     ctx.shadowBlur = 0;
-    
+
     // ===================================
     // BARRAS DE VIDA Y SUPER (debajo del jugador, estilo Brawl Stars)
     // ===================================
@@ -3029,10 +3029,10 @@ function render() {
     const barWidth = player.radius * 3; // MÁS ANCHO - más visible
     const barHeight = 10; // MÁS ALTO - más visible (era 6)
     const barSpacing = 4; // Más espacio entre barras
-    
+
     // BARRA DE SUPER (abajo)
     const superBarY = playerScreenY + player.radius + 20;
-    
+
     // Fondo de la barra de super (más oscuro y visible)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.fillRect(
@@ -3041,7 +3041,7 @@ function render() {
         barWidth,
         barHeight
     );
-    
+
     // Borde de la barra de super (más grueso)
     ctx.strokeStyle = '#00ffff';
     ctx.lineWidth = 2;
@@ -3051,13 +3051,13 @@ function render() {
         barWidth,
         barHeight
     );
-    
+
     // Relleno de la barra de super (amarillo brillante cuando cargada)
     if (superSystem) {
         const superPercent = superSystem.charge / superSystem.maxCharge;
         const superColor = superPercent >= 1 ? '#ffff00' : '#00ffff';
         const superGlow = superPercent >= 1 ? 20 : 8;
-        
+
         ctx.fillStyle = superColor;
         ctx.shadowColor = superColor;
         ctx.shadowBlur = superGlow;
@@ -3069,10 +3069,10 @@ function render() {
         );
         ctx.shadowBlur = 0;
     }
-    
+
     // BARRA DE VIDA (encima de la barra de super)
     const healthBarY = superBarY - barHeight - barSpacing;
-    
+
     // Fondo de la barra de vida (más oscuro y visible)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.fillRect(
@@ -3081,7 +3081,7 @@ function render() {
         barWidth,
         barHeight
     );
-    
+
     // Borde de la barra de vida (más grueso)
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
@@ -3091,7 +3091,7 @@ function render() {
         barWidth,
         barHeight
     );
-    
+
     // Marcas de regla cada 100 HP (más visibles)
     const maxHealth = player.maxHealth || 100;
     const marksCount = Math.floor(maxHealth / 100);
@@ -3104,7 +3104,7 @@ function render() {
         ctx.lineTo(markX, healthBarY + barHeight);
         ctx.stroke();
     }
-    
+
     // Relleno de la barra de vida con colores según porcentaje
     const healthPercent = player.health / maxHealth;
     let healthColor;
@@ -3115,7 +3115,7 @@ function render() {
     } else {
         healthColor = '#00ff00'; // Verde >= 66%
     }
-    
+
     ctx.fillStyle = healthColor;
     ctx.shadowColor = healthColor;
     ctx.shadowBlur = 10; // Más brillo
@@ -3126,10 +3126,10 @@ function render() {
         barHeight - 4
     );
     ctx.shadowBlur = 0;
-    
+
     // Restaurar transformación de zoom
     ctx.restore();
-    
+
     // ===================================
     // UI ELEMENTS (sin transformación de zoom)
     // ===================================
@@ -3180,10 +3180,10 @@ function render() {
                 const isPortrait = window.innerHeight > window.innerWidth;
                 const minimapRect = minimapCanvas.getBoundingClientRect();
                 let hasCharacterUnder = false;
-                
+
                 // Obtener zoom para ajustar coordenadas
                 const zoomScale = 1 / ViewportScale.cameraZoom;
-                
+
                 // Verificar jugador (coordenadas en espacio de pantalla con zoom aplicado)
                 const playerScreenX = (player.x - cameraX) * zoomScale;
                 const playerScreenY = (player.y - cameraY) * zoomScale;
@@ -3191,7 +3191,7 @@ function render() {
                     playerScreenY >= minimapRect.top && playerScreenY <= minimapRect.bottom) {
                     hasCharacterUnder = true;
                 }
-                
+
                 // Verificar enemigos
                 if (!hasCharacterUnder) {
                     for (const enemy of enemies) {
@@ -3204,7 +3204,7 @@ function render() {
                         }
                     }
                 }
-                
+
                 // Actualizar opacidad según detección
                 minimapCanvas.style.opacity = gameState.isPlaying ? (hasCharacterUnder ? '0.25' : '0.80') : '0';
 
@@ -3212,15 +3212,15 @@ function render() {
                 // El viewport muestra el área visible en el mapa con el zoom aplicado
                 const scaleX = minimapCanvas.width / window.gameMapSystem.width;
                 const scaleY = minimapCanvas.height / window.gameMapSystem.height;
-                
+
                 // Tamaño del viewport en tiles (ajustado por zoom)
                 const viewportWidthInTiles = (screenWidth * cameraZoom) / window.gameMapSystem.tileSize;
                 const viewportHeightInTiles = (screenHeight * cameraZoom) / window.gameMapSystem.tileSize;
-                
+
                 // Posición de la cámara en tiles
                 const cameraTileX = window.gameMapSystem.camera.x / window.gameMapSystem.tileSize;
                 const cameraTileY = window.gameMapSystem.camera.y / window.gameMapSystem.tileSize;
-                
+
                 window.minimapViewportRect = {
                     x: cameraTileX * scaleX,
                     y: cameraTileY * scaleY,
@@ -3245,21 +3245,21 @@ function render() {
         joystickManager.update();
         joystickManager.render(ctx, ViewportScale.getCameraZoom());
     }
-    
+
     // Render Ammo UI (Brawl Stars style bullets below player)
     if (ammoSystem && gameState.isPlaying && !gameState.isPaused) {
         // Calcular posición del jugador en screen space (centrada)
         const screenCenterX = canvas.width / 2;
         const screenCenterY = canvas.height / 2;
-        
+
         ammoSystem.render(ctx, screenCenterX, screenCenterY, ViewportScale.getCameraZoom());
     }
-    
+
     // Render Super UI - DESHABILITADO: Ahora se renderiza debajo del jugador
     // if (superSystem && gameState.isPlaying && !gameState.isPaused) {
     //     const screenCenterX = canvas.width / 2;
     //     const screenCenterY = canvas.height / 2;
-    //     
+    //
     //     superSystem.render(ctx, screenCenterX, screenCenterY);
     // }
 
@@ -3457,12 +3457,12 @@ function resetGameState() {
 
     // Reset snapshot
     statsSnapshot = null;
-    
+
     // Reset Ammo System
     if (ammoSystem) {
         ammoSystem.reset();
     }
-    
+
     // Reset Super System
     if (superSystem) {
         superSystem.reset();
@@ -3516,19 +3516,19 @@ window.startGameFromMenu = function(startLevel, mapType = 'maze') {
         // Configurar calidad de renderizado inicial
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        
+
         // Initialize Dynamic Joystick System
         if (typeof JoystickManager !== 'undefined' && !joystickManager) {
             joystickManager = new JoystickManager(canvas);
             console.log('✅ Dynamic Joystick Manager initialized');
         }
-        
+
         // Initialize Ammo System
         if (typeof AmmoSystem !== 'undefined' && !ammoSystem) {
             ammoSystem = new AmmoSystem();
             console.log('✅ Ammo System initialized');
         }
-        
+
         // Initialize Super System
         if (typeof SuperSystem !== 'undefined' && !superSystem) {
             superSystem = new SuperSystem();
