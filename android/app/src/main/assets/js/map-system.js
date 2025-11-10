@@ -866,6 +866,24 @@
          * @returns {Object} New position {x, y}
          */
         moveWithCollision(x, y, vx, vy, radius) {
+            // FIXED: Validar que el movimiento no sea excesivo (evitar teleports por lag)
+            const maxStep = this.tileSize; // No más de 1 tile por frame
+            const speed = Math.sqrt(vx * vx + vy * vy);
+
+            if (speed > maxStep) {
+                // Normalizar velocidad si es demasiado alta
+                const factor = maxStep / speed;
+                console.warn('⚠️ Velocidad excesiva detectada!', {
+                    originalSpeed: speed,
+                    maxStep: maxStep,
+                    vx: vx,
+                    vy: vy,
+                    factor: factor
+                });
+                vx *= factor;
+                vy *= factor;
+            }
+
             // Intentar movimiento en X primero
             let nextX = x + vx;
             let nextY = y;
@@ -887,6 +905,20 @@
             const mapHeight = this.height * this.tileSize;
             nextX = Math.max(radius, Math.min(mapWidth - radius, nextX));
             nextY = Math.max(radius, Math.min(mapHeight - radius, nextY));
+
+            // FIXED: Validación final - si la nueva posición está muy lejos, no mover
+            const distMoved = Math.sqrt((nextX - x) ** 2 + (nextY - y) ** 2);
+            if (distMoved > maxStep * 2) {
+                console.error('⛔ TELEPORT BLOQUEADO EN moveWithCollision!', {
+                    from: {x, y},
+                    to: {x: nextX, y: nextY},
+                    distance: distMoved,
+                    maxAllowed: maxStep * 2,
+                    vx: vx,
+                    vy: vy
+                });
+                return { x, y }; // No mover si es un salto sospechoso
+            }
 
             return { x: nextX, y: nextY };
         }
@@ -948,21 +980,28 @@
                 return { x, y, pushed: false };
             }
 
+            console.warn('🔧 Player dentro de pared, buscando posición válida...', {x, y, radius});
+
             // Find the nearest walkable position
-            const searchRadius = radius * 2;
+            // FIXED: Limitar búsqueda a un área pequeña para evitar teleports
+            const maxSearchRadius = radius * 3; // Máximo 3x el radio del jugador
             const step = this.tileSize / 4;
             let bestX = x;
             let bestY = y;
             let minDist = Infinity;
 
-            for (let dy = -searchRadius; dy <= searchRadius; dy += step) {
-                for (let dx = -searchRadius; dx <= searchRadius; dx += step) {
+            for (let dy = -maxSearchRadius; dy <= maxSearchRadius; dy += step) {
+                for (let dx = -maxSearchRadius; dx <= maxSearchRadius; dx += step) {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Solo buscar dentro del radio máximo
+                    if (dist > maxSearchRadius) continue;
+
                     const testX = x + dx;
                     const testY = y + dy;
                     const testCollision = this.checkCollision(testX, testY, radius);
 
                     if (!testCollision.collision) {
-                        const dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist < minDist) {
                             minDist = dist;
                             bestX = testX;
@@ -972,10 +1011,23 @@
                 }
             }
 
+            // Si no se encontró una posición cercana válida, NO mover (evitar teleports)
+            if (minDist === Infinity || minDist > maxSearchRadius) {
+                console.error('⛔ PUSHBACK IMPOSIBLE - jugador atrapado en pared sin salida cercana');
+                return { x, y, pushed: false };
+            }
+
             // Apply gradual pushback (25% per frame)
             const pushStrength = 0.25;
             const newX = x + (bestX - x) * pushStrength;
             const newY = y + (bestY - y) * pushStrength;
+
+            console.log('✅ Pushback aplicado:', {
+                from: {x, y},
+                to: {x: newX, y: newY},
+                distance: Math.sqrt((newX - x) ** 2 + (newY - y) ** 2),
+                pushStrength: pushStrength
+            });
 
             return { x: newX, y: newY, pushed: true };
         }
@@ -988,7 +1040,7 @@
             // Aplicar zoom al tamaño del canvas (ver más mapa = mayor área de cámara)
             const zoomedWidth = canvasWidth * zoom;
             const zoomedHeight = canvasHeight * zoom;
-            
+
             // Smooth camera follow
             this.camera.targetX = targetX - zoomedWidth / 2;
             this.camera.targetY = targetY - zoomedHeight / 2;
@@ -1167,7 +1219,7 @@
                 ctx.setLineDash([4, 4]);
                 ctx.strokeRect(vp.x, vp.y, vp.width, vp.height);
                 ctx.setLineDash([]);
-                
+
                 // Fondo semi-transparente del viewport
                 ctx.fillStyle = 'rgba(255, 255, 0, 0.1)';
                 ctx.fillRect(vp.x, vp.y, vp.width, vp.height);
@@ -1204,7 +1256,7 @@
             // Calcular el área visible ajustando por el zoom de cámara
             const viewportWidth = this.canvas.width * zoom;
             const viewportHeight = this.canvas.height * zoom;
-            
+
             const startTileX = Math.max(0, Math.floor(cameraX / this.tileSize) - 1);
             const endTileX = Math.min(this.width, Math.ceil((cameraX + viewportWidth) / this.tileSize) + 1);
             const startTileY = Math.max(0, Math.floor(cameraY / this.tileSize) - 1);

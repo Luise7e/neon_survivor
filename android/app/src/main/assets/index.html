@@ -263,7 +263,7 @@
             display: flex;
             flex-direction: column;
             gap: clamp(15px, 3vh, 25px); /* Responsive gap */
-            pointer-events: all;
+            pointer-events: none; /* FIXED: Dejar pasar toques al canvas */
         }
 
         .action-btn {
@@ -281,6 +281,7 @@
             cursor: pointer;
             transition: all 0.1s ease;
             position: relative;
+            pointer-events: auto; /* FIXED: El botón sí debe capturar toques */
         }
 
         .action-btn.inactive {
@@ -3318,14 +3319,14 @@
         </div>
     </div>
 
-    <!-- MINIMAP - Top Right Corner -->
-    <canvas id="minimapCanvas" width="180" height="180" style="
+    <!-- MINIMAP - Top Right Corner (50% size) -->
+    <canvas id="minimapCanvas" width="90" height="90" style="
         position: fixed;
         top: 18px;
         right: 18px;
         z-index: 1100;
-        border-radius: 16px;
-        box-shadow: 0 0 24px rgba(0, 255, 255, 0.5);
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
         background: rgba(10, 10, 26, 0.95);
         opacity: 0;
         transition: opacity 0.3s ease;
@@ -3341,14 +3342,14 @@
         <!-- Pause Button -->
         <button class="pause-btn-mobile" id="pauseBtnMobile"></button>
 
-        <!-- Move Joystick (Left) -->
-        <div class="joystick-container" id="joystickContainer">
+        <!-- Move Joystick (Left) - HIDDEN: Using dynamic joysticks now -->
+        <div class="joystick-container" id="joystickContainer" style="display: none;">
             <div class="joystick-base" id="joystickBase"></div>
             <div class="joystick-stick" id="joystickStick"></div>
         </div>
 
-        <!-- Shoot Joystick (Right) - Only visible in dual joystick mode -->
-    <div class="shoot-joystick-container" id="shootJoystickContainer">
+        <!-- Shoot Joystick (Right) - HIDDEN: Using dynamic joysticks now -->
+    <div class="shoot-joystick-container" id="shootJoystickContainer" style="display: none;">
             <div class="joystick-base" id="shootJoystickBase"></div>
             <div class="joystick-stick" id="shootJoystickStick"></div>
         </div>
@@ -3609,7 +3610,7 @@
     window.minimapCameraTarget = { x: 0, y: 0 };
     window.minimapViewportRect = { x: 0, y: 0, width: 0, height: 0 };
     var minimapCanvas = document.getElementById('minimapCanvas');
-    
+
     // ================= MINIMAP CAMERA TOUCH/MOUSE =================
     function setMinimapCameraFromEvent(e) {
         var minimapCanvas = document.getElementById('minimapCanvas');
@@ -3617,7 +3618,7 @@
             console.warn('⚠️ minimapCanvas not found');
             return;
         }
-        
+
         const rect = minimapCanvas.getBoundingClientRect();
         let mx, my;
         if (e.touches && e.touches.length > 0) {
@@ -3627,20 +3628,20 @@
             mx = e.clientX - rect.left;
             my = e.clientY - rect.top;
         }
-        
+
         const mapSystem = window.gameMapSystem || window.mapSystem;
         if (!mapSystem) {
             console.warn('⚠️ mapSystem not found');
             return;
         }
-        
+
         // Convert minimap coords to map coords
         const mapX = Math.floor(mx * mapSystem.width / minimapCanvas.width);
         const mapY = Math.floor(my * mapSystem.height / minimapCanvas.height);
         window.minimapCameraTarget.x = mapX * mapSystem.tileSize + mapSystem.tileSize / 2;
         window.minimapCameraTarget.y = mapY * mapSystem.tileSize + mapSystem.tileSize / 2;
         window.minimapCameraActive = true;
-        
+
         console.log('📍 MINIMAP CLICK:', {
             minimapCoords: { mx, my },
             minimapSize: { w: minimapCanvas.width, h: minimapCanvas.height },
@@ -3658,35 +3659,35 @@
             e.preventDefault();
             setMinimapCameraFromEvent(e);
         }, { passive: false });
-        
+
         minimapCanvas.addEventListener('touchmove', function(e) {
             if (window.minimapCameraActive) {
                 e.preventDefault();
                 setMinimapCameraFromEvent(e);
             }
         }, { passive: false });
-        
+
         minimapCanvas.addEventListener('touchend', function(e) {
             window.minimapCameraActive = false;
             console.log('📍 MINIMAP TOUCH END');
         });
-        
+
         // Mouse events
         minimapCanvas.addEventListener('mousedown', function(e) {
             setMinimapCameraFromEvent(e);
         });
-        
+
         minimapCanvas.addEventListener('mousemove', function(e) {
             if (window.minimapCameraActive && e.buttons) {
                 setMinimapCameraFromEvent(e);
             }
         });
-        
+
         minimapCanvas.addEventListener('mouseup', function(e) {
             window.minimapCameraActive = false;
             console.log('📍 MINIMAP MOUSE UP');
         });
-        
+
         minimapCanvas.addEventListener('mouseleave', function(e) {
             window.minimapCameraActive = false;
         });
@@ -4429,13 +4430,13 @@
                 } else {
                     mapSystem.updateCamera(playerX, playerY, canvas.width, canvas.height, false, zoom);
                 }
-                
+
                 // Calcular viewport rect para minimapa con zoom
                 const scaleX = minimapCanvas.width / mapSystem.width;
                 const scaleY = minimapCanvas.height / mapSystem.height;
                 const zoomedWidth = (canvas.width * zoom) / mapSystem.tileSize;
                 const zoomedHeight = (canvas.height * zoom) / mapSystem.tileSize;
-                
+
                 window.minimapViewportRect = {
                     x: (mapSystem.camera.x / mapSystem.tileSize) * scaleX,
                     y: (mapSystem.camera.y / mapSystem.tileSize) * scaleY,
@@ -5973,6 +5974,9 @@
     <script src="js/ui-manager.js"></script>
     <script src="js/firebase-handler.js"></script>
     <script src="js/map-system.js"></script>
+    <script src="js/dynamic-joystick.js"></script>
+    <script src="js/ammo-system.js"></script>
+    <script src="js/super-system.js"></script>
     <script src="game.js"></script>
 
     <script>
