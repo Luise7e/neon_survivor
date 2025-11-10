@@ -84,6 +84,26 @@
             this.camera.x = Math.max(0, Math.min(maxX, this.camera.x));
             this.camera.y = Math.max(0, Math.min(maxY, this.camera.y));
         }
+
+        /**
+         * Cambiar ángulo de cámara para efecto 2.5D
+         * @param {number} angle - Ángulo en grados (0-90)
+         */
+        setCameraAngle(angle) {
+            if (this.renderer3D) {
+                this.renderer3D.setCameraAngle(angle);
+            }
+        }
+
+        /**
+         * Cambiar orientación de cámara (rotación)
+         * @param {number} orientation - Orientación en grados (0-360)
+         */
+        setCameraOrientation(orientation) {
+            if (this.renderer3D) {
+                this.renderer3D.setCameraOrientation(orientation);
+            }
+        }
         /**
          * Pathfinding A* entre dos puntos tile
          * Devuelve array de tiles [{x, y}, ...] desde start hasta goal evitando paredes
@@ -191,6 +211,15 @@
             this.animationTime = 0;
 
             this.initialized = false;
+
+            // Inicializar renderizador 2.5D si está disponible
+            this.renderer3D = null;
+            if (typeof window.Pseudo3DRenderer !== 'undefined') {
+                this.renderer3D = new window.Pseudo3DRenderer();
+                console.log('✅ Pseudo3DRenderer integrado en MapSystem');
+            } else {
+                console.warn('⚠️ Pseudo3DRenderer no disponible, usando renderizado 2D plano');
+            }
         }
 
         // ===================================
@@ -286,31 +315,85 @@
         // ===================================
 
         _generateMaze() {
-            // Recursive backtracker maze - Laberinto perfecto
-            // Empezar con grid de paredes y suelo alternado
+            // ============================================
+            // GENERADOR DE LABERINTO MEJORADO
+            // ============================================
+            // CARACTERÍSTICAS:
+            // - Pasillos con ancho mínimo de 3 tiles
+            // - Plaza central despejada (6x6 tiles mínimo)
+            // - Rutas conectadas entre todas las zonas
+            // - Muros exteriores sólidos
+            // ============================================
 
+            // Inicializar grid completo con paredes
             for (let y = 0; y < this.height; y++) {
                 for (let x = 0; x < this.width; x++) {
-                    // Crear patrón inicial de paredes y espacios
-                    this.grid[y][x] = (x % 2 === 1 && y % 2 === 1) ? TILE_TYPES.FLOOR : TILE_TYPES.WALL;
+                    this.grid[y][x] = TILE_TYPES.WALL;
                 }
             }
 
-            // Carve maze usando DFS con mejor distribución
-            const startX = 1;
-            const startY = 1;
-            const stack = [[startX, startY]];
-            const visited = new Set([`${startX},${startY}`]);
+            // ============================================
+            // 1. CREAR PLAZA CENTRAL (6x6 tiles mínimo)
+            // ============================================
+            const centerX = Math.floor(this.width / 2);
+            const centerY = Math.floor(this.height / 2);
+            const plazaSize = 8; // 8x8 tiles para la plaza
+            const plazaStartX = centerX - Math.floor(plazaSize / 2);
+            const plazaStartY = centerY - Math.floor(plazaSize / 2);
+
+            // Despejar plaza central
+            for (let y = plazaStartY; y < plazaStartY + plazaSize; y++) {
+                for (let x = plazaStartX; x < plazaStartX + plazaSize; x++) {
+                    if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+                        this.grid[y][x] = TILE_TYPES.FLOOR;
+                    }
+                }
+            }
+
+            // Marcar plaza como zona especial
+            this.zones.objectives.push({ x: centerX, y: centerY });
+
+            // ============================================
+            // 2. GENERAR PASILLOS ANCHOS (3 tiles mínimo)
+            // Usando algoritmo de carving con paso de 4 tiles
+            // ============================================
+            const corridorWidth = 3; // Ancho de pasillos
+            const step = 6; // Distancia entre centros de pasillos (4 + 2 de pared)
+
+            // Crear grid de nodos para el laberinto (más espaciado)
+            const nodesX = [];
+            const nodesY = [];
+
+            for (let x = 3; x < this.width - 3; x += step) {
+                nodesX.push(x);
+            }
+            for (let y = 3; y < this.height - 3; y += step) {
+                nodesY.push(y);
+            }
+
+            // Generar laberinto usando DFS en nodos espaciados
+            const visited = new Set();
+            const stack = [];
+
+            // Empezar cerca de la plaza central
+            let startNodeX = nodesX[Math.floor(nodesX.length / 2)];
+            let startNodeY = nodesY[Math.floor(nodesY.length / 2)];
+            
+            stack.push([startNodeX, startNodeY]);
+            visited.add(`${startNodeX},${startNodeY}`);
 
             const directions = [
-                [0, -2], // North
-                [2, 0],  // East
-                [0, 2],  // South
-                [-2, 0]  // West
+                [0, -step], // North
+                [step, 0],  // East
+                [0, step],  // South
+                [-step, 0]  // West
             ];
 
             while (stack.length > 0) {
                 const [x, y] = stack[stack.length - 1];
+
+                // Carvar pasillo ancho en posición actual
+                this._carveWideCorridor(x, y, corridorWidth);
 
                 // Shuffle directions para más aleatoriedad
                 const shuffled = directions
@@ -324,15 +407,12 @@
                     const nx = x + dx;
                     const ny = y + dy;
 
-                    if (nx > 0 && nx < this.width - 1 &&
-                        ny > 0 && ny < this.height - 1 &&
+                    if (nx >= 3 && nx < this.width - 3 &&
+                        ny >= 3 && ny < this.height - 3 &&
                         !visited.has(`${nx},${ny}`)) {
 
-                        // Carve path to neighbor
-                        const wallX = x + dx / 2;
-                        const wallY = y + dy / 2;
-                        this.grid[wallY][wallX] = TILE_TYPES.FLOOR;
-                        this.grid[ny][nx] = TILE_TYPES.FLOOR;
+                        // Carvar camino entre nodos (pasillo ancho)
+                        this._carvePathBetweenNodes(x, y, nx, ny, corridorWidth);
 
                         visited.add(`${nx},${ny}`);
                         stack.push([nx, ny]);
@@ -346,8 +426,96 @@
                 }
             }
 
-            // Añadir algunas aberturas adicionales para hacer el laberinto menos perfecto
-            this._addRandomOpenings(0.1);
+            // ============================================
+            // 3. CONECTAR TODO CON LA PLAZA CENTRAL
+            // ============================================
+            // Crear pasillos radiales desde la plaza a los bordes
+            const radialPaths = 4;
+            for (let i = 0; i < radialPaths; i++) {
+                const angle = (Math.PI * 2 / radialPaths) * i;
+                const endX = centerX + Math.floor(Math.cos(angle) * this.width * 0.4);
+                const endY = centerY + Math.floor(Math.sin(angle) * this.height * 0.4);
+                
+                this._carvePathBetweenNodes(centerX, centerY, endX, endY, corridorWidth);
+            }
+
+            // ============================================
+            // 4. AÑADIR ABERTURAS ADICIONALES
+            // Para hacer el laberinto menos perfecto y más interesante
+            // ============================================
+            this._addRandomOpenings(0.15);
+
+            // ============================================
+            // 5. ASEGURAR MUROS EXTERIORES SÓLIDOS
+            // ============================================
+            for (let x = 0; x < this.width; x++) {
+                this.grid[0][x] = TILE_TYPES.WALL;
+                this.grid[this.height - 1][x] = TILE_TYPES.WALL;
+            }
+            for (let y = 0; y < this.height; y++) {
+                this.grid[y][0] = TILE_TYPES.WALL;
+                this.grid[y][this.width - 1] = TILE_TYPES.WALL;
+            }
+        }
+
+        /**
+         * Carvar un pasillo ancho centrado en (x, y)
+         * @param {number} x - Coordenada X del centro
+         * @param {number} y - Coordenada Y del centro
+         * @param {number} width - Ancho del pasillo (debe ser impar)
+         * @private
+         */
+        _carveWideCorridor(x, y, width) {
+            const halfWidth = Math.floor(width / 2);
+            
+            for (let dy = -halfWidth; dy <= halfWidth; dy++) {
+                for (let dx = -halfWidth; dx <= halfWidth; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    
+                    if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                        this.grid[ny][nx] = TILE_TYPES.FLOOR;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Carvar un camino ancho entre dos puntos
+         * @param {number} x1 - X inicial
+         * @param {number} y1 - Y inicial
+         * @param {number} x2 - X final
+         * @param {number} y2 - Y final
+         * @param {number} width - Ancho del camino
+         * @private
+         */
+        _carvePathBetweenNodes(x1, y1, x2, y2, width) {
+            const halfWidth = Math.floor(width / 2);
+
+            // Camino en L: primero horizontal, luego vertical
+            // Horizontal
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            for (let x = minX; x <= maxX; x++) {
+                for (let dy = -halfWidth; dy <= halfWidth; dy++) {
+                    const ny = y1 + dy;
+                    if (x >= 0 && x < this.width && ny >= 0 && ny < this.height) {
+                        this.grid[ny][x] = TILE_TYPES.FLOOR;
+                    }
+                }
+            }
+
+            // Vertical
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+            for (let y = minY; y <= maxY; y++) {
+                for (let dx = -halfWidth; dx <= halfWidth; dx++) {
+                    const nx = x2 + dx;
+                    if (nx >= 0 && nx < this.width && y >= 0 && y < this.height) {
+                        this.grid[y][nx] = TILE_TYPES.FLOOR;
+                    }
+                }
+            }
         }
 
         _generateRooms(roomCount, minSize, maxSize) {
@@ -1278,15 +1446,51 @@
             // Render decorations
             this._renderDecorations(ctx, cameraX, cameraY);
 
-            // Render walls con efecto neon
-            for (let y = startTileY; y < endTileY; y++) {
-                for (let x = startTileX; x < endTileX; x++) {
-                    const tileType = this.grid[y][x];
-                    const screenX = x * this.tileSize - cameraX;
-                    const screenY = y * this.tileSize - cameraY;
+            // ============================================
+            // RENDERIZADO DE MUROS CON DEPTH SORTING
+            // Los muros se renderizan de atrás hacia adelante (por coordenada Y)
+            // para que el jugador pueda pasar "detrás" de los muros
+            // ============================================
 
-                    if (tileType === TILE_TYPES.WALL || tileType === TILE_TYPES.WALL_DESTRUCTIBLE) {
-                        this._renderWallTile(ctx, screenX, screenY, tileType, x, y);
+            if (this.renderer3D && this.renderer3D.config.depthSorting) {
+                // Recolectar todos los tiles de muro visibles
+                const wallTiles = [];
+
+                for (let y = startTileY; y < endTileY; y++) {
+                    for (let x = startTileX; x < endTileX; x++) {
+                        const tileType = this.grid[y][x];
+
+                        if (tileType === TILE_TYPES.WALL || tileType === TILE_TYPES.WALL_DESTRUCTIBLE) {
+                            wallTiles.push({
+                                x: x,
+                                y: y,
+                                screenX: x * this.tileSize - cameraX,
+                                screenY: y * this.tileSize - cameraY,
+                                tileType: tileType
+                            });
+                        }
+                    }
+                }
+
+                // Ordenar por coordenada Y (de menor a mayor = de atrás hacia adelante)
+                // Esto permite que objetos con mayor Y se dibujen encima
+                wallTiles.sort((a, b) => a.y - b.y);
+
+                // Renderizar muros en orden de profundidad
+                for (const tile of wallTiles) {
+                    this._renderWallTile(ctx, tile.screenX, tile.screenY, tile.tileType, tile.x, tile.y);
+                }
+            } else {
+                // Renderizado normal sin depth sorting (2D plano)
+                for (let y = startTileY; y < endTileY; y++) {
+                    for (let x = startTileX; x < endTileX; x++) {
+                        const tileType = this.grid[y][x];
+                        const screenX = x * this.tileSize - cameraX;
+                        const screenY = y * this.tileSize - cameraY;
+
+                        if (tileType === TILE_TYPES.WALL || tileType === TILE_TYPES.WALL_DESTRUCTIBLE) {
+                            this._renderWallTile(ctx, screenX, screenY, tileType, x, y);
+                        }
                     }
                 }
             }
@@ -1366,6 +1570,18 @@
                 W: this.grid[tileY]?.[tileX - 1] === TILE_TYPES.WALL
             };
 
+            // ============================================
+            // USAR RENDERIZADOR 2.5D SI ESTÁ DISPONIBLE
+            // ============================================
+            if (this.renderer3D) {
+                this.renderer3D.renderWallTile(ctx, x, y, size, tileX, tileY, neighbors);
+                return;
+            }
+
+            // ============================================
+            // FALLBACK: RENDERIZADO 2D PLANO (sin efecto 3D)
+            // Se mantiene para compatibilidad si el módulo 3D no está cargado
+            // ============================================
             ctx.save();
 
             // Base oscura

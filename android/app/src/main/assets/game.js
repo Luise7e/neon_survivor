@@ -404,7 +404,7 @@ const player = {
         const baseSpeed = (playerStats.movementSpeed.baseValue) * ViewportScale.scale;
         return baseSpeed * (playerStats.movementSpeed.currentValue / playerStats.movementSpeed.baseValue);
     }, // Velocidad proporcional con mejora
-    color: '#00ffff',
+    color: '#5EF067',
     angle: 0,
     aimX: 0,
     aimY: 0,
@@ -2643,8 +2643,8 @@ function render() {
     ctx.save();
     ctx.scale(zoomScale, zoomScale);
     
-    // Renderizar mapa procedural si está disponible
-    if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function') {
+    // Renderizado con depth sorting: muros y personajes/enemigos se dibujan en orden de profundidad
+    if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function' && window.gameMapSystem.renderer3D && window.gameMapSystem.renderer3D.config.depthSorting) {
         // Actualizar cámara del MapSystem con zoom
         if (window.minimapCameraActive) {
             window.gameMapSystem.updateCamera(
@@ -2666,9 +2666,173 @@ function render() {
             );
         }
 
-        // Renderizar mapa con cámara del sistema (ya con transformación aplicada)
-        window.gameMapSystem.render(ctx, window.gameMapSystem.camera.x, window.gameMapSystem.camera.y);
+        // ============================================
+        // ALGORITMO DE DEPTH SORTING MEJORADO
+        // ============================================
+        // OBJETIVO: Renderizar todos los elementos (muros, jugador, enemigos) en orden correcto
+        // basándose en su coordenada Y + altura para simular profundidad 3D realista
+        //
+        // ORDEN DE RENDERIZADO (de atrás hacia adelante):
+        // 1. Elementos con menor Y (más alejados = fondo)
+        // 2. Elementos con mayor Y (más cercanos = frente)
+        //
+        // CÁLCULO DE PROFUNDIDAD:
+        // - Muros: Y + altura del muro (para que personajes detrás queden ocultos)
+        // - Personajes/Enemigos: Y + radio (posición inferior de la esfera)
+        // ============================================
+
+        // Obtener tiles de muro visibles
+        const wallTiles = [];
+        const startTileX = Math.max(0, Math.floor(window.gameMapSystem.camera.x / window.gameMapSystem.tileSize) - 1);
+        const endTileX = Math.min(window.gameMapSystem.width, Math.ceil((window.gameMapSystem.camera.x + screenWidth * cameraZoom) / window.gameMapSystem.tileSize) + 1);
+        const startTileY = Math.max(0, Math.floor(window.gameMapSystem.camera.y / window.gameMapSystem.tileSize) - 1);
+        const endTileY = Math.min(window.gameMapSystem.height, Math.ceil((window.gameMapSystem.camera.y + screenHeight * cameraZoom) / window.gameMapSystem.tileSize) + 1);
+        
+        for (let y = startTileY; y < endTileY; y++) {
+            for (let x = startTileX; x < endTileX; x++) {
+                const tileType = window.gameMapSystem.grid[y][x];
+                if (tileType === window.TILE_TYPES.WALL || tileType === window.TILE_TYPES.WALL_DESTRUCTIBLE) {
+                    wallTiles.push({
+                        x: x,
+                        y: y,
+                        screenX: x * window.gameMapSystem.tileSize - window.gameMapSystem.camera.x,
+                        screenY: y * window.gameMapSystem.tileSize - window.gameMapSystem.camera.y,
+                        tileType: tileType,
+                        // Profundidad: parte inferior del tile + altura del muro
+                        depth: (y + 1) * window.gameMapSystem.tileSize + 48 // +48 = altura del muro
+                    });
+                }
+            }
+        }
+
+        // Crear lista de "drawables" (elementos renderizables) con su profundidad
+        const drawables = [];
+
+        // Sistema de marcas para evitar renderizado duplicado
+        const renderedEnemies = new Set();
+        const renderedPlayer = false;
+
+        // Añadir muros
+        wallTiles.forEach(tile => {
+            drawables.push({
+                type: 'wall',
+                depth: tile.depth,
+                data: tile
+            });
+        });
+
+        // Añadir enemigos (solo una vez cada uno)
+        enemies.forEach((enemy, index) => {
+            drawables.push({
+                type: 'enemy',
+                // Profundidad: posición Y + radio (parte inferior de la esfera)
+                depth: enemy.y + enemy.radius,
+                data: enemy,
+                id: index // ID único para evitar duplicados
+            });
+        });
+
+        // Añadir jugador
+        drawables.push({
+            type: 'player',
+            depth: player.y + player.radius,
+            data: player
+        });
+
+        // ORDENAR POR PROFUNDIDAD: menor depth = más atrás = renderizar primero
+        drawables.sort((a, b) => a.depth - b.depth);
+
+        // RENDERIZAR EN ORDEN (evitando duplicados)
+        let playerRendered = false;
+        
+        drawables.forEach(drawable => {
+            if (drawable.type === 'wall') {
+                const tile = drawable.data;
+                window.gameMapSystem._renderWallTile(ctx, tile.screenX, tile.screenY, tile.tileType, tile.x, tile.y);
+            } else if (drawable.type === 'enemy') {
+                // Solo renderizar si no se ha renderizado antes
+                if (!renderedEnemies.has(drawable.id)) {
+                    renderEnemy3D(ctx, drawable.data, cameraX, cameraY);
+                    renderedEnemies.add(drawable.id);
+                }
+            } else if (drawable.type === 'player' && !playerRendered) {
+                renderPlayer3D(ctx, drawable.data, cameraX, cameraY);
+                playerRendered = true;
+            }
+        });
+    } else {
+        // Renderizado clásico
+        if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function') {
+            window.gameMapSystem.updateCamera(
+                player.x,
+                player.y,
+                screenWidth,
+                screenHeight,
+                false,
+                cameraZoom
+            );
+            window.gameMapSystem.render(ctx, window.gameMapSystem.camera.x, window.gameMapSystem.camera.y);
+        }
     }
+// Función para renderizar un enemigo como esfera 3D (igual que en el bucle enemies.forEach)
+function renderEnemy3D(ctx, enemy, cameraX, cameraY) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(
+        enemy.x - cameraX - enemy.radius * 0.4,
+        enemy.y - cameraY - enemy.radius * 0.4,
+        enemy.radius * 0.2,
+        enemy.x - cameraX,
+        enemy.y - cameraY,
+        enemy.radius
+    );
+    grad.addColorStop(0, '#fff');
+    grad.addColorStop(0.45, enemy.color);
+    grad.addColorStop(1, '#222');
+    ctx.fillStyle = grad;
+    ctx.shadowColor = enemy.color;
+    ctx.shadowBlur = enemy.isBoss ? qualitySettings.shadowBlur * 3 : qualitySettings.shadowBlur * 1.5;
+    ctx.globalAlpha = 0.98;
+    ctx.fill();
+    ctx.globalAlpha = 0.18;
+    ctx.beginPath();
+    ctx.arc(enemy.x - cameraX - enemy.radius * 0.35, enemy.y - cameraY - enemy.radius * 0.35, enemy.radius * 0.32, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+}
+
+// Función para renderizar el jugador como esfera 3D (igual que en el bloque player)
+function renderPlayer3D(ctx, player, cameraX, cameraY) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(player.x - cameraX, player.y - cameraY, player.radius, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(
+        player.x - cameraX - player.radius * 0.4,
+        player.y - cameraY - player.radius * 0.4,
+        player.radius * 0.2,
+        player.x - cameraX,
+        player.y - cameraY,
+        player.radius
+    );
+    grad.addColorStop(0, '#B8FFD6');
+    grad.addColorStop(0.45, player.color);
+    grad.addColorStop(1, '#1B6B3C');
+    ctx.fillStyle = grad;
+    ctx.shadowColor = player.color;
+    ctx.shadowBlur = qualitySettings.shadowBlur * 2;
+    ctx.globalAlpha = 0.98;
+    ctx.fill();
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.arc(player.x - cameraX - player.radius * 0.35, player.y - cameraY - player.radius * 0.35, player.radius * 0.35, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+}
 
     // Render special particles
     particles.forEach(p => {
@@ -2835,25 +2999,22 @@ function render() {
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
 
-    // Render enemies
+    // Render enemies como esferas 3D
     enemies.forEach((enemy, idx) => {
-
         // Efectos especiales según tipo
         if (enemy.explosive) {
-            // Pulso para explosivos
             const pulseSize = Math.sin(Date.now() * 0.008) * 3;
             ctx.shadowColor = enemy.color;
             ctx.shadowBlur = qualitySettings.shadowBlur * 2.5;
-            ctx.fillStyle = enemy.color;
             ctx.globalAlpha = 0.3;
             ctx.beginPath();
-        ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + pulseSize + 10, 0, Math.PI * 2);
+            ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + pulseSize + 10, 0, Math.PI * 2);
+            ctx.fillStyle = enemy.color;
             ctx.fill();
             ctx.globalAlpha = 1;
         }
 
         if (enemy.isBoss) {
-            // Anillo giratorio para jefes
             const rotation = Date.now() * 0.002;
             ctx.strokeStyle = enemy.color;
             ctx.lineWidth = 3;
@@ -2867,17 +3028,35 @@ function render() {
             ctx.stroke();
         }
 
-        // Cuerpo del enemigo
+        // Cuerpo del enemigo como esfera 3D
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius, 0, Math.PI * 2);
+        // Gradiente radial para efecto de esfera
+        const grad = ctx.createRadialGradient(
+            enemy.x - cameraX - enemy.radius * 0.4,
+            enemy.y - cameraY - enemy.radius * 0.4,
+            enemy.radius * 0.2,
+            enemy.x - cameraX,
+            enemy.y - cameraY,
+            enemy.radius
+        );
+        grad.addColorStop(0, '#fff'); // Brillo central
+        grad.addColorStop(0.45, enemy.color);
+        grad.addColorStop(1, '#222'); // Sombra exterior
+        ctx.fillStyle = grad;
         ctx.shadowColor = enemy.color;
         ctx.shadowBlur = enemy.isBoss ? qualitySettings.shadowBlur * 3 : qualitySettings.shadowBlur * 1.5;
-        ctx.fillStyle = enemy.color;
-        ctx.beginPath();
-    ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius, 0, Math.PI * 2);
+        ctx.globalAlpha = 0.98;
         ctx.fill();
-
-        // Reset shadow for performance
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'transparent';
+        // Reflejo superior izquierdo
+        ctx.globalAlpha = 0.18;
+        ctx.beginPath();
+        ctx.arc(enemy.x - cameraX - enemy.radius * 0.35, enemy.y - cameraY - enemy.radius * 0.35, enemy.radius * 0.32, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+        ctx.restore();
 
         // Indicador de tipo en el centro
         if (enemy.type === 'FAST') {
@@ -2909,12 +3088,12 @@ function render() {
         const barHeight = enemy.isBoss ? 10 : 6;
         const barOffset = enemy.isBoss ? 20 : 14;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2, barHeight);
-    const healthColor = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
-    ctx.fillStyle = healthColor;
-    ctx.shadowColor = healthColor;
-    ctx.shadowBlur = 8;
-    ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2 * healthPercent, barHeight);
+        ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2, barHeight);
+        const healthColor = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
+        ctx.fillStyle = healthColor;
+        ctx.shadowColor = healthColor;
+        ctx.shadowBlur = 8;
+        ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2 * healthPercent, barHeight);
         ctx.shadowBlur = 0;
     });
 
@@ -2988,21 +3167,36 @@ function render() {
         }
     }
 
-    // Render player
-    // Calcular offset de cámara para renderizar personajes y enemigos
+    // Render player como esfera 3D
     if (player.x && player.y && player.radius) {
-        // ...log eliminado...
-
-        ctx.shadowColor = player.color;
-        ctx.shadowBlur = qualitySettings.shadowBlur * 2;
-        ctx.fillStyle = player.color;
+        ctx.save();
         ctx.beginPath();
         ctx.arc(player.x - cameraX, player.y - cameraY, player.radius, 0, Math.PI * 2);
+        // Gradiente radial para efecto de esfera
+        const grad = ctx.createRadialGradient(
+            player.x - cameraX - player.radius * 0.4,
+            player.y - cameraY - player.radius * 0.4,
+            player.radius * 0.2,
+            player.x - cameraX,
+            player.y - cameraY,
+            player.radius
+        );
+        grad.addColorStop(0, '#B8FFD6'); // Brillo central
+        grad.addColorStop(0.45, player.color);
+        grad.addColorStop(1, '#1B6B3C'); // Sombra exterior
+        ctx.fillStyle = grad;
+        ctx.shadowColor = player.color;
+        ctx.shadowBlur = qualitySettings.shadowBlur * 2;
+        ctx.globalAlpha = 0.98;
         ctx.fill();
-
-        // Reset shadow
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'transparent';
+        // Reflejo superior izquierdo
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath();
+        ctx.arc(player.x - cameraX - player.radius * 0.35, player.y - cameraY - player.radius * 0.35, player.radius * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+        ctx.restore();
     } else {
         console.error('❌ PLAYER RENDER ERROR:', { x: player.x, y: player.y, radius: player.radius });
     }
