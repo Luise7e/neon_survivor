@@ -150,10 +150,10 @@
          * 1. Sombra proyectada (nivel más bajo)
          * 2. Caras laterales (orden: norte → oeste → este → sur)
          * 3. Cara superior (nivel más alto)
-         * 
+         *
          * OPTIMIZACIÓN: Solo renderiza caras visibles basándose en vecinos
          * EFECTO DE TRANSICIÓN: Paredes laterales con deslizamiento suave
-         * 
+         *
          * @param {CanvasRenderingContext2D} ctx - Contexto de canvas
          * @param {number} x - Posición X en pantalla
          * @param {number} y - Posición Y en pantalla
@@ -306,7 +306,7 @@
             gradient.addColorStop(0, 'rgba(0, 220, 255, 0.4)');
             gradient.addColorStop(0.5, 'rgba(0, 187, 221, 0.2)');
             gradient.addColorStop(1, 'rgba(0, 100, 120, 0.1)');
-            
+
             ctx.fillStyle = gradient;
             ctx.fillRect(x, y + tileSize, tileSize, yOffset);
 
@@ -324,7 +324,7 @@
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.lineWidth = 1;
             ctx.shadowBlur = 0;
-            
+
             // Línea a 1/3 de altura
             ctx.beginPath();
             ctx.moveTo(x + 2, y + tileSize + yOffset * 0.33);
@@ -367,7 +367,7 @@
             // GEOMETRÍA: Rectángulo vertical para la cara lateral derecha
             // Ancho proporcional a la altura del muro para perspectiva correcta
             const faceWidth = yOffset * 0.5;
-            
+
             ctx.fillStyle = baseColor;
             ctx.fillRect(x + tileSize, y, faceWidth, tileSize + yOffset);
 
@@ -488,7 +488,7 @@
 
             // GEOMETRÍA: Rectángulo vertical para la cara lateral izquierda
             const faceWidth = yOffset * 0.5;
-            
+
             ctx.fillStyle = baseColor;
             ctx.fillRect(x - faceWidth, y, faceWidth, tileSize + yOffset);
 

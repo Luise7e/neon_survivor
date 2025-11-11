@@ -3136,45 +3136,10 @@
 
             <div class="map-types-grid" id="mapTypesGrid">
                 <!-- Maze -->
-                <div class="map-type-card" data-map-type="maze">
+                <div class="map-type-card selected" data-map-type="maze">
                     <div class="map-type-icon">🌀</div>
                     <div class="map-type-name">Maze</div>
                     <div class="map-type-description">Complex labyrinth with narrow corridors and dead ends. Perfect for ambushes.</div>
-                </div>
-
-                <!-- Rooms -->
-                <div class="map-type-card" data-map-type="rooms">
-                    <div class="map-type-icon">🏛️</div>
-                    <div class="map-type-name">Rooms</div>
-                    <div class="map-type-description">Connected chambers with strategic chokepoints. Balanced tactical gameplay.</div>
-                </div>
-
-                <!-- Cellular -->
-                <div class="map-type-card" data-map-type="cellular">
-                    <div class="map-type-icon">🌿</div>
-                    <div class="map-type-name">Cellular</div>
-                    <div class="map-type-description">Organic cave-like structures. Natural and unpredictable terrain.</div>
-                </div>
-
-                <!-- Arena -->
-                <div class="map-type-card" data-map-type="arena">
-                    <div class="map-type-icon">⚔️</div>
-                    <div class="map-type-name">Arena</div>
-                    <div class="map-type-description">Open central battlefield with perimeter walls. Pure combat focus.</div>
-                </div>
-
-                <!-- Symmetrical -->
-                <div class="map-type-card" data-map-type="symmetrical">
-                    <div class="map-type-icon">🔷</div>
-                    <div class="map-type-name">Symmetrical</div>
-                    <div class="map-type-description">Mirrored layout for balanced competitive matches. Fair positioning.</div>
-                </div>
-
-                <!-- Jungla -->
-                <div class="map-type-card" data-map-type="jungla">
-                    <div class="map-type-icon">🌳</div>
-                    <div class="map-type-name">Jungla</div>
-                    <div class="map-type-description">Dense vegetation with scattered clearings. Stealth and cover tactics.</div>
                 </div>
             </div>
 
@@ -4333,12 +4298,9 @@
             const mapSystem = new MapSystem();
             mapSystem.init(canvas);
 
-            // Generar mapa con diferentes algoritmos (prueba aleatoria)
-            const algorithms = ['maze', 'rooms', 'cellular'];
-            const randomAlgo = algorithms[Math.floor(Math.random() * algorithms.length)];
-
-            console.log('🎲 Using algorithm:', randomAlgo);
-            mapSystem.generateMap({ algorithm: randomAlgo });
+            // Generar mapa con algoritmo maze
+            console.log('🎲 Using algorithm: maze');
+            mapSystem.generateMap({ algorithm: 'maze' });
 
             // Estado de la demo
             let demoActive = true;
@@ -4533,8 +4495,17 @@
             console.log('🗺️ Map type for game:', mapType);
 
             // Iniciar el juego inmediatamente (sin mostrar loadingScreen)
+            console.log('🔍 Verificando window.startGameFromMenu:', typeof window.startGameFromMenu);
             if (window.startGameFromMenu) {
-                window.startGameFromMenu(startLevel, mapType);
+                console.log('✅ Llamando a window.startGameFromMenu con:', { startLevel, mapType });
+                try {
+                    window.startGameFromMenu(startLevel, mapType);
+                    console.log('✅ window.startGameFromMenu ejecutado sin errores');
+                } catch (error) {
+                    console.error('❌ Error al ejecutar startGameFromMenu:', error);
+                }
+            } else {
+                console.error('❌ window.startGameFromMenu NO está disponible!');
             }
         }
 
@@ -5973,7 +5944,11 @@
     <script src="js/config.js"></script>
     <script src="js/ui-manager.js"></script>
     <script src="js/firebase-handler.js"></script>
-    <script src="js/pseudo-3d-renderer.js"></script>
+    <!-- Isometric rendering system -->
+    <script src="js/isometric-transform.js"></script>
+    <script src="js/isometric-tile-renderer.js"></script>
+    <script src="js/isometric-entity-renderer.js"></script>
+    <!-- Map system with isometric support -->
     <script src="js/map-system.js"></script>
     <script src="js/dynamic-joystick.js"></script>
     <script src="js/ammo-system.js"></script>

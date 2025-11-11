@@ -33,14 +33,14 @@ const CONFIG_3D = {
     wallHeight: 48,              // Altura de muros en píxeles
     cameraAngle: 25,             // Inclinación (0° = top-down, 90° = lateral)
     cameraOrientation: 135,      // Rotación (0° = norte, 90° = este, etc.)
-    
+
     colors: {
         top: '#00ffff',          // Color cara superior
         south: '#00bbdd',        // Color cara sur (frente)
         east: '#0099bb',         // Color cara este (lado derecho)
         // ... más colores
     },
-    
+
     sideDarkenFactor: 0.3,       // Factor de oscurecimiento lateral (0-1)
     enableShadows: true,         // Activar sombras proyectadas
     shadowOffsetX: 8,            // Offset sombra horizontal
@@ -130,10 +130,10 @@ const yOffset = height * Math.sin(cameraAngle * π/180);
 ```javascript
 _renderSouthFace(ctx, x, y, tileSize, height) {
     const yOffset = height * this.depthFactor;
-    
+
     // Color oscurecido para dar profundidad
     const color = this._darkenColor(this.config.colors.south, 0.3);
-    
+
     // Trapecio para simular perspectiva
     ctx.beginPath();
     ctx.moveTo(x, y + tileSize);                     // Superior izq
@@ -142,7 +142,7 @@ _renderSouthFace(ctx, x, y, tileSize, height) {
     ctx.lineTo(x, y + tileSize + yOffset);           // Inferior izq
     ctx.closePath();
     ctx.fill();
-    
+
     // Gradiente de volumen
     const gradient = ctx.createLinearGradient(
         x, y + tileSize,
@@ -165,7 +165,7 @@ _renderSouthFace(ctx, x, y, tileSize, height) {
 if (window.gameMapSystem) {
     // Cambiar inclinación (0-90°)
     window.gameMapSystem.setCameraAngle(30); // 30° de inclinación
-    
+
     // Cambiar rotación (0-360°)
     window.gameMapSystem.setCameraOrientation(180); // Cámara mira hacia sur
 }
@@ -303,7 +303,7 @@ D             → Activar/desactivar depth sorting
 
 ---
 
-**Autor**: GitHub Copilot  
-**Fecha**: 10 de noviembre de 2025  
-**Versión**: 1.0.0  
+**Autor**: GitHub Copilot
+**Fecha**: 10 de noviembre de 2025
+**Versión**: 1.0.0
 **Compatibilidad**: Canvas 2D (todos los navegadores), Android WebView 5.0+

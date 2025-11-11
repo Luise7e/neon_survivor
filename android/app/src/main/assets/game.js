@@ -26,6 +26,7 @@ let continueAdState = {
 function onAdMobReady() {
     admobReady = true;
     //console.log('✅ AdMob Native Android Ready');
+
 }
 
 // Exponer el estado del bonus para el UI
@@ -289,12 +290,12 @@ const ViewportScale = {
         }
 
     },
-    
+
     // Control de altura de cámara
     getCameraZoom() {
         return this.cameraZoom;
     },
-    
+
     setCameraZoom(zoom) {
         this.cameraZoom = Math.max(1.0, Math.min(4.0, zoom)); // Entre 1.0 y 4.0
         console.log('📷 Camera Zoom changed to:', this.cameraZoom);
@@ -334,9 +335,9 @@ function resizeCanvas() {
 function updateMinimapPosition() {
     const minimapCanvas = document.getElementById('minimapCanvas');
     if (!minimapCanvas) return;
-    
+
     const isPortrait = window.innerHeight > window.innerWidth;
-    
+
     if (isPortrait) {
         // Modo vertical: esquina superior derecha
         minimapCanvas.style.top = '18px';
@@ -1275,21 +1276,21 @@ function spawnAbilityPickup(x, y) {
  */
 function findClosestEnemy(maxRange = 600) {
     if (!enemies || enemies.length === 0) return null;
-    
+
     let closestEnemy = null;
     let closestDistance = maxRange;
-    
+
     for (const enemy of enemies) {
         const dx = enemy.x - player.x;
         const dy = enemy.y - player.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance < closestDistance) {
             closestDistance = distance;
             closestEnemy = enemy;
         }
     }
-    
+
     return closestEnemy;
 }
 
@@ -1300,24 +1301,24 @@ function findClosestEnemy(maxRange = 600) {
  */
 function calculateAimAngle(target) {
     if (!target) return player.angle;
-    
+
     // Predicción simple de movimiento
     const bulletSpeed = 14 * ViewportScale.scale;
     const dx = target.x - player.x;
     const dy = target.y - player.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    
+
     // Tiempo estimado de llegada de la bala
     const timeToHit = distance / bulletSpeed;
-    
+
     // Posición predicha del enemigo
     const predictedX = target.x + (target.vx || 0) * timeToHit;
     const predictedY = target.y + (target.vy || 0) * timeToHit;
-    
+
     // Ángulo hacia la posición predicha
     const finalDx = predictedX - player.x;
     const finalDy = predictedY - player.y;
-    
+
     return Math.atan2(finalDy, finalDx);
 }
 
@@ -1331,10 +1332,10 @@ function getShootingAngle(joystickAngle, useAutoAim = true) {
     if (!useAutoAim) {
         return joystickAngle;
     }
-    
+
     // Buscar enemigo más cercano
     const closestEnemy = findClosestEnemy(600);
-    
+
     if (closestEnemy) {
         // Auto-aim al enemigo más cercano
         return calculateAimAngle(closestEnemy);
@@ -1375,7 +1376,7 @@ function createPlayerBullet(angle) {
         glow: true,
         isCritical: isCritical
     });
-    
+
     console.log('📊 Total bullets:', bullets.length);
 }
 
@@ -1857,6 +1858,8 @@ function updatePlayerMovement() {
     if (joystickManager) {
         const moveInput = joystickManager.getMovementInput();
         if (moveInput.isActive) {
+            // Movimiento directo en coordenadas del mundo (cartesiano)
+            // La proyección isométrica solo afecta el renderizado, no la física
             vx = moveInput.x * player.speed;
             vy = moveInput.y * player.speed;
         }
@@ -1864,57 +1867,19 @@ function updatePlayerMovement() {
 
     // Apply movement with collision detection
     if (window.gameMapSystem) {
-        const oldX = player.x;
-        const oldY = player.y;
-        
         // Use sliding collision system
         const newPos = window.gameMapSystem.moveWithCollision(
             player.x, player.y, vx, vy, player.radius
         );
-        
-        // CRÍTICO: Detectar si moveWithCollision retornó la posición original (teleport bloqueado)
-        const moveWasBlocked = (newPos.x === oldX && newPos.y === oldY && (vx !== 0 || vy !== 0));
-        
         player.x = newPos.x;
         player.y = newPos.y;
-        
-        // DETECCIÓN DE TELEPORT - solo si ya hay posición previa guardada
-        if (player.lastX !== undefined && player.lastY !== undefined) {
-            const distMoved = Math.sqrt((player.x - oldX) ** 2 + (player.y - oldY) ** 2);
-            
-            // También detectar si moveWithCollision bloqueó el movimiento
-            if (moveWasBlocked) {
-                console.warn('⚠️ Movimiento bloqueado por moveWithCollision', {
-                    attempted: {x: oldX + vx, y: oldY + vy},
-                    current: {x: player.x, y: player.y},
-                    vx: vx,
-                    vy: vy
-                });
-            }
-            
-            if (distMoved > 100) {
-                console.error('⚠️ TELEPORT DETECTADO!', {
-                    from: {x: oldX, y: oldY},
-                    to: {x: player.x, y: player.y},
-                    distance: distMoved,
-                    vx: vx,
-                    vy: vy,
-                    moveSpeed: player.moveSpeed,
-                    gameMapSystem: !!window.gameMapSystem
-                });
-            }
-        }
-        
-        // CRÍTICO: SIEMPRE actualizar última posición válida
-        player.lastX = player.x;
-        player.lastY = player.y;
     } else {
         // Fallback: simple bounds clamping
         player.x += vx;
         player.y += vy;
         player.x = Math.max(player.radius, Math.min(screenWidth - player.radius, player.x));
         player.y = Math.max(gameAreaTop + player.radius, Math.min(screenHeight - player.radius, player.y));
-        
+
         // Actualizar última posición
         player.lastX = player.x;
         player.lastY = player.y;
@@ -1945,7 +1910,7 @@ function updateAbilityPickups() {
 }
 
 // Update only visual effects and pickups during countdown
-function updateVisualsDuringCountdown() {
+function updateVisualsDuranteCountdown() {
     // Update ability pickups (sin recoger por enemigos)
     abilityPickups = abilityPickups.filter(pickup => {
         pickup.rotation += 0.06;
@@ -1993,7 +1958,7 @@ function update() {
     if (ammoSystem) {
         ammoSystem.update(performance.now());
     }
-    
+
     // UPDATE SUPER SYSTEM (Brawl Stars super/ultimate)
     if (superSystem) {
         const deltaTime = 16; // Aproximado a 60fps
@@ -2020,42 +1985,29 @@ function update() {
     if (joystickManager) {
         const moveInput = joystickManager.getMovementInput();
         if (moveInput.isActive) {
-            vx = moveInput.x * player.speed;
-            vy = moveInput.y * player.speed;
+            // TRANSFORMACIÓN ISOMÉTRICA: Convertir entrada de pantalla a espacio del mundo
+            // En vista isométrica, necesitamos rotar las direcciones para que sean intuitivas
+            if (typeof IsometricTransform !== 'undefined' && typeof IsometricTransform.screenDirectionToWorld === 'function') {
+                // Usar transformación isométrica si está disponible
+                const worldDir = IsometricTransform.screenDirectionToWorld(moveInput.x, moveInput.y);
+                vx = worldDir.x * player.speed;
+                vy = worldDir.y * player.speed;
+            } else {
+                // Fallback: movimiento cartesiano directo (modo 2D plano)
+                vx = moveInput.x * player.speed;
+                vy = moveInput.y * player.speed;
+            }
         }
     }
 
     // Apply movement with collision detection
     if (window.gameMapSystem) {
-        const oldX = player.x;
-        const oldY = player.y;
-        
         // Use sliding collision system
         const newPos = window.gameMapSystem.moveWithCollision(
             player.x, player.y, vx, vy, player.radius
         );
         player.x = newPos.x;
         player.y = newPos.y;
-        
-        // DETECCIÓN DE TELEPORT - solo si ya hay posición previa guardada
-        if (player.lastX !== undefined && player.lastY !== undefined) {
-            const distMoved = Math.sqrt((player.x - oldX) ** 2 + (player.y - oldY) ** 2);
-            if (distMoved > 100) {
-                console.error('⚠️ TELEPORT DETECTADO (Mobile)!', {
-                    from: {x: oldX, y: oldY},
-                    to: {x: player.x, y: player.y},
-                    distance: distMoved,
-                    vx: vx,
-                    vy: vy,
-                    moveSpeed: player.speed,
-                    gameMapSystem: !!window.gameMapSystem
-                });
-            }
-        }
-        
-        // Actualizar última posición válida
-        player.lastX = player.x;
-        player.lastY = player.y;
     } else {
         // Fallback: simple bounds clamping
         player.x += vx;
@@ -2073,7 +2025,7 @@ function update() {
                 angle: window._joystickRightLastAngle,
                 isDrag: window._joystickRightLastStrength > 0.25
             });
-            
+
             // Si fue drag (strength > 0.25), disparar en esa dirección
             if (window._joystickRightLastStrength > 0.25) {
                 const shootAngle = window._joystickRightLastAngle;
@@ -2094,7 +2046,8 @@ function update() {
                         player.lastShootTime = now;
                     }
                 } else {
-                    console.log('   ⏱️ Cooldown activo');
+
+                                       console.log('   ⏱️ Cooldown activo');
                 }
             } else {
                 // Tap corto: disparo automático (auto-aim si hay objetivo, si no, en la última dirección de movimiento)
@@ -2412,7 +2365,7 @@ function update() {
         // Check if bullet is out of world bounds (not screen bounds!)
         const worldWidth = window.gameMapSystem ? window.gameMapSystem.width * window.gameMapSystem.tileSize : 2400;
         const worldHeight = window.gameMapSystem ? window.gameMapSystem.height * window.gameMapSystem.tileSize : 2400;
-        
+
         if (bullet.x < -200 || bullet.x > worldWidth + 200 ||
             bullet.y < -200 || bullet.y > worldHeight + 200) {
             console.log('🌌 BULLET OUT OF WORLD BOUNDS:', {x: bullet.x, y: bullet.y, worldWidth, worldHeight});
@@ -2450,22 +2403,22 @@ function update() {
                 if (dist < enemy.radius + bullet.radius) {
                     enemy.health -= bullet.damage;
                     hit = true;
-                    
+
                     console.log('🎯 BULLET HIT ENEMY!', {damage: bullet.damage, enemyHealth: enemy.health});
-                    
+
                     // Cargar super con el daño infligido
                     if (superSystem) {
                         superSystem.addCharge(bullet.damage);
                     }
-                    
+
                     // FASE 5: Mostrar número de daño flotante
                     createDamageNumber(enemy.x, enemy.y, bullet.damage, bullet.isCritical);
-                    
+
                     // IMPROVED IMPACT EFFECTS (Brawl Stars style)
                     // Más partículas para críticos
                     const particleCount = bullet.isCritical ? 20 : 12;
                     createParticles(enemy.x, enemy.y, particleCount, bullet.color);
-                    
+
                     // Partículas adicionales en dirección del impacto
                     const impactAngle = Math.atan2(dy, dx);
                     for (let i = 0; i < 5; i++) {
@@ -2579,7 +2532,7 @@ function update() {
     if (particles.length > qualitySettings.maxParticles) {
         particles = particles.slice(-qualitySettings.maxParticles);
     }
-    
+
     // FASE 5: Update damage numbers (números de daño flotantes)
     damageNumbers = damageNumbers.filter(dn => {
         dn.x += dn.vx;
@@ -2597,6 +2550,10 @@ function update() {
 // ===================================
 
 function render() {
+    if (frameCount === 1 || frameCount % 300 === 0) {
+        console.log('🎨 Render() llamado - Frame:', frameCount);
+    }
+
     if (!ctx || !canvas) {
         console.error('❌ RENDER ERROR: ctx or canvas is null!', { ctx: !!ctx, canvas: !!canvas });
         return;
@@ -2630,21 +2587,21 @@ function render() {
     // ===================================
     // SISTEMA DE TRANSFORMACIÓN GLOBAL CON ZOOM
     // ===================================
-    
+
     // Calcular offset de cámara desde el MapSystem
     let cameraX = window.gameMapSystem?.camera.x || (player.x - screenWidth / 2);
     let cameraY = window.gameMapSystem?.camera.y || (player.y - screenHeight / 2);
-    
+
     // Obtener zoom de cámara
     const cameraZoom = ViewportScale.getCameraZoom();
     const zoomScale = 1 / cameraZoom;
-    
+
     // Aplicar transformación global: zoom + offset de cámara
     ctx.save();
     ctx.scale(zoomScale, zoomScale);
-    
-    // Renderizado con depth sorting: muros y personajes/enemigos se dibujan en orden de profundidad
-    if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function' && window.gameMapSystem.renderer3D && window.gameMapSystem.renderer3D.config.depthSorting) {
+
+    // Renderizado con depth sorting isométrico: mapa, muros y entidades se dibujan en orden de profundidad
+    if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function') {
         // Actualizar cámara del MapSystem con zoom
         if (window.minimapCameraActive) {
             window.gameMapSystem.updateCamera(
@@ -2666,116 +2623,68 @@ function render() {
             );
         }
 
-        // ============================================
-        // ALGORITMO DE DEPTH SORTING MEJORADO
-        // ============================================
-        // OBJETIVO: Renderizar todos los elementos (muros, jugador, enemigos) en orden correcto
-        // basándose en su coordenada Y + altura para simular profundidad 3D realista
-        //
-        // ORDEN DE RENDERIZADO (de atrás hacia adelante):
-        // 1. Elementos con menor Y (más alejados = fondo)
-        // 2. Elementos con mayor Y (más cercanos = frente)
-        //
-        // CÁLCULO DE PROFUNDIDAD:
-        // - Muros: Y + altura del muro (para que personajes detrás queden ocultos)
-        // - Personajes/Enemigos: Y + radio (posición inferior de la esfera)
+        const cameraX = window.gameMapSystem.camera.x;
+        const cameraY = window.gameMapSystem.camera.y;
+
         // ============================================
 
-        // Obtener tiles de muro visibles
-        const wallTiles = [];
-        const startTileX = Math.max(0, Math.floor(window.gameMapSystem.camera.x / window.gameMapSystem.tileSize) - 1);
-        const endTileX = Math.min(window.gameMapSystem.width, Math.ceil((window.gameMapSystem.camera.x + screenWidth * cameraZoom) / window.gameMapSystem.tileSize) + 1);
-        const startTileY = Math.max(0, Math.floor(window.gameMapSystem.camera.y / window.gameMapSystem.tileSize) - 1);
-        const endTileY = Math.min(window.gameMapSystem.height, Math.ceil((window.gameMapSystem.camera.y + screenHeight * cameraZoom) / window.gameMapSystem.tileSize) + 1);
-        
-        for (let y = startTileY; y < endTileY; y++) {
-            for (let x = startTileX; x < endTileX; x++) {
-                const tileType = window.gameMapSystem.grid[y][x];
-                if (tileType === window.TILE_TYPES.WALL || tileType === window.TILE_TYPES.WALL_DESTRUCTIBLE) {
-                    wallTiles.push({
-                        x: x,
-                        y: y,
-                        screenX: x * window.gameMapSystem.tileSize - window.gameMapSystem.camera.x,
-                        screenY: y * window.gameMapSystem.tileSize - window.gameMapSystem.camera.y,
-                        tileType: tileType,
-                        // Profundidad: parte inferior del tile + altura del muro
-                        depth: (y + 1) * window.gameMapSystem.tileSize + 48 // +48 = altura del muro
-                    });
-                }
-            }
+        // DEPTH SORTING ISOMÉTRICO
+        // ============================================
+
+        // Renderizar mapa completo primero (suelos y fondo)
+        console.log("DIAGNÓSTICO FASE 2: renderer isométrico", window.gameMapSystem.isometricRenderer);
+        if (!window.gameMapSystem.isometricRenderer) {
+            console.error("ERROR: El renderer isométrico no está disponible");
         }
+        console.log("DIAGNÓSTICO FASE 3: llamando a gameMapSystem.render");
+        window.gameMapSystem.render(ctx, cameraX, cameraY);
 
-        // Crear lista de "drawables" (elementos renderizables) con su profundidad
+        // Crear lista de entidades con profundidad para depth sorting
         const drawables = [];
-
-        // Sistema de marcas para evitar renderizado duplicado
-        const renderedEnemies = new Set();
-        const renderedPlayer = false;
-
-        // Añadir muros
-        wallTiles.forEach(tile => {
-            drawables.push({
-                type: 'wall',
-                depth: tile.depth,
-                data: tile
-            });
-        });
-
-        // Añadir enemigos (solo una vez cada uno)
-        enemies.forEach((enemy, index) => {
-            drawables.push({
-                type: 'enemy',
-                // Profundidad: posición Y + radio (parte inferior de la esfera)
-                depth: enemy.y + enemy.radius,
-                data: enemy,
-                id: index // ID único para evitar duplicados
-            });
-        });
 
         // Añadir jugador
         drawables.push({
             type: 'player',
-            depth: player.y + player.radius,
+            depth: player.y + player.radius, // Profundidad basada en Y
             data: player
         });
 
-        // ORDENAR POR PROFUNDIDAD: menor depth = más atrás = renderizar primero
+        // Añadir enemigos
+        enemies.forEach((enemy, index) => {
+            drawables.push({
+                type: 'enemy',
+                depth: enemy.y + enemy.radius,
+                data: enemy,
+                id: index
+            });
+        });
+
+        // ORDENAR POR PROFUNDIDAD (menor Y = más atrás = renderizar primero)
         drawables.sort((a, b) => a.depth - b.depth);
 
-        // RENDERIZAR EN ORDEN (evitando duplicados)
-        let playerRendered = false;
-        
+        // RENDERIZAR ENTIDADES EN ORDEN
         drawables.forEach(drawable => {
-            if (drawable.type === 'wall') {
-                const tile = drawable.data;
-                window.gameMapSystem._renderWallTile(ctx, tile.screenX, tile.screenY, tile.tileType, tile.x, tile.y);
-            } else if (drawable.type === 'enemy') {
-                // Solo renderizar si no se ha renderizado antes
-                if (!renderedEnemies.has(drawable.id)) {
-                    renderEnemy3D(ctx, drawable.data, cameraX, cameraY);
-                    renderedEnemies.add(drawable.id);
+            if (drawable.type === 'player') {
+                // Renderizar jugador isométrico
+                if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderPlayerIsometric === 'function') {
+                    IsometricEntityRenderer.renderPlayerIsometric(ctx, drawable.data, cameraX, cameraY);
+                } else {
+                    // Fallback 2D
+                    renderPlayer2D(ctx, drawable.data, cameraX, cameraY);
                 }
-            } else if (drawable.type === 'player' && !playerRendered) {
-                renderPlayer3D(ctx, drawable.data, cameraX, cameraY);
-                playerRendered = true;
+            } else if (drawable.type === 'enemy') {
+                // Renderizar enemigo isométrico
+                if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderEnemyIsometric === 'function') {
+                    IsometricEntityRenderer.renderEnemyIsometric(ctx, drawable.data, cameraX, cameraY);
+                } else {
+                    // Fallback 2D
+                    renderEnemy2D(ctx, drawable.data, cameraX, cameraY);
+                }
             }
         });
-    } else {
-        // Renderizado clásico
-        if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function') {
-            window.gameMapSystem.updateCamera(
-                player.x,
-                player.y,
-                screenWidth,
-                screenHeight,
-                false,
-                cameraZoom
-            );
-            window.gameMapSystem.render(ctx, window.gameMapSystem.camera.x, window.gameMapSystem.camera.y);
-        }
     }
-// Función para renderizar un enemigo como esfera 3D (igual que en el bucle enemies.forEach)
-function renderEnemy3D(ctx, enemy, cameraX, cameraY) {
+// Función para renderizar un enemigo en 2D (fallback)
+function renderEnemy2D(ctx, enemy, cameraX, cameraY) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius, 0, Math.PI * 2);
@@ -2804,8 +2713,8 @@ function renderEnemy3D(ctx, enemy, cameraX, cameraY) {
     ctx.restore();
 }
 
-// Función para renderizar el jugador como esfera 3D (igual que en el bloque player)
-function renderPlayer3D(ctx, player, cameraX, cameraY) {
+// Función para renderizar el jugador en 2D (fallback)
+function renderPlayer2D(ctx, player, cameraX, cameraY) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(player.x - cameraX, player.y - cameraY, player.radius, 0, Math.PI * 2);
@@ -2834,8 +2743,15 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
     ctx.restore();
 }
 
-    // Render special particles
+    // Render special particles y normal particles
     particles.forEach(p => {
+        // Usar renderizado isométrico si está disponible
+        if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderParticleIsometric === 'function') {
+            IsometricEntityRenderer.renderParticleIsometric(ctx, p, cameraX, cameraY);
+            return; // Ya renderizado
+        }
+
+        // Fallback: Renderizado cartesiano (2D plano)
         if (p.type === 'lightning') {
             ctx.globalAlpha = p.life / p.maxLife;
             ctx.strokeStyle = p.color;
@@ -2866,56 +2782,59 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
             ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
+        } else {
+            // Partículas normales
+            const alpha = p.life / p.maxLife;
+            ctx.globalAlpha = alpha;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = qualitySettings.shadowBlur * 0.5;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
+            ctx.fill();
         }
     });
     ctx.globalAlpha = 1;
-
-    // Render normal particles
-    particles.forEach(p => {
-        if (p.type) return;
-        const alpha = p.life / p.maxLife;
-        ctx.globalAlpha = alpha;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = qualitySettings.shadowBlur * 0.5;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x - cameraX, p.y - cameraY, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-    });
-    ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
-    
+
     // FASE 5: Render damage numbers (números de daño flotantes)
     damageNumbers.forEach(dn => {
+        // Usar renderizado isométrico si está disponible
+        if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderDamageNumberIsometric === 'function') {
+            IsometricEntityRenderer.renderDamageNumberIsometric(ctx, dn, cameraX, cameraY);
+            return; // Ya renderizado
+        }
+
+        // Fallback: Renderizado cartesiano (2D plano)
         ctx.save();
         ctx.translate(dn.x - cameraX, dn.y - cameraY);
         ctx.rotate(dn.rotation);
         ctx.scale(dn.scale, dn.scale);
-        
+
         const alpha = dn.life;
         ctx.globalAlpha = alpha;
-        
+
         // Sombra para legibilidad
         ctx.shadowColor = '#000000';
         ctx.shadowBlur = 8;
         ctx.lineWidth = 4;
         ctx.strokeStyle = '#000000';
-        
+
         // Texto del daño
         const fontSize = dn.isCritical ? 28 : 20;
         ctx.font = `bold ${fontSize}px Orbitron`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
+
         // Contorno negro
         ctx.strokeText(dn.damage.toString(), 0, 0);
-        
+
         // Color según tipo
         ctx.shadowBlur = dn.isCritical ? 15 : 8;
         ctx.shadowColor = dn.isCritical ? '#ff00ff' : '#ffff00';
         ctx.fillStyle = dn.isCritical ? '#ff00ff' : '#ffffff';
         ctx.fillText(dn.damage.toString(), 0, 0);
-        
+
         ctx.restore();
     });
     ctx.globalAlpha = 1;
@@ -2923,6 +2842,13 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
 
     // Render ability pickups
     abilityPickups.forEach(pickup => {
+        // Usar renderizado isométrico si está disponible
+        if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderAbilityPickupIsometric === 'function') {
+            IsometricEntityRenderer.renderAbilityPickupIsometric(ctx, pickup, cameraX, cameraY);
+            return; // Ya renderizado
+        }
+
+        // Fallback: Renderizado cartesiano (2D plano)
         ctx.save();
         ctx.translate(pickup.x - cameraX, pickup.y - cameraY);
         ctx.rotate(pickup.rotation);
@@ -2943,8 +2869,15 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         ctx.restore();
     });
 
-    // Render bullets (IMPROVED - Brawl Stars style)
+    // Render bullets (IMPROVED - Brawl Stars style con proyección isométrica)
     bullets.forEach(bullet => {
+        // Usar renderizado isométrico si está disponible
+        if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderBulletIsometric === 'function') {
+            IsometricEntityRenderer.renderBulletIsometric(ctx, bullet, cameraX, cameraY);
+            return; // Ya renderizado
+        }
+
+        // Fallback: Renderizado cartesiano (2D plano)
         // Trail effect (estela)
         bullet.trail.forEach((point, i) => {
             const alpha = i / bullet.trail.length;
@@ -2974,7 +2907,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         ctx.beginPath();
         ctx.arc(bullet.x - cameraX, bullet.y - cameraY, bullet.radius, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Inner core (núcleo brillante)
         ctx.shadowBlur = 0;
         ctx.fillStyle = bullet.isCritical ? '#ffffff' : '#ffffff';
@@ -2982,7 +2915,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         ctx.beginPath();
         ctx.arc(bullet.x - cameraX, bullet.y - cameraY, bullet.radius * 0.5, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Critical indicator (indicador de crítico)
         if (bullet.isCritical) {
             ctx.globalAlpha = 0.6;
@@ -2999,8 +2932,28 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
 
-    // Render enemies como esferas 3D
+    // Render enemies como esferas isométricas
     enemies.forEach((enemy, idx) => {
+        // Calcular posición en pantalla (isométrica o cartesiana)
+        let enemyScreenX, enemyScreenY;
+
+        if (typeof IsometricTransform !== 'undefined' && typeof IsometricTransform.worldToIso === 'function') {
+            const isoPos = IsometricTransform.worldToIso(enemy.x, enemy.y);
+            const cameraIso = IsometricTransform.worldToIso(cameraX, cameraY);
+            enemyScreenX = isoPos.x - cameraIso.x + ctx.canvas.width / 2;
+            enemyScreenY = isoPos.y - cameraIso.y + ctx.canvas.height / 2;
+        } else {
+            enemyScreenX = enemy.x - cameraX;
+            enemyScreenY = enemy.y - cameraY;
+        }
+
+        // Usar renderizado isométrico si está disponible
+        if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderEnemyIsometric === 'function') {
+            IsometricEntityRenderer.renderEnemyIsometric(ctx, enemy, cameraX, cameraY);
+            return; // Ya renderizado, saltar al siguiente enemigo
+        }
+
+        // Fallback: Renderizado cartesiano (2D plano)
         // Efectos especiales según tipo
         if (enemy.explosive) {
             const pulseSize = Math.sin(Date.now() * 0.008) * 3;
@@ -3008,7 +2961,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
             ctx.shadowBlur = qualitySettings.shadowBlur * 2.5;
             ctx.globalAlpha = 0.3;
             ctx.beginPath();
-            ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + pulseSize + 10, 0, Math.PI * 2);
+            ctx.arc(enemyScreenX, enemyScreenY, enemy.radius + pulseSize + 10, 0, Math.PI * 2);
             ctx.fillStyle = enemy.color;
             ctx.fill();
             ctx.globalAlpha = 1;
@@ -3021,24 +2974,24 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
             ctx.shadowColor = enemy.color;
             ctx.shadowBlur = qualitySettings.shadowBlur * 3;
             ctx.beginPath();
-            ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + 15, rotation, rotation + Math.PI);
+            ctx.arc(enemyScreenX, enemyScreenY, enemy.radius + 15, rotation, rotation + Math.PI);
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius + 15, rotation + Math.PI, rotation + Math.PI * 2);
+            ctx.arc(enemyScreenX, enemyScreenY, enemy.radius + 15, rotation + Math.PI, rotation + Math.PI * 2);
             ctx.stroke();
         }
 
         // Cuerpo del enemigo como esfera 3D
         ctx.save();
         ctx.beginPath();
-        ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius, 0, Math.PI * 2);
+        ctx.arc(enemyScreenX, enemyScreenY, enemy.radius, 0, Math.PI * 2);
         // Gradiente radial para efecto de esfera
         const grad = ctx.createRadialGradient(
-            enemy.x - cameraX - enemy.radius * 0.4,
-            enemy.y - cameraY - enemy.radius * 0.4,
+            enemyScreenX - enemy.radius * 0.4,
+            enemyScreenY - enemy.radius * 0.4,
             enemy.radius * 0.2,
-            enemy.x - cameraX,
-            enemy.y - cameraY,
+            enemyScreenX,
+            enemyScreenY,
             enemy.radius
         );
         grad.addColorStop(0, '#fff'); // Brillo central
@@ -3052,7 +3005,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         // Reflejo superior izquierdo
         ctx.globalAlpha = 0.18;
         ctx.beginPath();
-        ctx.arc(enemy.x - cameraX - enemy.radius * 0.35, enemy.y - cameraY - enemy.radius * 0.35, enemy.radius * 0.32, 0, Math.PI * 2);
+        ctx.arc(enemyScreenX - enemy.radius * 0.35, enemyScreenY - enemy.radius * 0.35, enemy.radius * 0.32, 0, Math.PI * 2);
         ctx.fillStyle = '#fff';
         ctx.fill();
         ctx.globalAlpha = 1.0;
@@ -3065,21 +3018,21 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
             ctx.font = `bold ${enemy.radius * 0.8}px Orbitron`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('»', enemy.x - cameraX, enemy.y - cameraY);
+            ctx.fillText('»', enemyScreenX, enemyScreenY);
         } else if (enemy.explosive) {
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#000000';
             ctx.font = `bold ${enemy.radius * 0.7}px Orbitron`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('💥', enemy.x - cameraX, enemy.y - cameraY);
+            ctx.fillText('💥', enemyScreenX, enemyScreenY);
         } else if (enemy.isBoss) {
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#ffffff';
             ctx.font = `bold ${enemy.radius * 0.4}px Orbitron`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('👑', enemy.x - cameraX, enemy.y - cameraY);
+            ctx.fillText('👑', enemyScreenX, enemyScreenY);
         }
 
         // Health bar
@@ -3088,26 +3041,50 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         const barHeight = enemy.isBoss ? 10 : 6;
         const barOffset = enemy.isBoss ? 20 : 14;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2, barHeight);
+        ctx.fillRect(enemyScreenX - enemy.radius, enemyScreenY - enemy.radius - barOffset, enemy.radius * 2, barHeight);
         const healthColor = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
         ctx.fillStyle = healthColor;
         ctx.shadowColor = healthColor;
         ctx.shadowBlur = 8;
-        ctx.fillRect(enemy.x - cameraX - enemy.radius, enemy.y - cameraY - enemy.radius - barOffset, enemy.radius * 2 * healthPercent, barHeight);
+        ctx.fillRect(enemyScreenX - enemy.radius, enemyScreenY - enemy.radius - barOffset, enemy.radius * 2 * healthPercent, barHeight);
         ctx.shadowBlur = 0;
     });
 
     // Auto-aim indicator (línea de mira hacia enemigo objetivo)
     if (joystickManager && joystickManager.getShootingInput().isActive) {
         const shootInput = joystickManager.getShootingInput();
-        
+
+        // Calcular posición del jugador en pantalla (isométrica)
+        let aimPlayerScreenX, aimPlayerScreenY;
+        if (typeof IsometricTransform !== 'undefined' && typeof IsometricTransform.worldToIso === 'function') {
+            const isoPos = IsometricTransform.worldToIso(player.x, player.y);
+            const cameraIso = IsometricTransform.worldToIso(cameraX, cameraY);
+            aimPlayerScreenX = isoPos.x - cameraIso.x + ctx.canvas.width / 2;
+            aimPlayerScreenY = isoPos.y - cameraIso.y + ctx.canvas.height / 2;
+        } else {
+            aimPlayerScreenX = player.x - cameraX;
+            aimPlayerScreenY = player.y - cameraY;
+        }
+
         // Si hay desplazamiento significativo, mostrar indicador de dirección manual
         if (shootInput.strength > 0.25) {
-            // Línea de dirección manual desde el jugador
+            // Calcular punto final en mundo
             const lineLength = 150;
-            const endX = player.x + Math.cos(shootInput.angle) * lineLength;
-            const endY = player.y + Math.sin(shootInput.angle) * lineLength;
-            
+            const endWorldX = player.x + Math.cos(shootInput.angle) * lineLength;
+            const endWorldY = player.y + Math.sin(shootInput.angle) * lineLength;
+
+            // Convertir punto final a coordenadas de pantalla
+            let endScreenX, endScreenY;
+            if (typeof IsometricTransform !== 'undefined' && typeof IsometricTransform.worldToIso === 'function') {
+                const endIso = IsometricTransform.worldToIso(endWorldX, endWorldY);
+                const cameraIso = IsometricTransform.worldToIso(cameraX, cameraY);
+                endScreenX = endIso.x - cameraIso.x + ctx.canvas.width / 2;
+                endScreenY = endIso.y - cameraIso.y + ctx.canvas.height / 2;
+            } else {
+                endScreenX = endWorldX - cameraX;
+                endScreenY = endWorldY - cameraY;
+            }
+
             ctx.strokeStyle = '#ff00ff';
             ctx.lineWidth = 3;
             ctx.globalAlpha = 0.6;
@@ -3115,30 +3092,27 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
             ctx.shadowColor = '#ff00ff';
             ctx.shadowBlur = 10;
             ctx.beginPath();
-            ctx.moveTo(player.x - cameraX, player.y - cameraY);
-            ctx.lineTo(endX - cameraX, endY - cameraY);
+            ctx.moveTo(aimPlayerScreenX, aimPlayerScreenY);
+            ctx.lineTo(endScreenX, endScreenY);
             ctx.stroke();
             ctx.setLineDash([]);
-            
+
             // Punta de flecha
             const arrowSize = 12;
             ctx.fillStyle = '#ff00ff';
             ctx.globalAlpha = 0.8;
             ctx.beginPath();
-            ctx.moveTo(endX - cameraX, endY - cameraY);
+            ctx.moveTo(endScreenX, endScreenY);
             ctx.lineTo(
-                endX - cameraX - Math.cos(shootInput.angle - 0.5) * arrowSize,
-                endY - cameraY - Math.sin(shootInput.angle - 0.5) * arrowSize
+                endScreenX - Math.cos(shootInput.angle - 0.5) * arrowSize,
+                endScreenY - Math.sin(shootInput.angle - 0.5) * arrowSize
             );
             ctx.lineTo(
-                endX - cameraX - Math.cos(shootInput.angle + 0.5) * arrowSize,
-                endY - cameraY - Math.sin(shootInput.angle + 0.5) * arrowSize
+                endScreenX - Math.cos(shootInput.angle + 0.5) * arrowSize,
+                endScreenY - Math.sin(shootInput.angle + 0.5) * arrowSize
             );
             ctx.closePath();
             ctx.fill();
-            
-            ctx.globalAlpha = 1;
-            ctx.shadowBlur = 0;
         } else {
             // Tap sin arrastre: mostrar auto-aim si hay objetivo
             const targetEnemy = findClosestEnemy(600);
@@ -3153,7 +3127,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
                 ctx.lineTo(targetEnemy.x - cameraX, targetEnemy.y - cameraY);
                 ctx.stroke();
                 ctx.setLineDash([]);
-                
+
                 // Indicador en el enemigo objetivo
                 ctx.strokeStyle = '#ff00ff';
                 ctx.lineWidth = 3;
@@ -3161,72 +3135,54 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
                 ctx.beginPath();
                 ctx.arc(targetEnemy.x - cameraX, targetEnemy.y - cameraY, targetEnemy.radius + 8, 0, Math.PI * 2);
                 ctx.stroke();
-                
+
                 ctx.globalAlpha = 1;
             }
         }
     }
 
-    // Render player como esfera 3D
-    if (player.x && player.y && player.radius) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(player.x - cameraX, player.y - cameraY, player.radius, 0, Math.PI * 2);
-        // Gradiente radial para efecto de esfera
-        const grad = ctx.createRadialGradient(
-            player.x - cameraX - player.radius * 0.4,
-            player.y - cameraY - player.radius * 0.4,
-            player.radius * 0.2,
-            player.x - cameraX,
-            player.y - cameraY,
-            player.radius
-        );
-        grad.addColorStop(0, '#B8FFD6'); // Brillo central
-        grad.addColorStop(0.45, player.color);
-        grad.addColorStop(1, '#1B6B3C'); // Sombra exterior
-        ctx.fillStyle = grad;
-        ctx.shadowColor = player.color;
-        ctx.shadowBlur = qualitySettings.shadowBlur * 2;
-        ctx.globalAlpha = 0.98;
-        ctx.fill();
-        // Reflejo superior izquierdo
-        ctx.globalAlpha = 0.25;
-        ctx.beginPath();
-        ctx.arc(player.x - cameraX - player.radius * 0.35, player.y - cameraY - player.radius * 0.35, player.radius * 0.35, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff';
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-        ctx.restore();
-    } else {
-        console.error('❌ PLAYER RENDER ERROR:', { x: player.x, y: player.y, radius: player.radius });
-    }
+    // ===================================
+    // RENDERIZADO DE JUGADOR Y ENEMIGOS
+    // Ya se renderiza en el sistema de depth sorting anterior
+    // ===================================
 
     // Player direction indicator
+    let playerScreenX, playerScreenY;
+
+    // Calcular posición en pantalla (isométrica o cartesiana)
+    if (typeof IsometricTransform !== 'undefined' && typeof IsometricTransform.worldToIso === 'function') {
+        const isoPos = IsometricTransform.worldToIso(player.x, player.y);
+        const cameraIso = IsometricTransform.worldToIso(cameraX, cameraY);
+        playerScreenX = isoPos.x - cameraIso.x + ctx.canvas.width / 2;
+        playerScreenY = isoPos.y - cameraIso.y + ctx.canvas.height / 2;
+    } else {
+        playerScreenX = player.x - cameraX;
+        playerScreenY = player.y - cameraY;
+    }
+
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 4;
     ctx.shadowBlur = 15;
     ctx.shadowColor = '#ffffff';
     ctx.beginPath();
-    ctx.moveTo(player.x - cameraX, player.y - cameraY);
+    ctx.moveTo(playerScreenX, playerScreenY);
     ctx.lineTo(
-        (player.x - cameraX) + Math.cos(player.angle) * (player.radius + 15),
-        (player.y - cameraY) + Math.sin(player.angle) * (player.radius + 15)
+        playerScreenX + Math.cos(player.angle) * (player.radius + 15),
+        playerScreenY + Math.sin(player.angle) * (player.radius + 15)
     );
     ctx.stroke();
     ctx.shadowBlur = 0;
-    
+
     // ===================================
     // BARRAS DE VIDA Y SUPER (debajo del jugador, estilo Brawl Stars)
     // ===================================
-    const playerScreenX = player.x - cameraX;
-    const playerScreenY = player.y - cameraY;
     const barWidth = player.radius * 3; // MÁS ANCHO - más visible
     const barHeight = 10; // MÁS ALTO - más visible (era 6)
     const barSpacing = 4; // Más espacio entre barras
-    
+
     // BARRA DE SUPER (abajo)
     const superBarY = playerScreenY + player.radius + 20;
-    
+
     // Fondo de la barra de super (más oscuro y visible)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.fillRect(
@@ -3235,7 +3191,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         barWidth,
         barHeight
     );
-    
+
     // Borde de la barra de super (más grueso)
     ctx.strokeStyle = '#00ffff';
     ctx.lineWidth = 2;
@@ -3245,13 +3201,13 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         barWidth,
         barHeight
     );
-    
+
     // Relleno de la barra de super (amarillo brillante cuando cargada)
     if (superSystem) {
         const superPercent = superSystem.charge / superSystem.maxCharge;
         const superColor = superPercent >= 1 ? '#ffff00' : '#00ffff';
         const superGlow = superPercent >= 1 ? 20 : 8;
-        
+
         ctx.fillStyle = superColor;
         ctx.shadowColor = superColor;
         ctx.shadowBlur = superGlow;
@@ -3263,10 +3219,10 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         );
         ctx.shadowBlur = 0;
     }
-    
+
     // BARRA DE VIDA (encima de la barra de super)
     const healthBarY = superBarY - barHeight - barSpacing;
-    
+
     // Fondo de la barra de vida (más oscuro y visible)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.fillRect(
@@ -3275,7 +3231,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         barWidth,
         barHeight
     );
-    
+
     // Borde de la barra de vida (más grueso)
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
@@ -3285,7 +3241,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         barWidth,
         barHeight
     );
-    
+
     // Marcas de regla cada 100 HP (más visibles)
     const maxHealth = player.maxHealth || 100;
     const marksCount = Math.floor(maxHealth / 100);
@@ -3298,7 +3254,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         ctx.lineTo(markX, healthBarY + barHeight);
         ctx.stroke();
     }
-    
+
     // Relleno de la barra de vida con colores según porcentaje
     const healthPercent = player.health / maxHealth;
     let healthColor;
@@ -3309,7 +3265,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
     } else {
         healthColor = '#00ff00'; // Verde >= 66%
     }
-    
+
     ctx.fillStyle = healthColor;
     ctx.shadowColor = healthColor;
     ctx.shadowBlur = 10; // Más brillo
@@ -3320,10 +3276,10 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         barHeight - 4
     );
     ctx.shadowBlur = 0;
-    
+
     // Restaurar transformación de zoom
     ctx.restore();
-    
+
     // ===================================
     // UI ELEMENTS (sin transformación de zoom)
     // ===================================
@@ -3374,10 +3330,10 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
                 const isPortrait = window.innerHeight > window.innerWidth;
                 const minimapRect = minimapCanvas.getBoundingClientRect();
                 let hasCharacterUnder = false;
-                
+
                 // Obtener zoom para ajustar coordenadas
                 const zoomScale = 1 / ViewportScale.cameraZoom;
-                
+
                 // Verificar jugador (coordenadas en espacio de pantalla con zoom aplicado)
                 const playerScreenX = (player.x - cameraX) * zoomScale;
                 const playerScreenY = (player.y - cameraY) * zoomScale;
@@ -3385,7 +3341,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
                     playerScreenY >= minimapRect.top && playerScreenY <= minimapRect.bottom) {
                     hasCharacterUnder = true;
                 }
-                
+
                 // Verificar enemigos
                 if (!hasCharacterUnder) {
                     for (const enemy of enemies) {
@@ -3398,7 +3354,7 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
                         }
                     }
                 }
-                
+
                 // Actualizar opacidad según detección
                 minimapCanvas.style.opacity = gameState.isPlaying ? (hasCharacterUnder ? '0.25' : '0.80') : '0';
 
@@ -3406,15 +3362,15 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
                 // El viewport muestra el área visible en el mapa con el zoom aplicado
                 const scaleX = minimapCanvas.width / window.gameMapSystem.width;
                 const scaleY = minimapCanvas.height / window.gameMapSystem.height;
-                
+
                 // Tamaño del viewport en tiles (ajustado por zoom)
                 const viewportWidthInTiles = (screenWidth * cameraZoom) / window.gameMapSystem.tileSize;
                 const viewportHeightInTiles = (screenHeight * cameraZoom) / window.gameMapSystem.tileSize;
-                
+
                 // Posición de la cámara en tiles
                 const cameraTileX = window.gameMapSystem.camera.x / window.gameMapSystem.tileSize;
                 const cameraTileY = window.gameMapSystem.camera.y / window.gameMapSystem.tileSize;
-                
+
                 window.minimapViewportRect = {
                     x: cameraTileX * scaleX,
                     y: cameraTileY * scaleY,
@@ -3439,30 +3395,27 @@ function renderPlayer3D(ctx, player, cameraX, cameraY) {
         joystickManager.update();
         joystickManager.render(ctx, ViewportScale.getCameraZoom());
     }
-    
+
     // Render Ammo UI (Brawl Stars style bullets below player)
     if (ammoSystem && gameState.isPlaying && !gameState.isPaused) {
         // Calcular posición del jugador en screen space (centrada)
         const screenCenterX = canvas.width / 2;
         const screenCenterY = canvas.height / 2;
-        
+
         ammoSystem.render(ctx, screenCenterX, screenCenterY, ViewportScale.getCameraZoom());
     }
-    
+
     // Render Super UI - DESHABILITADO: Ahora se renderiza debajo del jugador
     // if (superSystem && gameState.isPlaying && !gameState.isPaused) {
     //     const screenCenterX = canvas.width / 2;
     //     const screenCenterY = canvas.height / 2;
-    //     
+    //
     //     superSystem.render(ctx, screenCenterX, screenCenterY);
     // }
 
     // Reset all context state at end of render for next frame
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#ffffff';
 }
 
 // ===================================
@@ -3569,7 +3522,13 @@ function updateAimCursor() {
 // GAME LOOP
 // ===================================
 
+let frameCount = 0;
 function gameLoop() {
+    frameCount++;
+    if (frameCount === 1 || frameCount % 300 === 0) {
+        console.log('🎮 Game Loop ejecutándose - Frame:', frameCount);
+    }
+
     // Si Map Mode está activo, usar su lógica
     if (window.MapMode && window.MapMode.isActive) {
         const currentTime = performance.now();
@@ -3587,9 +3546,9 @@ function gameLoop() {
         if (gameState.isCountdown) {
             // Durante countdown: permitir movimiento del jugador y recoger items
             updatePlayerMovement();
-            updateVisualsDuringCountdown();
+            updateVisualsDuranteCountdown();
         } else {
-            updateVisualsDuringCountdown(); // Animaciones y efectos
+            updateVisualsDuranteCountdown(); // Animaciones y efectos
             update();
         }
     }
@@ -3599,7 +3558,7 @@ function gameLoop() {
 
 // Función para resetear completamente el estado del juego
 function resetGameState() {
-    //console.log('🔄 Resetting game state...');
+    console.log('🔄 Resetting game state...');
 
     // Reset game state
     gameState.isPlaying = false;
@@ -3651,12 +3610,12 @@ function resetGameState() {
 
     // Reset snapshot
     statsSnapshot = null;
-    
+
     // Reset Ammo System
     if (ammoSystem) {
         ammoSystem.reset();
     }
-    
+
     // Reset Super System
     if (superSystem) {
         superSystem.reset();
@@ -3687,15 +3646,18 @@ let superSystem = null;
 
 // Función para iniciar el juego desde el menú con un nivel específico
 window.startGameFromMenu = function(startLevel, mapType = 'maze') {
-    //console.log('🎮 Starting game from menu, level:', startLevel, 'mapType:', mapType);
+    console.log('🎮 ===== INICIANDO JUEGO =====');
+    console.log('🎮 Starting game from menu, level:', startLevel, 'mapType:', mapType);
 
     // Initialize canvas if not done
     if (!canvas) {
+        console.log('📺 Canvas no inicializado, inicializando...');
         canvas = document.getElementById('gameCanvas');
         if (!canvas) {
             console.error('❌ Canvas not found!');
             return;
         }
+        console.log('✅ Canvas encontrado:', canvas);
         // Use minimal options for better Android WebView compatibility
         ctx = canvas.getContext('2d', {
             alpha: false,
@@ -3706,23 +3668,24 @@ window.startGameFromMenu = function(startLevel, mapType = 'maze') {
             console.error('❌ Canvas context could not be created!');
             return;
         }
+        console.log('✅ Contexto 2D creado correctamente');
 
         // Configurar calidad de renderizado inicial
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        
+
         // Initialize Dynamic Joystick System
         if (typeof JoystickManager !== 'undefined' && !joystickManager) {
             joystickManager = new JoystickManager(canvas);
             console.log('✅ Dynamic Joystick Manager initialized');
         }
-        
+
         // Initialize Ammo System
         if (typeof AmmoSystem !== 'undefined' && !ammoSystem) {
             ammoSystem = new AmmoSystem();
             console.log('✅ Ammo System initialized');
         }
-        
+
         // Initialize Super System
         if (typeof SuperSystem !== 'undefined' && !superSystem) {
             superSystem = new SuperSystem();
@@ -3747,7 +3710,9 @@ window.startGameFromMenu = function(startLevel, mapType = 'maze') {
         // Add resize listener after canvas is initialized
         window.addEventListener('resize', resizeCanvas);
 
-
+        console.log('✅ Canvas completamente inicializado');
+    } else {
+        console.log('✅ Canvas ya estaba inicializado');
     }
 
     // Reset completo del estado del juego
@@ -3767,14 +3732,46 @@ window.startGameFromMenu = function(startLevel, mapType = 'maze') {
     player.lastShootTime = Date.now();
     updateGameAreaLimits();
 
-    //console.log('🎮 Game flags set - isPlaying:', gameState.isPlaying, 'isPaused:', gameState.isPaused, 'isGameOver:', gameState.isGameOver);
+    console.log('🎮 Game flags set - isPlaying:', gameState.isPlaying, 'isPaused:', gameState.isPaused, 'isGameOver:', gameState.isGameOver);
 
     // Inicializar sistema de mapas procedurales
     if (typeof MapSystem !== 'undefined') {
-        //console.log('🗺️ Initializing procedural map system...');
+        console.log('🗺️ Initializing procedural map system...');
         window.gameMapSystem = new MapSystem();
         window.gameMapSystem.init(canvas);
+
+        console.log("DIAGNÓSTICO FASE 4: canvas", canvas, "width:", canvas.width, "height:", canvas.height);
+        if (canvas.width === 0 || canvas.height === 0) {
+            console.error("ERROR: El canvas tiene tamaño cero");
+        }
+
         window.gameMapSystem.generateMap({ algorithm: mapType });
+        console.log("DIAGNÓSTICO FASE 1: grid generado", window.gameMapSystem.grid);
+        if (!window.gameMapSystem.grid || window.gameMapSystem.grid.length === 0) {
+            console.error("ERROR: El grid no se ha generado correctamente");
+        } else {
+            console.log(`✅ Grid generado correctamente: ${window.gameMapSystem.grid.length}x${window.gameMapSystem.grid[0].length}`);
+        }
+
+        // Verificar renderer isométrico
+        if (!window.gameMapSystem.isometricRenderer) {
+            console.error("❌ ERROR: El renderer isométrico no está disponible");
+        } else {
+            console.log("✅ IsometricRenderer disponible en MapSystem");
+        }
+
+        // Configurar sistema isométrico
+        if (typeof IsometricTransform !== 'undefined') {
+            console.log('✅ Configurando sistema isométrico...');
+            // Centrar el mapa en el canvas
+            IsometricTransform.centerMap(
+                window.gameMapSystem.width,
+                window.gameMapSystem.height,
+                canvas.width,
+                canvas.height
+            );
+            console.log('✅ Sistema isométrico configurado');
+        }
 
         // Posicionar jugador en spawn del mapa
         const spawnPos = window.gameMapSystem.getPlayerSpawnPosition();
@@ -3786,8 +3783,8 @@ window.startGameFromMenu = function(startLevel, mapType = 'maze') {
         player.lastX = player.x; // Guardar última posición válida
         player.lastY = player.y;
 
-        //console.log('✅ Map system initialized with type:', mapType);
-        //console.log('   - Player spawn:', spawnPos);
+        console.log('✅ Map system initialized with type:', mapType);
+        console.log('   - Player spawn:', spawnPos);
     } else {
         console.warn('⚠️ MapSystem not loaded, using default positioning');
         // Reposicionar jugador en el centro del área de juego válida
@@ -3805,75 +3802,62 @@ window.startGameFromMenu = function(startLevel, mapType = 'maze') {
     updateHUD();
     nextWave(); // Inicia la primera wave
 
-    //console.log('🎮 === GAME START DEBUG INFO ===');
-    //console.log('   - Canvas:', canvas ? 'EXISTS' : 'NULL');
-    //console.log('   - Canvas width:', canvas ? canvas.width : 'N/A');
-    //console.log('   - Canvas height:', canvas ? canvas.height : 'N/A');
-    //console.log('   - Context:', ctx ? 'EXISTS' : 'NULL');
-    //console.log('   - Player:', player);
-    //console.log('   - Enemies count:', enemies.length);
-    //console.log('   - Bullets count:', bullets.length);
-    //console.log('   - Viewport scale:', ViewportScale);
-    //console.log('   - isMobileDevice:', isMobileDevice);
-    //console.log('🎮 ==============================='});
+    console.log('🎮 === GAME START DEBUG INFO ===');
+    console.log('   - Canvas:', canvas ? 'EXISTS' : 'NULL');
+    console.log('   - Canvas width:', canvas ? canvas.width : 'N/A');
+    console.log('   - Canvas height:', canvas ? canvas.height : 'N/A');
+    console.log('   - Canvas DPR:', window.devicePixelRatio);
+    console.log('   - Quality settings:', qualitySettings);
+    console.log('   - Context:', ctx ? 'EXISTS' : 'NULL');
+    console.log('   - MapSystem:', window.gameMapSystem ? 'EXISTS' : 'NULL');
+    console.log('   - IsometricRenderer:', window.gameMapSystem?.isometricRenderer ? 'EXISTS' : 'NULL');
+    console.log('   - Player:', player);
+    console.log('   - Enemies count:', enemies.length);
+    console.log('   - Bullets count:', bullets.length);
+    console.log('   - Viewport scale:', ViewportScale);
+    console.log('   - isMobileDevice:', isMobileDevice);
+    console.log('🎮 ===============================');
 
+    console.log('🎮 Iniciando game loop...');
     gameLoop();
 
     // Ensure both joysticks are visible on mobile
     if (isMobileDevice) {
-        //console.log('📱 Ensuring joysticks are visible...');
-        const shootJoystickContainer = document.getElementById('shootJoystickContainer');
+        console.log('📱 Ensuring joysticks are visible...');
+    let shootJoystickContainer = document.getElementById('shootJoystickContainer');
         const joystickContainer = document.getElementById('joystickContainer');
 
-        //console.log('   - shootJoystickContainer:', shootJoystickContainer ? '✅ Found' : '❌ NOT FOUND');
-        //console.log('   - joystickContainer:', joystickContainer ? '✅ Found' : '❌ NOT FOUND');
+        console.log('   - shootJoystickContainer:', shootJoystickContainer ? '✅ Found' : '❌ NOT FOUND');
+        console.log('   - joystickContainer:', joystickContainer ? '✅ Found' : '❌ NOT FOUND');
 
         if (shootJoystickContainer) {
             shootJoystickContainer.style.display = 'block';
-            //console.log('   - shootJoystickContainer display set to block');
-            //console.log('   - Computed style:', window.getComputedStyle(shootJoystickContainer).display);
+            console.log('   - shootJoystickContainer display set to block');
+            console.log('   - Computed style:', window.getComputedStyle(shootJoystickContainer).display);
         }
         if (joystickContainer) {
             joystickContainer.style.display = 'block';
-            //console.log('   - joystickContainer display set to block');
-            //console.log('   - Computed style:', window.getComputedStyle(joystickContainer).display);
+            console.log('   - joystickContainer display set to block');
+            console.log('   - Computed style:', window.getComputedStyle(joystickContainer).display);
         }
     }
 
-    //console.log('🎮 Game Started!');
-    //console.log('Device:', isMobileDevice ? '📱 Mobile' : '🖥️ PC');
-    //console.log('Controls: Dual Joystick (Wild Rift Style)');
-    //console.log('Quality:', qualitySettings);
-    //console.log('Game Area Top:', gameAreaTop);
+    console.log('🎮 Game Started!');
+    console.log('Device:', isMobileDevice ? '📱 Mobile' : '🖥️ PC');
+    console.log('Controls: Dual Joystick (Wild Rift Style)');
+    console.log('Quality:', qualitySettings);
+    console.log('Game Area Top:', gameAreaTop);
 
     // Diagnóstico de calidad gráfica
-    //console.log('🎨 GRAPHICS QUALITY DIAGNOSTIC:');
-    //console.log('   - Device Pixel Ratio (DPR):', window.devicePixelRatio);
-    //console.log('   - Canvas Physical Size:', canvas.width, 'x', canvas.height);
-    //console.log('   - Canvas CSS Size:', canvas.style.width, 'x', canvas.style.height);
-    //console.log('   - Window Size:', window.innerWidth, 'x', window.innerHeight);
-    //console.log('   - imageSmoothingEnabled:', ctx.imageSmoothingEnabled);
-    //console.log('   - imageSmoothingQuality:', ctx.imageSmoothingQuality);
-    //console.log('   - Alpha channel:', ctx.getContextAttributes().alpha);
-    //console.log('   - Desynchronized:', ctx.getContextAttributes().desynchronized);
-    //console.log('   - Quality multiplier:', qualitySettings.effectsMultiplier);
-};
-// Pause button event listeners
-// Note: Pause, resume and abort button event listeners are handled in initializeMobileControls() and index.html
-
-// ===================================
-// GLOBAL API - Camera Zoom Control
-// ===================================
-// Exponer control de zoom de cámara para uso externo
-window.setCameraZoom = function(zoom) {
-    ViewportScale.setCameraZoom(zoom);
-};
-
-window.getCameraZoom = function() {
-    return ViewportScale.getCameraZoom();
-};
-
-// Ejemplo de uso:
-// window.setCameraZoom(2.0); // Ver el doble de mapa
-// window.setCameraZoom(1.0); // Zoom normal
-// window.setCameraZoom(3.0); // Ver el triple de mapa
+    console.log('🎨 GRAPHICS QUALITY DIAGNOSTIC:');
+    console.log('   - Device Pixel Ratio (DPR):', window.devicePixelRatio);
+    console.log('   - Canvas Physical Size:', canvas.width, 'x', canvas.height);
+    console.log('   - Canvas CSS Size:', canvas.style.width, 'x', canvas.style.height);
+    console.log('   - Window Size:', window.innerWidth, 'x', window.innerHeight);
+    console.log('   - imageSmoothingEnabled:', ctx.imageSmoothingEnabled);
+    console.log('   - imageSmoothingQuality:', ctx.imageSmoothingQuality);
+    console.log('   - Alpha channel:', ctx.getContextAttributes().alpha);
+    console.log('   - Desynchronized:', ctx.getContextAttributes().desynchronized);
+    console.log('   - Quality multiplier:', qualitySettings.effectsMultiplier);
+    console.log('🎮 ===== JUEGO INICIADO EXITOSAMENTE =====');
+}

@@ -177,6 +177,10 @@
             return [];
         }
         constructor() {
+            console.log('🗺️ MapSystem constructor llamado');
+            console.log('   - IsometricTileRenderer disponible:', typeof window.IsometricTileRenderer);
+            console.log('   - IsometricEntityRenderer disponible:', typeof window.IsometricEntityRenderer);
+
             this.width = MAP_WIDTH;
             this.height = MAP_HEIGHT;
             this.tileSize = TILE_SIZE;
@@ -212,14 +216,19 @@
 
             this.initialized = false;
 
-            // Inicializar renderizador 2.5D si está disponible
-            this.renderer3D = null;
-            if (typeof window.Pseudo3DRenderer !== 'undefined') {
-                this.renderer3D = new window.Pseudo3DRenderer();
-                console.log('✅ Pseudo3DRenderer integrado en MapSystem');
+            // Inicializar renderizador isométrico si está disponible
+            this.isometricRenderer = null;
+            if (typeof window.IsometricTileRenderer !== 'undefined') {
+                this.isometricRenderer = new window.IsometricTileRenderer();
+                console.log('✅ IsometricTileRenderer integrado en MapSystem');
             } else {
-                console.warn('⚠️ Pseudo3DRenderer no disponible, usando renderizado 2D plano');
+                console.warn('⚠️ IsometricTileRenderer no disponible - window.IsometricTileRenderer es:', typeof window.IsometricTileRenderer);
             }
+
+            // Mantener referencia al renderizador 3D por compatibilidad (deprecated)
+            this.renderer3D = this.isometricRenderer;
+
+            console.log('✅ MapSystem constructor completado - isometricRenderer:', !!this.isometricRenderer);
         }
 
         // ===================================
@@ -227,6 +236,14 @@
         // ===================================
 
         init(canvas) {
+            console.log('🗺️ MapSystem.init() llamado', {
+                canvas: !!canvas,
+                canvasWidth: canvas?.width,
+                canvasHeight: canvas?.height,
+                IsometricTileRenderer: typeof IsometricTileRenderer,
+                IsometricEntityRenderer: typeof IsometricEntityRenderer
+            });
+
             this.canvas = canvas;
             this.ctx = canvas.getContext('2d');
 
@@ -240,7 +257,7 @@
             );
 
             this.initialized = true;
-            //console.log('✅ MapSystem initialized:', this.width, 'x', this.height);
+            console.log('✅ MapSystem initialized:', this.width, 'x', this.height);
         }
 
         // ===================================
@@ -249,7 +266,7 @@
 
         generateMap(options = {}) {
             const {
-                algorithm = 'maze', // 'maze', 'rooms', 'cellular'
+                algorithm = 'maze', // Solo maze disponible
                 wallDensity = 0.3,
                 roomCount = 6,
                 minRoomSize = 5,
@@ -261,20 +278,8 @@
             // Clear existing map
             this.clearMap();
 
-            // Generate based on algorithm
-            switch(algorithm) {
-                case 'maze':
-                    this._generateMaze();
-                    break;
-                case 'rooms':
-                    this._generateRooms(roomCount, minRoomSize, maxRoomSize);
-                    break;
-                case 'cellular':
-                    this._generateCellular(wallDensity);
-                    break;
-                default:
-                    this._generateMaze();
-            }
+            // Generate maze (único algoritmo disponible)
+            this._generateMaze();
 
             // Post-processing
             this._addBorder();
@@ -378,7 +383,7 @@
             // Empezar cerca de la plaza central
             let startNodeX = nodesX[Math.floor(nodesX.length / 2)];
             let startNodeY = nodesY[Math.floor(nodesY.length / 2)];
-            
+
             stack.push([startNodeX, startNodeY]);
             visited.add(`${startNodeX},${startNodeY}`);
 
@@ -435,7 +440,7 @@
                 const angle = (Math.PI * 2 / radialPaths) * i;
                 const endX = centerX + Math.floor(Math.cos(angle) * this.width * 0.4);
                 const endY = centerY + Math.floor(Math.sin(angle) * this.height * 0.4);
-                
+
                 this._carvePathBetweenNodes(centerX, centerY, endX, endY, corridorWidth);
             }
 
@@ -467,12 +472,12 @@
          */
         _carveWideCorridor(x, y, width) {
             const halfWidth = Math.floor(width / 2);
-            
+
             for (let dy = -halfWidth; dy <= halfWidth; dy++) {
                 for (let dx = -halfWidth; dx <= halfWidth; dx++) {
                     const nx = x + dx;
                     const ny = y + dy;
-                    
+
                     if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
                         this.grid[ny][nx] = TILE_TYPES.FLOOR;
                     }
@@ -1034,25 +1039,7 @@
          * @returns {Object} New position {x, y}
          */
         moveWithCollision(x, y, vx, vy, radius) {
-            // FIXED: Validar que el movimiento no sea excesivo (evitar teleports por lag)
-            const maxStep = this.tileSize; // No más de 1 tile por frame
-            const speed = Math.sqrt(vx * vx + vy * vy);
-
-            if (speed > maxStep) {
-                // Normalizar velocidad si es demasiado alta
-                const factor = maxStep / speed;
-                console.warn('⚠️ Velocidad excesiva detectada!', {
-                    originalSpeed: speed,
-                    maxStep: maxStep,
-                    vx: vx,
-                    vy: vy,
-                    factor: factor
-                });
-                vx *= factor;
-                vy *= factor;
-            }
-
-            // Intentar movimiento en X primero
+            // Intentar movimiento en X primero (sliding collision)
             let nextX = x + vx;
             let nextY = y;
 
@@ -1073,20 +1060,6 @@
             const mapHeight = this.height * this.tileSize;
             nextX = Math.max(radius, Math.min(mapWidth - radius, nextX));
             nextY = Math.max(radius, Math.min(mapHeight - radius, nextY));
-
-            // FIXED: Validación final - si la nueva posición está muy lejos, no mover
-            const distMoved = Math.sqrt((nextX - x) ** 2 + (nextY - y) ** 2);
-            if (distMoved > maxStep * 2) {
-                console.error('⛔ TELEPORT BLOQUEADO EN moveWithCollision!', {
-                    from: {x, y},
-                    to: {x: nextX, y: nextY},
-                    distance: distMoved,
-                    maxAllowed: maxStep * 2,
-                    vx: vx,
-                    vy: vy
-                });
-                return { x, y }; // No mover si es un salto sospechoso
-            }
 
             return { x: nextX, y: nextY };
         }
@@ -1148,11 +1121,8 @@
                 return { x, y, pushed: false };
             }
 
-            console.warn('🔧 Player dentro de pared, buscando posición válida...', {x, y, radius});
-
             // Find the nearest walkable position
-            // FIXED: Limitar búsqueda a un área pequeña para evitar teleports
-            const maxSearchRadius = radius * 3; // Máximo 3x el radio del jugador
+            const maxSearchRadius = radius * 4;
             const step = this.tileSize / 4;
             let bestX = x;
             let bestY = y;
@@ -1162,7 +1132,6 @@
                 for (let dx = -maxSearchRadius; dx <= maxSearchRadius; dx += step) {
                     const dist = Math.sqrt(dx * dx + dy * dy);
 
-                    // Solo buscar dentro del radio máximo
                     if (dist > maxSearchRadius) continue;
 
                     const testX = x + dx;
@@ -1179,9 +1148,8 @@
                 }
             }
 
-            // Si no se encontró una posición cercana válida, NO mover (evitar teleports)
-            if (minDist === Infinity || minDist > maxSearchRadius) {
-                console.error('⛔ PUSHBACK IMPOSIBLE - jugador atrapado en pared sin salida cercana');
+            // Si no se encontró una posición válida, retornar la posición original
+            if (minDist === Infinity) {
                 return { x, y, pushed: false };
             }
 
@@ -1189,13 +1157,6 @@
             const pushStrength = 0.25;
             const newX = x + (bestX - x) * pushStrength;
             const newY = y + (bestY - y) * pushStrength;
-
-            console.log('✅ Pushback aplicado:', {
-                from: {x, y},
-                to: {x: newX, y: newY},
-                distance: Math.sqrt((newX - x) ** 2 + (newY - y) ** 2),
-                pushStrength: pushStrength
-            });
 
             return { x: newX, y: newY, pushed: true };
         }
@@ -1407,10 +1368,29 @@
         // ===================================
 
         render(ctx, cameraX = 0, cameraY = 0) {
+            console.log("🗺️ MapSystem.render() llamado", {
+                initialized: this.initialized,
+                isometricRenderer: !!this.isometricRenderer,
+                gridSize: this.grid ? `${this.grid.length}x${this.grid[0]?.length}` : 'null',
+                camera: { x: cameraX, y: cameraY }
+            });
+
             if (!this.initialized) {
                 console.warn('⚠️ MapSystem.render() called but not initialized');
                 return;
             }
+
+            // MODO ISOMÉTRICO - Delegar todo el renderizado al IsometricTileRenderer
+            if (this.isometricRenderer) {
+                const camera = { x: cameraX, y: cameraY };
+                // CRÍTICO: Pasar tileSize para conversión correcta de coordenadas
+                console.log("🎨 Llamando a isometricRenderer.render()");
+                this.isometricRenderer.render(ctx, this.grid, camera, this.tileSize);
+                return;
+            }
+
+            // FALLBACK: Renderizado 2D plano (solo si no hay renderizador isométrico)
+            console.warn('⚠️ Usando fallback 2D - IsometricTileRenderer no disponible');
 
             // Actualizar tiempo de animación
             this.animationTime += VISUAL_STYLE.animationSpeed;
