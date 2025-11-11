@@ -3299,8 +3299,28 @@
         border: 2px solid rgba(0, 255, 255, 0.6);
     "></canvas>
 
-    <!-- DEBUG BUTTON - TOP RIGHT -->
-    <button id="debugPauseBtn" style="position:unset!important;top:90%!important;right:43%!important;width:60px!important;height:60px!important;background:red!important;color:white!important;border:3px solid yellow!important;border-radius:50%!important;z-index:99999!important;font-size:24px!important;font-weight:bold!important;cursor:pointer!important;">⏸</button>
+    <!-- DEBUG MODE TOGGLE BUTTON -->
+    <button id="debugToggleBtn" style="position:fixed;top:10px;right:10px;width:50px;height:50px;background:#ff0044;color:white;border:2px solid #fff;border-radius:50%;z-index:99999;font-size:20px;font-weight:bold;cursor:pointer;box-shadow:0 0 20px rgba(255,0,68,0.8);">🐛</button>
+
+    <!-- DEBUG PANEL -->
+    <div id="debugPanel" style="display:none;position:fixed;top:70px;right:10px;background:rgba(0,0,0,0.95);border:2px solid #00ffff;border-radius:10px;padding:15px;z-index:99998;min-width:250px;box-shadow:0 0 30px rgba(0,255,255,0.5);">
+        <div style="color:#00ffff;font-weight:bold;margin-bottom:10px;text-align:center;font-size:16px;text-shadow:0 0 10px #00ffff;">DEBUG CONTROLS</div>
+
+        <!-- Enemy Movement Toggle -->
+        <button id="debugFreezeEnemies" style="width:100%;padding:10px;margin:5px 0;background:#00ff88;color:#000;border:none;border-radius:5px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px rgba(0,255,136,0.5);">🧊 Freeze Enemies</button>
+
+        <!-- Add Enemy -->
+        <button id="debugAddEnemy" style="width:100%;padding:10px;margin:5px 0;background:#ff00ff;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px rgba(255,0,255,0.5);">➕ Add Enemy</button>
+
+        <!-- Remove Enemy -->
+        <button id="debugRemoveEnemy" style="width:100%;padding:10px;margin:5px 0;background:#ff4400;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px rgba(255,68,0,0.5);">➖ Remove Enemy</button>
+
+        <!-- Toggle Collision Borders -->
+        <button id="debugToggleCollisions" style="width:100%;padding:10px;margin:5px 0;background:#ffff00;color:#000;border:none;border-radius:5px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px rgba(255,255,0,0.5);">🔴 Show Collisions</button>
+
+        <!-- Toggle Tile Borders -->
+        <button id="debugToggleTiles" style="width:100%;padding:10px;margin:5px 0;background:#00ffff;color:#000;border:none;border-radius:5px;font-weight:bold;cursor:pointer;box-shadow:0 0 10px rgba(0,255,255,0.5);">🟢 Show Tiles</button>
+    </div>
 
     <!-- Mobile Controls -->
     <div class="mobile-controls" id="mobileControls">
@@ -5696,251 +5716,86 @@
         });
     </script>
 
-    <!-- DEBUG PAUSE BUTTON SCRIPT -->
+    <!-- DEBUG MODE SYSTEM SCRIPT -->
     <script>
-        const debugPauseBtn = document.getElementById('debugPauseBtn');
-        let debugPaused = false;
+        // Debug state
+        window.debugMode = {
+            enabled: false,
+            enemiesFrozen: false,
+            showCollisions: false,
+            showTiles: false
+        };
 
-        debugPauseBtn.addEventListener('click', () => {
-            vibrateButton(50); // ✅ Vibración al pausar debug
-            debugPaused = !debugPaused;
+        // Toggle debug panel
+        const debugToggleBtn = document.getElementById('debugToggleBtn');
+        const debugPanel = document.getElementById('debugPanel');
 
-            if (debugPaused) {
-                // Pausar el juego SIN mostrar overlays
-                if (window.gameState) {
-                    window.gameState.isPaused = true;
-                    window.gameState.isPlaying = false;
-                }
+        debugToggleBtn.addEventListener('click', () => {
+            window.debugMode.enabled = !window.debugMode.enabled;
+            debugPanel.style.display = window.debugMode.enabled ? 'block' : 'none';
+            debugToggleBtn.style.background = window.debugMode.enabled ? '#00ff88' : '#ff0044';
+            console.log('🐛 Debug mode:', window.debugMode.enabled ? 'ENABLED' : 'DISABLED');
+        });
 
-                debugPauseBtn.textContent = '▶';
-                debugPauseBtn.style.background = 'green';
+        // Freeze/Unfreeze enemies
+        const debugFreezeEnemies = document.getElementById('debugFreezeEnemies');
+        debugFreezeEnemies.addEventListener('click', () => {
+            window.debugMode.enemiesFrozen = !window.debugMode.enemiesFrozen;
+            debugFreezeEnemies.textContent = window.debugMode.enemiesFrozen ? '▶️ Unfreeze Enemies' : '🧊 Freeze Enemies';
+            debugFreezeEnemies.style.background = window.debugMode.enemiesFrozen ? '#ff4400' : '#00ff88';
+            console.log('🧊 Enemies frozen:', window.debugMode.enemiesFrozen);
+        });
 
-                console.log('🔍 ==================== DEBUG PAUSE ====================');
-                console.log('🎮 Game paused for debugging');
+        // Add enemy
+        const debugAddEnemy = document.getElementById('debugAddEnemy');
+        debugAddEnemy.addEventListener('click', () => {
+            if (typeof window.spawnEnemy === 'function' && window.player) {
+                // Spawn enemy near player
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 200 + Math.random() * 200;
+                const x = window.player.x + Math.cos(angle) * distance;
+                const y = window.player.y + Math.sin(angle) * distance;
 
-                // Listar TODOS los elementos con sus propiedades
-                const elements = [
-                    { id: 'gameCanvas', name: 'CANVAS PRINCIPAL', cssFile: 'css/global.css', cssSelector: '#gameCanvas', htmlLine: '~3843' },
-                    { id: 'startMenu', name: 'MENÚ INICIO', cssFile: 'N/A (inline)', cssSelector: '.start-menu', htmlLine: '~3286' },
-                    { id: 'gameHUD', name: 'HUD', cssFile: 'css/game-ui.css', cssSelector: '.hud', htmlLine: '~3673' },
-                    { id: 'mobileControls', name: 'CONTROLES MÓVILES', cssFile: 'css/mobile-controls.css', cssSelector: '.mobile-controls', htmlLine: '~3701' },
-                    { id: 'joystickContainer', name: 'JOYSTICK MOVIMIENTO', cssFile: 'css/mobile-controls.css', cssSelector: '.joystick-container', htmlLine: '~3707' },
-                    { id: 'shootJoystickContainer', name: 'JOYSTICK DISPARO', cssFile: 'css/mobile-controls.css', cssSelector: '.shoot-joystick-container', htmlLine: '~3712' },
-                    { id: 'pauseOverlay', name: 'OVERLAY PAUSA', cssFile: 'index.html (inline)', cssSelector: '#pauseOverlay', htmlLine: '~3791' },
-                    { id: 'gameOver', name: 'GAME OVER', cssFile: 'index.html (inline)', cssSelector: '#gameOver, .game-over', htmlLine: '~3815' },
-                    { id: 'upgradeModal', name: 'MODAL UPGRADES', cssFile: 'index.html (inline)', cssSelector: '.upgrade-modal', htmlLine: '~3752' },
-                    { id: 'loadingScreen', name: 'PANTALLA CARGA', cssFile: 'css/game-ui.css', cssSelector: '.loading-screen', htmlLine: '~3663' },
-                    { id: 'levelSelector', name: 'SELECTOR NIVELES', cssFile: 'index.html (inline)', cssSelector: '.level-selector', htmlLine: '~3551' },
-                    { id: 'statsPage', name: 'PÁGINA ESTADÍSTICAS', cssFile: 'index.html (inline)', cssSelector: '.stats-page', htmlLine: '~3564' },
-                    { id: 'userOptionsModal', name: 'MODAL OPCIONES USUARIO', cssFile: 'index.html (inline)', cssSelector: '.modal-overlay', htmlLine: '~3424' },
-                    { id: 'avatarSelectionModal', name: 'MODAL SELECCIÓN AVATAR', cssFile: 'index.html (inline)', cssSelector: '.avatar-modal-overlay', htmlLine: '~3450' },
-                    { id: 'waveCountdown', name: 'COUNTDOWN OLEADA', cssFile: 'index.html (inline)', cssSelector: '.wave-countdown', htmlLine: '~3747' },
-                    { id: 'waveIndicator', name: 'INDICADOR OLEADA', cssFile: 'index.html (inline)', cssSelector: '.wave-indicator', htmlLine: '~3744' },
-                    { id: 'notification', name: 'NOTIFICACIÓN', cssFile: 'index.html (inline)', cssSelector: '.notification', htmlLine: '~3741' },
-                    { id: 'customCursor', name: 'CURSOR PERSONALIZADO', cssFile: 'css/global.css', cssSelector: '.custom-cursor', htmlLine: '~3838' },
-                    { id: 'debugPauseBtn', name: 'BOTÓN DEBUG (ESTE)', cssFile: 'index.html (inline)', cssSelector: '#debugPauseBtn', htmlLine: '~3698' }
-                ];
-
-                console.log('📋 LISTA DE ELEMENTOS HTML (con ubicación en código):');
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-                elements.forEach(item => {
-                    const el = document.getElementById(item.id);
-                    if (el) {
-                        const styles = window.getComputedStyle(el);
-                        console.log(`\n🔹 ${item.name}`);
-                        console.log(`   📄 ID HTML: "${item.id}"`);
-                        console.log(`   📍 Ubicación HTML: Línea ${item.htmlLine} en index.html`);
-                        console.log(`   🎨 CSS Selector: "${item.cssSelector}"`);
-                        console.log(`   📂 Archivo CSS: ${item.cssFile}`);
-                        console.log(`   🏷️  Tag: <${el.tagName.toLowerCase()}>`);
-                        console.log(`   ├─ display: ${styles.display}`);
-                        console.log(`   ├─ visibility: ${styles.visibility}`);
-                        console.log(`   ├─ opacity: ${styles.opacity}`);
-                        console.log(`   ├─ position: ${styles.position}`);
-                        console.log(`   ├─ zIndex: ${styles.zIndex}`);
-                        console.log(`   ├─ top: ${styles.top}`);
-                        console.log(`   ├─ left: ${styles.left}`);
-                        console.log(`   ├─ width: ${styles.width}`);
-                        console.log(`   ├─ height: ${styles.height}`);
-                        console.log(`   ├─ transform: ${styles.transform}`);
-                        console.log(`   └─ pointer-events: ${styles.pointerEvents}`);
-
-                        // Información de clase
-                        if (el.className) {
-                            console.log(`   📦 classes: "${el.className}"`);
-                        }
-
-                        // Calcular si está en viewport
-                        const rect = el.getBoundingClientRect();
-                        const inViewport = rect.top < window.innerHeight && rect.bottom > 0 && rect.left < window.innerWidth && rect.right > 0;
-                        console.log(`   👁️  En viewport: ${inViewport ? '✅ SÍ' : '❌ NO'}`);
-                        console.log(`   📐 Rect: {top:${rect.top.toFixed(0)}, left:${rect.left.toFixed(0)}, width:${rect.width.toFixed(0)}, height:${rect.height.toFixed(0)}}`);
-                    } else {
-                        console.log(`\n❌ ${item.name} (ID: "${item.id}") - NO ENCONTRADO`);
-                    }
-                });
-
-                // Información del body
-                console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('🔹 BODY');
-                console.log('   📄 Tag: <body>');
-                console.log('   📍 CSS: css/global.css → html, body { ... }');
-                const bodyStyles = window.getComputedStyle(document.body);
-                console.log(`   ├─ display: ${bodyStyles.display}`);
-                console.log(`   ├─ position: ${bodyStyles.position}`);
-                console.log(`   ├─ background: ${bodyStyles.background}`);
-                console.log(`   ├─ overflow: ${bodyStyles.overflow}`);
-                console.log(`   ├─ width: ${bodyStyles.width}`);
-                console.log(`   └─ height: ${bodyStyles.height}`);
-
-                // Información de viewport
-                console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('📱 VIEWPORT INFO:');
-                console.log(`   ├─ window.innerWidth: ${window.innerWidth}`);
-                console.log(`   ├─ window.innerHeight: ${window.innerHeight}`);
-                console.log(`   ├─ screen.width: ${screen.width}`);
-                console.log(`   ├─ screen.height: ${screen.height}`);
-                console.log(`   └─ devicePixelRatio: ${window.devicePixelRatio}`);
-
-                // Estado del juego
-                console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('🎮 GAME STATE (variables en game.js):');
-                if (window.gameState) {
-                    console.log(`   ├─ isPlaying: ${window.gameState.isPlaying}`);
-                    console.log(`   ├─ isPaused: ${window.gameState.isPaused}`);
-                    console.log(`   ├─ isGameOver: ${window.gameState.isGameOver}`);
-                    console.log(`   └─ wave: ${window.gameState.wave}`);
-                }
-
-                // ENEMIGOS - Información detallada
-                console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('👾 ENEMIGOS (array window.enemies en game.js):');
-                console.log('   📄 Definición: game.js → let enemies = [];');
-                console.log('   📍 Renderizado: game.js → función render() línea ~1850-2100');
-                console.log('   🎨 NO tienen elemento HTML (se dibujan en canvas)');
-                console.log('   🖌️  Se renderizan con: ctx.arc() y ctx.fill()');
-
-                if (window.enemies && window.enemies.length > 0) {
-                    console.log(`   📊 Total enemigos activos: ${window.enemies.length}`);
-                    console.log('');
-                    window.enemies.forEach((enemy, index) => {
-                        console.log(`   👾 ENEMY #${index + 1}:`);
-                        console.log(`      ├─ type: ${enemy.type || 'BASIC'}`);
-                        console.log(`      ├─ position: (x:${enemy.x.toFixed(1)}, y:${enemy.y.toFixed(1)})`);
-                        console.log(`      ├─ radius: ${enemy.radius.toFixed(1)}`);
-                        console.log(`      ├─ color: ${enemy.color || '#ff00ff'}`);
-                        console.log(`      ├─ health: ${enemy.health.toFixed(1)}/${enemy.maxHealth.toFixed(1)}`);
-                        console.log(`      ├─ speed: ${enemy.speed.toFixed(2)}`);
-                        console.log(`      └─ 🔍 Buscar en game.js: "enemies.push({ type: '${enemy.type}'")`);
-                    });
-                } else {
-                    console.log('   ⚠️  No hay enemigos activos en este momento');
-                }
-
-                // JUGADOR - Información detallada
-                console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('🎮 JUGADOR (objeto window.player en game.js):');
-                console.log('   📄 Definición: game.js → let player = { x, y, radius, ... };');
-                console.log('   📍 Renderizado: game.js → función render() línea ~2150-2180');
-                console.log('   🎨 NO tiene elemento HTML (se dibuja en canvas)');
-                console.log('   🖌️  Se renderiza con: ctx.arc() y ctx.fill()');
-
-                if (window.player) {
-                    console.log('');
-                    console.log(`   🎮 PLAYER:`);
-                    console.log(`      ├─ position: (x:${window.player.x.toFixed(1)}, y:${window.player.y.toFixed(1)})`);
-                    console.log(`      ├─ targetPos: (x:${window.player.targetX?.toFixed(1)}, y:${window.player.targetY?.toFixed(1)})`);
-                    console.log(`      ├─ radius: ${window.player.radius}`);
-                    console.log(`      ├─ color: ${window.player.color || '#00ffff'}`);
-                    console.log(`      ├─ health: ${window.player.health?.toFixed(1)}/${window.player.maxHealth}`);
-                    console.log(`      ├─ speed: ${window.player.speed}`);
-                    console.log(`      └─ 🔍 Buscar en game.js: "let player = {"`);
-                } else {
-                    console.log('   ⚠️  Player object no encontrado');
-                }
-
-                // BALAS - Información
-                console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('💥 BALAS (array window.bullets en game.js):');
-                console.log('   📄 Definición: game.js → let bullets = [];');
-                console.log('   📍 Renderizado: game.js → función render() línea ~2030-2050');
-                console.log('   🎨 NO tienen elemento HTML (se dibujan en canvas)');
-                if (window.bullets) {
-                    console.log(`   📊 Total balas activas: ${window.bullets.length}`);
-                }
-
-                // Canvas específico con análisis de píxeles
-                const canvas = document.getElementById('gameCanvas');
-                if (canvas) {
-                    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.log('🎨 CANVAS DETALLE:');
-                    console.log('   📄 ID HTML: "gameCanvas"');
-                    console.log('   📍 Ubicación HTML: Línea ~3843 en index.html');
-                    console.log('   🎨 CSS Selector: "#gameCanvas"');
-                    console.log('   📂 Archivo CSS: css/global.css');
-                    console.log(`   ├─ canvas.width: ${canvas.width}`);
-                    console.log(`   ├─ canvas.height: ${canvas.height}`);
-                    console.log(`   ├─ canvas.style.width: ${canvas.style.width}`);
-                    console.log(`   └─ canvas.style.height: ${canvas.style.height}`);
-
-                    // Intentar obtener píxeles del canvas en diferentes posiciones
-                    try {
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            // Centro
-                            const centerData = ctx.getImageData(canvas.width/2, canvas.height/2, 1, 1);
-                            const centerPixel = centerData.data;
-                            console.log(`   🔍 Pixel CENTRO (${canvas.width/2}, ${canvas.height/2}):`);
-                            console.log(`      ├─ RGBA: (${centerPixel[0]}, ${centerPixel[1]}, ${centerPixel[2]}, ${centerPixel[3]})`);
-                            console.log(`      └─ Tiene contenido: ${centerPixel[3] > 0 ? '✅ SÍ' : '❌ NO (transparente)'}`);
-
-                            // Esquina superior izquierda
-                            const topLeftData = ctx.getImageData(10, 10, 1, 1);
-                            const topLeftPixel = topLeftData.data;
-                            console.log(`   🔍 Pixel ESQUINA (10, 10):`);
-                            console.log(`      ├─ RGBA: (${topLeftPixel[0]}, ${topLeftPixel[1]}, ${topLeftPixel[2]}, ${topLeftPixel[3]})`);
-                            console.log(`      └─ Tiene contenido: ${topLeftPixel[3] > 0 ? '✅ SÍ' : '❌ NO (transparente)'}`);
-
-                            // Posición del jugador si existe
-                            if (window.player) {
-                                const playerData = ctx.getImageData(Math.floor(window.player.x), Math.floor(window.player.y), 1, 1);
-                                const playerPixel = playerData.data;
-                                console.log(`   🔍 Pixel JUGADOR (${Math.floor(window.player.x)}, ${Math.floor(window.player.y)}):`);
-                                console.log(`      ├─ RGBA: (${playerPixel[0]}, ${playerPixel[1]}, ${playerPixel[2]}, ${playerPixel[3]})`);
-                                console.log(`      └─ Tiene contenido: ${playerPixel[3] > 0 ? '✅ SÍ (jugador dibujado)' : '❌ NO (no hay píxel)'}`);
-                            }
-                        }
-                    } catch(e) {
-                        console.log(`   ❌ Error leyendo píxeles: ${e.message}`);
-                    }
-                }
-
-                console.log('\n🔍 ====================================================');
-                console.log('💡 CÓMO BUSCAR EN EL CÓDIGO:');
-                console.log('   🔎 En HTML: Busca por ID (ej: id="gameCanvas")');
-                console.log('   🔎 En CSS: Busca por selector (ej: #gameCanvas o .hud)');
-                console.log('   🔎 En game.js: Busca por variable (ej: let player, let enemies)');
-                console.log('   🔎 Enemigos/Jugador: NO están en HTML, se dibujan en canvas');
-                console.log('💡 Presiona ▶ (botón verde) para reanudar el juego');
-                console.log('🔍 ====================================================\n');
-
+                window.spawnEnemy(x, y, 'BASIC');
+                console.log('➕ Enemy added at', {x: x.toFixed(0), y: y.toFixed(0)});
             } else {
-                // Reanudar juego
-                if (window.gameState) {
-                    window.gameState.isPaused = false;
-                    window.gameState.isPlaying = true;
-                }
-
-                debugPauseBtn.textContent = '⏸';
-                debugPauseBtn.style.background = 'red';
-
-                console.log('▶️ Game resumed');
+                console.warn('⚠️ Cannot add enemy: spawnEnemy function not available');
             }
         });
 
-        console.log('🐛 Debug pause button initialized - Click red button to pause and inspect');
-    </script>    <!-- Modular JavaScript - Load Order Matters! -->
+        // Remove enemy
+        const debugRemoveEnemy = document.getElementById('debugRemoveEnemy');
+        debugRemoveEnemy.addEventListener('click', () => {
+            if (window.enemies && window.enemies.length > 0) {
+                const removed = window.enemies.pop();
+                console.log('➖ Enemy removed. Remaining:', window.enemies.length);
+            } else {
+                console.warn('⚠️ No enemies to remove');
+            }
+        });
+
+        // Toggle collision visualization
+        const debugToggleCollisions = document.getElementById('debugToggleCollisions');
+        debugToggleCollisions.addEventListener('click', () => {
+            window.debugMode.showCollisions = !window.debugMode.showCollisions;
+            debugToggleCollisions.textContent = window.debugMode.showCollisions ? '❌ Hide Collisions' : '🔴 Show Collisions';
+            debugToggleCollisions.style.background = window.debugMode.showCollisions ? '#ff0044' : '#ffff00';
+            console.log('🔴 Show collisions:', window.debugMode.showCollisions);
+        });
+
+        // Toggle tile visualization
+        const debugToggleTiles = document.getElementById('debugToggleTiles');
+        debugToggleTiles.addEventListener('click', () => {
+            window.debugMode.showTiles = !window.debugMode.showTiles;
+            debugToggleTiles.textContent = window.debugMode.showTiles ? '❌ Hide Tiles' : '🟢 Show Tiles';
+            debugToggleTiles.style.background = window.debugMode.showTiles ? '#ff0044' : '#00ffff';
+            console.log('🟢 Show tiles:', window.debugMode.showTiles);
+        });
+
+        console.log('🐛 Debug mode system initialized - Click 🐛 button to toggle');
+    </script>
+
+    <!-- Modular JavaScript - Load Order Matters! -->
     <script src="js/config.js"></script>
     <script src="js/ui-manager.js"></script>
     <script src="js/firebase-handler.js"></script>

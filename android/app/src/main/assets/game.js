@@ -1164,9 +1164,11 @@ function getSpawnPosition() {
     return { x, y };
 }
 
-function spawnEnemy() {
-    const enemyType = selectEnemyType();
-    const position = getSpawnPosition();
+function spawnEnemy(customX, customY, customType) {
+    const enemyType = customType ? ENEMY_TYPES[customType] || selectEnemyType() : selectEnemyType();
+    const position = (customX !== undefined && customY !== undefined)
+        ? { x: customX, y: customY }
+        : getSpawnPosition();
 
     const radius = ViewportScale.enemySize * enemyType.sizeMultiplier; // RESPONSIVE
     const baseHealth = 55 + gameState.wave * 15;
@@ -1188,6 +1190,9 @@ function spawnEnemy() {
 
     enemies.push(enemy);
 }
+
+// Make spawnEnemy available globally for debug mode
+window.spawnEnemy = spawnEnemy;
 
 // Jefes finales
 let bosses = [];
@@ -2133,6 +2138,13 @@ function update() {
         setTimeout(checkModal, 1000);
     }    // Update enemies
     enemies.forEach(enemy => {
+        // ============================================
+        // DEBUG MODE: Skip enemy movement if frozen
+        // ============================================
+        if (window.debugMode && window.debugMode.enemiesFrozen) {
+            return; // Skip this enemy update
+        }
+
         if (window.gameMapSystem) {
             const enemyTile = window.gameMapSystem.worldToTile(enemy.x, enemy.y);
             const playerTile = window.gameMapSystem.worldToTile(player.x, player.y);
@@ -2600,100 +2612,90 @@ function render() {
     ctx.save();
     ctx.scale(zoomScale, zoomScale);
 
-    // Renderizado con depth sorting isométrico: mapa, muros y entidades se dibujan en orden de profundidad
-    if (window.gameMapSystem && typeof window.gameMapSystem.render === 'function') {
-        // Actualizar cámara del MapSystem con zoom
-        if (window.minimapCameraActive) {
-            window.gameMapSystem.updateCamera(
-                window.minimapCameraTarget.x,
-                window.minimapCameraTarget.y,
-                screenWidth,
-                screenHeight,
-                true,
-                cameraZoom
-            );
-        } else {
-            window.gameMapSystem.updateCamera(
-                player.x,
-                player.y,
-                screenWidth,
-                screenHeight,
-                false,
-                cameraZoom
-            );
-        }
-
-        const cameraX = window.gameMapSystem.camera.x;
-        const cameraY = window.gameMapSystem.camera.y;
-
-        // ============================================
-        // RENDERIZADO ISOMÉTRICO CON DEPTH SORTING
-        // ============================================
-        // IsometricTileRenderer maneja automáticamente el depth sorting
-        // de tiles (suelos y muros) en orden correcto.
-        // Solo necesitamos renderizar entidades entre el mapa.
-        // ============================================
-
-        // Renderizar mapa completo (IsometricTileRenderer hace depth sorting interno)
-        window.gameMapSystem.render(ctx, cameraX, cameraY);
-
-        // DEPTH SORTING DE ENTIDADES
-        // Crear lista de entidades ordenadas por profundidad (Y)
-        const drawables = [];
-
-        // Añadir jugador
-        drawables.push({
-            type: 'player',
-            depth: player.y + player.radius,
-            y: player.y,
-            data: player
-        });
-
-        // Añadir enemigos
-        enemies.forEach((enemy, index) => {
-            drawables.push({
-                type: 'enemy',
-                depth: enemy.y + enemy.radius,
-                y: enemy.y,
-                data: enemy,
-                id: index
-            });
-        });
-
-        // Añadir pickups (también necesitan depth sorting)
-        abilityPickups.forEach((pickup, index) => {
-            drawables.push({
-                type: 'pickup',
-                depth: pickup.y + pickup.radius,
-                y: pickup.y,
-                data: pickup,
-                id: index
-            });
-        });
-
-        // ORDENAR POR PROFUNDIDAD (menor Y = más atrás = renderizar primero)
-        drawables.sort((a, b) => a.depth - b.depth);
-
-        // Renderizar entidades en orden (entidades detrás de muros se dibujan primero)
-        drawables.forEach(drawable => {
-            if (drawable.type === 'player') {
-                if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderPlayerIsometric === 'function') {
-                    IsometricEntityRenderer.renderPlayerIsometric(ctx, drawable.data, cameraX, cameraY);
-                } else {
-                    renderPlayer2D(ctx, drawable.data, cameraX, cameraY);
-                }
-            } else if (drawable.type === 'enemy') {
-                if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderEnemyIsometric === 'function') {
-                    IsometricEntityRenderer.renderEnemyIsometric(ctx, drawable.data, cameraX, cameraY);
-                } else {
-                    renderEnemy2D(ctx, drawable.data, cameraX, cameraY);
-                }
-            } else if (drawable.type === 'pickup') {
-                // Los pickups ya se renderizan más adelante, skip aquí
-                // (o integrarlos aquí si queremos que los muros los oculten también)
+        // Renderizado en tres pasos: suelos, entidades, muros
+        if (window.gameMapSystem && typeof window.gameMapSystem.renderFloorsOnly === 'function' && typeof window.gameMapSystem.renderWallsOnly === 'function') {
+            // Actualizar cámara del MapSystem con zoom
+            if (window.minimapCameraActive) {
+                window.gameMapSystem.updateCamera(
+                    window.minimapCameraTarget.x,
+                    window.minimapCameraTarget.y,
+                    screenWidth,
+                    screenHeight,
+                    true,
+                    cameraZoom
+                );
+            } else {
+                window.gameMapSystem.updateCamera(
+                    player.x,
+                    player.y,
+                    screenWidth,
+                    screenHeight,
+                    false,
+                    cameraZoom
+                );
             }
-        });
-    }
+
+            const cameraX = window.gameMapSystem.camera.x;
+            const cameraY = window.gameMapSystem.camera.y;
+
+            // 1. Renderizar suelo y bases de arbustos
+            window.gameMapSystem.renderFloorsOnly(ctx, cameraX, cameraY);
+
+            // 2. Sistema de depth sorting unificado: combinar enemigos, jugador, muros y arbustos
+            const allDrawables = [];
+
+            // Añadir enemigos
+            enemies.forEach((enemy, index) => {
+                allDrawables.push({
+                    type: 'enemy',
+                    depth: enemy.y + enemy.radius,
+                    data: enemy,
+                    id: index
+                });
+            });
+
+            // Añadir jugador
+            allDrawables.push({
+                type: 'player',
+                depth: player.y + player.radius,
+                data: player
+            });
+
+            // Añadir objetos estáticos (muros y arbustos)
+            if (typeof window.gameMapSystem.getStaticObjectsForDepthSorting === 'function') {
+                const staticObjects = window.gameMapSystem.getStaticObjectsForDepthSorting();
+                staticObjects.forEach(obj => {
+                    allDrawables.push({
+                        type: 'static',
+                        depth: obj.depth,
+                        data: obj
+                    });
+                });
+            }
+
+            // Ordenar todo por profundidad (Y)
+            allDrawables.sort((a, b) => a.depth - b.depth);
+
+            // Renderizar todo en orden de profundidad
+            allDrawables.forEach(drawable => {
+                if (drawable.type === 'enemy') {
+                    if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderEnemyIsometric === 'function') {
+                        IsometricEntityRenderer.renderEnemyIsometric(ctx, drawable.data, cameraX, cameraY);
+                    } else {
+                        renderEnemy2D(ctx, drawable.data, cameraX, cameraY);
+                    }
+                } else if (drawable.type === 'player') {
+                    if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderPlayerIsometric === 'function') {
+                        IsometricEntityRenderer.renderPlayerIsometric(ctx, drawable.data, cameraX, cameraY);
+                    } else {
+                        renderPlayer2D(ctx, drawable.data, cameraX, cameraY);
+                    }
+                } else if (drawable.type === 'static') {
+                    // Renderizar muro o arbusto
+                    window.gameMapSystem.renderStaticObject(ctx, drawable.data, cameraX, cameraY);
+                }
+            });
+        }
 
 // Función para renderizar un enemigo en 2D (fallback)
 function renderEnemy2D(ctx, enemy, cameraX, cameraY) {
@@ -3428,6 +3430,89 @@ function renderPlayer2D(ctx, player, cameraX, cameraY) {
     // Reset all context state at end of render for next frame
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
+
+    // ============================================
+    // DEBUG RENDERING
+    // ============================================
+    if (window.debugMode) {
+        ctx.save();
+
+        // Show collision boxes (red border, 80% alpha)
+        if (window.debugMode.showCollisions) {
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 0;
+
+            // Player collision
+            ctx.beginPath();
+            ctx.arc(player.x - cameraX, player.y - cameraY, player.radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Enemy collisions
+            enemies.forEach(enemy => {
+                ctx.beginPath();
+                ctx.arc(enemy.x - cameraX, enemy.y - cameraY, enemy.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            // Bullet collisions
+            bullets.forEach(bullet => {
+                ctx.beginPath();
+                ctx.arc(bullet.x - cameraX, bullet.y - cameraY, bullet.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            // Wall collisions (if map system exists)
+            if (window.gameMapSystem && window.gameMapSystem.grid) {
+                const tileSize = window.gameMapSystem.tileSize;
+                const startTileX = Math.max(0, Math.floor(cameraX / tileSize) - 1);
+                const endTileX = Math.min(window.gameMapSystem.width, Math.ceil((cameraX + canvas.width) / tileSize) + 1);
+                const startTileY = Math.max(0, Math.floor(cameraY / tileSize) - 1);
+                const endTileY = Math.min(window.gameMapSystem.height, Math.ceil((cameraY + canvas.height) / tileSize) + 1);
+
+                for (let y = startTileY; y < endTileY; y++) {
+                    for (let x = startTileX; x < endTileX; x++) {
+                        const tileType = window.gameMapSystem.grid[y][x];
+                        // Wall types: 2 = WALL, 3 = WALL_DESTRUCTIBLE
+                        if (tileType === 2 || tileType === 3) {
+                            const screenX = x * tileSize - cameraX;
+                            const screenY = y * tileSize - cameraY;
+                            ctx.strokeRect(screenX, screenY, tileSize, tileSize);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Show tiles (green fill, 50% alpha)
+        if (window.debugMode.showTiles && window.gameMapSystem && window.gameMapSystem.grid) {
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 0;
+
+            const tileSize = window.gameMapSystem.tileSize;
+            const startTileX = Math.max(0, Math.floor(cameraX / tileSize) - 1);
+            const endTileX = Math.min(window.gameMapSystem.width, Math.ceil((cameraX + canvas.width) / tileSize) + 1);
+            const startTileY = Math.max(0, Math.floor(cameraY / tileSize) - 1);
+            const endTileY = Math.min(window.gameMapSystem.height, Math.ceil((cameraY + canvas.height) / tileSize) + 1);
+
+            for (let y = startTileY; y < endTileY; y++) {
+                for (let x = startTileX; x < endTileX; x++) {
+                    const screenX = x * tileSize - cameraX;
+                    const screenY = y * tileSize - cameraY;
+
+                    // Fill tile
+                    ctx.fillRect(screenX, screenY, tileSize, tileSize);
+
+                    // Draw grid lines
+                    ctx.strokeRect(screenX, screenY, tileSize, tileSize);
+                }
+            }
+        }
+
+        ctx.restore();
+    }
 }
 
 // ===================================

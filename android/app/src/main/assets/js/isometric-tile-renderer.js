@@ -86,85 +86,251 @@
 
             // Cache de tiles para optimización
             this.tileCache = new Map();
+
+            // Texturas
+            this.textures = {
+                paredDerecha: null,
+                paredIzquierda: null,
+                arbusto: null,
+                cesped: null
+            };
+
+            // Cargar texturas
+            this.loadTextures();
         }
+
+        loadTextures() {
+            const basePath = 'graficos/escenario/basico/';
+
+            // Cargar pared derecha
+            const imgParedDerecha = new Image();
+            imgParedDerecha.src = basePath + 'pared_derecha.png';
+            imgParedDerecha.onload = () => {
+                this.textures.paredDerecha = imgParedDerecha;
+                console.log('✅ Textura pared_derecha cargada');
+            };
+            imgParedDerecha.onerror = () => {
+                console.warn('⚠️ No se pudo cargar pared_derecha.png');
+            };
+
+            // Cargar pared izquierda
+            const imgParedIzquierda = new Image();
+            imgParedIzquierda.src = basePath + 'pared_izquierda.png';
+            imgParedIzquierda.onload = () => {
+                this.textures.paredIzquierda = imgParedIzquierda;
+                console.log('✅ Textura pared_izquierda cargada');
+            };
+            imgParedIzquierda.onerror = () => {
+                console.warn('⚠️ No se pudo cargar pared_izquierda.png');
+            };
+
+            // Cargar arbusto
+            const imgArbusto = new Image();
+            imgArbusto.src = basePath + 'arbusto.png';
+            imgArbusto.onload = () => {
+                this.textures.arbusto = imgArbusto;
+                console.log('✅ Textura arbusto cargada');
+            };
+            imgArbusto.onerror = () => {
+                console.warn('⚠️ No se pudo cargar arbusto.png');
+            };
+
+            // Cargar césped
+            const imgCesped = new Image();
+            imgCesped.src = basePath + 'cesped.png';
+            imgCesped.onload = () => {
+                this.textures.cesped = imgCesped;
+                console.log('✅ Textura cesped cargada');
+            };
+            imgCesped.onerror = () => {
+                console.warn('⚠️ No se pudo cargar cesped.png');
+            };
+        }
+
+        // Dibuja la base circular del arbusto (junto al suelo)
+        _drawBushBase(ctx, screenX, screenY) {
+            const vertices = this._getTileVerticesScreen(screenX, screenY);
+            const centerX = (vertices[0].x + vertices[2].x) / 2;
+            const centerY = (vertices[0].y + vertices[2].y) / 2;
+            const radius = window.IsometricTransform.config.tileWidth / 3;
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.fillStyle = this.config.colors.bush;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            if (this.config.enableGlow) {
+                ctx.shadowBlur = this.config.glowIntensity;
+                ctx.shadowColor = this.config.colors.bushGlow;
+                ctx.strokeStyle = this.config.colors.bushGlow;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // Dibuja las hojas volumétricas del arbusto (junto a los muros)
+        _drawBushLeaves(ctx, screenX, screenY) {
+            const vertices = this._getTileVerticesScreen(screenX, screenY);
+            const centerX = (vertices[0].x + vertices[2].x) / 2;
+            const centerY = (vertices[0].y + vertices[2].y) / 2;
+            const wallHeight = this.config.wallHeight;
+            const bushHeight = wallHeight * 0.5;
+            const radiusX = window.IsometricTransform.config.tileWidth / 2.5;
+            const radiusY = bushHeight;
+
+            // Si tenemos textura de arbusto, usarla
+            if (this.textures.arbusto && this.textures.arbusto.complete) {
+                ctx.save();
+                ctx.translate(centerX, centerY - bushHeight);
+                ctx.globalAlpha = 0.95;
+
+                // Dibujar la textura centrada
+                const imgWidth = radiusX * 2;
+                const imgHeight = bushHeight * 2;
+                ctx.drawImage(
+                    this.textures.arbusto,
+                    -imgWidth / 2,
+                    -imgHeight / 2,
+                    imgWidth,
+                    imgHeight
+                );
+
+                ctx.restore();
+            } else {
+                // Fallback: forma elíptica con color
+                ctx.save();
+                ctx.translate(centerX, centerY - bushHeight);
+                ctx.scale(1, 0.7);
+                ctx.fillStyle = this.config.colors.bush;
+                ctx.globalAlpha = 0.95;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (this.config.enableGlow) {
+                    ctx.shadowBlur = this.config.glowIntensity * 1.2;
+                    ctx.shadowColor = this.config.colors.bushGlow;
+                    ctx.strokeStyle = this.config.colors.bushGlow;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Partículas flotantes para efecto visual (solo si no hay textura)
+            if (!this.textures.arbusto || !this.textures.arbusto.complete) {
+                const numParticles = 5;
+                for (let i = 0; i < numParticles; i++) {
+                    const angle = (Math.PI * 2 / numParticles) * i + this.animationTime;
+                    const dist = radiusX * 0.8;
+                    const px = centerX + Math.cos(angle) * dist;
+                    const py = centerY - bushHeight + Math.sin(angle) * radiusY * 0.7 - Math.abs(Math.sin(this.animationTime * 3 + i)) * 6;
+                    ctx.fillStyle = this.config.colors.bushGlow;
+                    ctx.globalAlpha = 0.5 + Math.sin(this.animationTime * 2 + i) * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+            }
 
         /**
          * Renderiza el mapa completo en proyección isométrica
          * @param {CanvasRenderingContext2D} ctx - Contexto de canvas
          * @param {Array<Array<number>>} mapData - Datos del mapa (matriz de tiles)
          * @param {Object} camera - Objeto de cámara en coordenadas CARTESIANAS del mundo {x, y}
-         * @param {number} tileSize - Tamaño del tile en el mundo cartesiano (64px por defecto)
+
+        /**
+         * Renderiza solo los suelos (FLOOR, BUSH, SPAWN zones, DECORATION, OBJECTIVE)
          */
-        render(ctx, mapData, camera, tileSize = 64) {
-            console.log("🎨 IsometricTileRenderer.render() llamado", {
-                mapData: mapData ? `${mapData.length}x${mapData[0]?.length}` : 'null',
-                camera,
-                tileSize,
-                IsometricTransform: !!window.IsometricTransform
-            });
-
-            if (!mapData || !window.IsometricTransform) {
-                console.error('❌ MapData or IsometricTransform not available');
-                return;
-            }
-
+        renderFloorsOnly(ctx, mapData, camera, tileSize = 64) {
+            if (!mapData || !window.IsometricTransform) return;
             const transform = window.IsometricTransform;
-
-            // Actualizar tiempo de animación
-            this.animationTime += this.config.animationSpeed;
-
-            // Obtener dimensiones del mapa
             const mapHeight = mapData.length;
             const mapWidth = mapData[0] ? mapData[0].length : 0;
-
-            // CRÍTICO: Convertir posición de cámara cartesiana a isométrica
-            // La cámara viene en píxeles del mundo (cartesiano), necesitamos convertir a isométrico
             const cameraTileX = camera.x / tileSize;
             const cameraTileY = camera.y / tileSize;
             const cameraIso = transform.mapToIso(cameraTileX, cameraTileY);
-
-            // Array de objetos a renderizar (para depth sorting)
             const renderQueue = [];
-
-            // RENDERIZAR TODOS LOS TILES (sin culling por ahora para debug)
-            // TODO: Optimizar con viewport culling una vez que funcione correctamente
             for (let y = 0; y < mapHeight; y++) {
                 for (let x = 0; x < mapWidth; x++) {
                     const tileType = mapData[y][x];
-
-                    // Posición isométrica del tile
-                    const isoPos = transform.mapToIso(x, y);
-                    const depth = transform.getDepth(x, y);
-
-                    // Calcular posición en pantalla (restar cámara isométrica)
-                    const screenX = isoPos.x - cameraIso.x + (ctx.canvas.width / 2);
-                    const screenY = isoPos.y - cameraIso.y + (ctx.canvas.height / 2);
-
-                    renderQueue.push({
-                        x, y,
-                        screenX,
-                        screenY,
-                        tileType,
-                        depth
-                    });
+                    // Only floor-like tiles
+                    if ([1,4,5,6,7,8,9].includes(tileType)) {
+                        const isoPos = transform.mapToIso(x, y);
+                        const depth = transform.getDepth(x, y);
+                        const screenX = isoPos.x - cameraIso.x + (ctx.canvas.width / 2);
+                        const screenY = isoPos.y - cameraIso.y + (ctx.canvas.height / 2);
+                        renderQueue.push({x, y, screenX, screenY, tileType, depth});
+                    }
                 }
             }
-
-            // Ordenar por profundidad (back-to-front)
             renderQueue.sort((a, b) => a.depth - b.depth);
-
-            console.log(`🎨 Renderizando ${renderQueue.length} tiles isométricos`);
-
-            // Renderizar tiles en orden
             for (const tile of renderQueue) {
-                this._renderTile(ctx, tile.tileType, tile.screenX, tile.screenY, tile.x, tile.y);
+                if (tile.tileType === 4) {
+                    this._drawBushBase(ctx, tile.screenX, tile.screenY);
+                } else {
+                    this._renderTile(ctx, tile.tileType, tile.screenX, tile.screenY, tile.x, tile.y);
+                }
             }
+        }
 
-            console.log("✅ Renderizado isométrico completado");
+        /**
+         * Renderiza solo los muros (WALL, WALL_DESTRUCTIBLE)
+         */
+        renderWallsOnly(ctx, mapData, camera, tileSize = 64) {
+            if (!mapData || !window.IsometricTransform) return;
+            const transform = window.IsometricTransform;
+            const mapHeight = mapData.length;
+            const mapWidth = mapData[0] ? mapData[0].length : 0;
+            const cameraTileX = camera.x / tileSize;
+            const cameraTileY = camera.y / tileSize;
+            const cameraIso = transform.mapToIso(cameraTileX, cameraTileY);
+            const renderQueue = [];
+            for (let y = 0; y < mapHeight; y++) {
+                for (let x = 0; x < mapWidth; x++) {
+                    const tileType = mapData[y][x];
+                    if (tileType === 2 || tileType === 3) {
+                        const isoPos = transform.mapToIso(x, y);
+                        const depth = transform.getDepth(x, y);
+                        const screenX = isoPos.x - cameraIso.x + (ctx.canvas.width / 2);
+                        const screenY = isoPos.y - cameraIso.y + (ctx.canvas.height / 2);
+                        renderQueue.push({x, y, screenX, screenY, tileType, depth});
+                    }
+                }
+            }
+            renderQueue.sort((a, b) => a.depth - b.depth);
+            for (const tile of renderQueue) {
+                if (tile.tileType === 4) {
+                    this._drawBushLeaves(ctx, tile.screenX, tile.screenY);
+                } else {
+                    this._renderTile(ctx, tile.tileType, tile.screenX, tile.screenY, tile.x, tile.y);
+                }
+            }
+        }
 
-            // Renderizar grid de debug si está activado
-            if (this.config.showGrid) {
-                this._renderGrid(ctx, mapWidth, mapHeight, cameraIso, tileSize);
+        /**
+         * Renderiza un objeto estático individual (muro o arbusto)
+         */
+        renderSingleStaticObject(ctx, mapData, tileX, tileY, tileType, camera, tileSize = 64) {
+            if (!mapData || !window.IsometricTransform) return;
+            const transform = window.IsometricTransform;
+            const cameraTileX = camera.x / tileSize;
+            const cameraTileY = camera.y / tileSize;
+            const cameraIso = transform.mapToIso(cameraTileX, cameraTileY);
+            const isoPos = transform.mapToIso(tileX, tileY);
+            const screenX = isoPos.x - cameraIso.x + (ctx.canvas.width / 2);
+            const screenY = isoPos.y - cameraIso.y + (ctx.canvas.height / 2);
+
+            // Renderizar según el tipo
+            if (tileType === 4) {
+                // Arbusto: solo hojas volumétricas
+                this._drawBushLeaves(ctx, screenX, screenY);
+            } else if (tileType === 2 || tileType === 3) {
+                // Muro
+                this._renderTile(ctx, tileType, screenX, screenY, tileX, tileY);
             }
         }
 
@@ -248,123 +414,200 @@
          * @private
          */
         _drawEmpty(ctx, screenX, screenY) {
-            const transform = window.IsometricTransform;
-            const vertices = this._getTileVerticesScreen(screenX, screenY);
+                    const transform = window.IsometricTransform;
+                    const vertices = this._getTileVerticesScreen(screenX, screenY);
 
-            ctx.fillStyle = this.config.colors.empty;
-            ctx.beginPath();
-            ctx.moveTo(vertices[0].x, vertices[0].y);
-            for (let i = 1; i < vertices.length; i++) {
-                ctx.lineTo(vertices[i].x, vertices[i].y);
-            }
-            ctx.closePath();
-            ctx.fill();
-        }
+                    ctx.fillStyle = this.config.colors.empty;
+                    ctx.beginPath();
+                    ctx.moveTo(vertices[0].x, vertices[0].y);
+                    for (let i = 1; i < vertices.length; i++) {
+                        ctx.lineTo(vertices[i].x, vertices[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
 
-        /**
-         * Dibuja un tile de suelo transitable
-         * @private
-         */
-        _drawFloor(ctx, screenX, screenY, mapX, mapY) {
-            const vertices = this._getTileVerticesScreen(screenX, screenY);
+                /**
+                 * Dibuja un tile de suelo transitable
+                 * @private
+                 */
+                _drawFloor(ctx, screenX, screenY, mapX, mapY) {
+                    const vertices = this._getTileVerticesScreen(screenX, screenY);
 
-            // Patrón de damero para variedad visual
-            const isDark = (mapX + mapY) % 2 === 0;
-            const baseColor = isDark ? this.config.colors.floor : this.config.colors.floorAccent;
+                    // Si tenemos textura de césped, usarla
+                    if (this.textures.cesped && this.textures.cesped.complete) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(vertices[0].x, vertices[0].y);
+                        for (let i = 1; i < vertices.length; i++) {
+                            ctx.lineTo(vertices[i].x, vertices[i].y);
+                        }
+                        ctx.closePath();
+                        ctx.clip();
 
-            // Fondo del tile
-            ctx.fillStyle = baseColor;
-            ctx.beginPath();
-            ctx.moveTo(vertices[0].x, vertices[0].y);
-            for (let i = 1; i < vertices.length; i++) {
-                ctx.lineTo(vertices[i].x, vertices[i].y);
-            }
-            ctx.closePath();
-            ctx.fill();
+                        // Calcular el tamaño del rombo isométrico
+                        const tileWidth = window.IsometricTransform.config.tileWidth;
+                        const tileHeight = window.IsometricTransform.config.tileHeight;
 
-            // Brillo sutil neon
-            if (this.config.enableGlow) {
-                const pulseIntensity = 0.5 + Math.sin(this.animationTime + mapX + mapY) * 0.5;
-                ctx.fillStyle = this.config.colors.floorGlow;
-                ctx.globalAlpha = 0.1 * pulseIntensity;
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
-            }
+                        // Dibujar la textura ajustada al rombo
+                        ctx.drawImage(
+                            this.textures.cesped,
+                            screenX - tileWidth / 2,
+                            screenY - tileHeight / 2,
+                            tileWidth,
+                            tileHeight
+                        );
 
-            // Borde sutil
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
+                        ctx.restore();
 
-        /**
-         * Dibuja un muro con volumen isométrico
-         * @private
-         */
-        _drawWall(ctx, screenX, screenY, mapX, mapY, isDestructible = false) {
-            const transform = window.IsometricTransform;
+                        // Borde sutil
+                        ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(vertices[0].x, vertices[0].y);
+                        for (let i = 1; i < vertices.length; i++) {
+                            ctx.lineTo(vertices[i].x, vertices[i].y);
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                    } else {
+                        // Fallback: colores sólidos
+                        const isDark = (mapX + mapY) % 2 === 0;
+                        const baseColor = isDark ? this.config.colors.floor : this.config.colors.floorAccent;
+
+                        ctx.fillStyle = baseColor;
+                        ctx.beginPath();
+                        ctx.moveTo(vertices[0].x, vertices[0].y);
+                        for (let i = 1; i < vertices.length; i++) {
+                            ctx.lineTo(vertices[i].x, vertices[i].y);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+
+                        if (this.config.enableGlow) {
+                            const pulseIntensity = 0.5 + Math.sin(this.animationTime + mapX + mapY) * 0.5;
+                            ctx.fillStyle = this.config.colors.floorGlow;
+                            ctx.globalAlpha = 0.1 * pulseIntensity;
+                            ctx.fill();
+                            //ctx.globalAlpha = 1.0;
+                        }
+
+                        ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+
+                /**
+                 * Dibuja un muro con volumen isométrico
+                 * @private
+                 */
+               _drawWall(ctx, screenX, screenY, mapX, mapY, isDestructible = false) {
             const vertices = this._getTileVerticesScreen(screenX, screenY);
             const height = this.config.wallHeight;
 
-            // Sombra proyectada
-            if (this.config.enableShadows) {
-                ctx.save();
-                ctx.fillStyle = this.config.colors.shadow;
-                ctx.shadowBlur = this.config.shadowBlur;
-                ctx.shadowColor = this.config.colors.shadow;
-                ctx.shadowOffsetX = 4;
-                ctx.shadowOffsetY = 4;
+        // Cara sur-oeste (paredIzquierda)
+        if (this.textures.paredIzquierda && this.textures.paredIzquierda.complete) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(vertices[3].x, vertices[3].y);
+            ctx.lineTo(vertices[3].x, vertices[3].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
+            ctx.closePath();
+            ctx.clip();
 
-                ctx.beginPath();
-                ctx.moveTo(vertices[0].x, vertices[0].y);
-                for (let i = 1; i < vertices.length; i++) {
-                    ctx.lineTo(vertices[i].x, vertices[i].y);
-                }
-                ctx.closePath();
-                ctx.fill();
-                ctx.restore();
-            }
+            // Medidas destino en el canvas (paralelogramo de la pared)
+            const destX = vertices[3].x;
+            const destY = vertices[3].y - height;
+            const destWidth = Math.abs(vertices[2].x - vertices[3].x);
+            const destHeight = height;
 
-            // Cara lateral izquierda (oeste)
+            // Medidas originales de la textura
+            const srcWidth = this.textures.paredIzquierda.naturalWidth;
+            const srcHeight = this.textures.paredIzquierda.naturalHeight;
+
+            // Dibujar la textura adaptada al muro (escala y recorte)
+                    // Transformar el contexto para distorsionar la textura
+                    const dx = vertices[2].x - vertices[3].x;
+                    const dy = vertices[2].y - vertices[3].y;
+                    ctx.setTransform(
+                        dx / this.textures.paredIzquierda.naturalWidth, // escala X
+                        dy / this.textures.paredIzquierda.naturalWidth, // inclinación Y
+                        0, // inclinación X
+                        height / this.textures.paredIzquierda.naturalHeight, // escala Y
+                        vertices[3].x, // origen X
+                        vertices[3].y - height // origen Y
+                    );
+                    ctx.drawImage(this.textures.paredIzquierda, 0, 0);
+            ctx.restore();
+        } else {
             ctx.fillStyle = this.config.colors.wallSideAlt;
             ctx.beginPath();
-            ctx.moveTo(vertices[3].x, vertices[3].y); // Left
-            ctx.lineTo(vertices[3].x, vertices[3].y - height); // Left top
-            ctx.lineTo(vertices[0].x, vertices[0].y - height); // Top top
-            ctx.lineTo(vertices[0].x, vertices[0].y); // Top
+            ctx.moveTo(vertices[3].x, vertices[3].y);
+            ctx.lineTo(vertices[3].x, vertices[3].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
             ctx.closePath();
             ctx.fill();
+        }
 
-            // Cara lateral derecha (este)
+        // Cara sur-este (paredDerecha)
+        if (this.textures.paredDerecha && this.textures.paredDerecha.complete) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(vertices[1].x, vertices[1].y);
+            ctx.lineTo(vertices[1].x, vertices[1].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
+            ctx.closePath();
+            ctx.clip();
+
+            // Medidas destino en el canvas (paralelogramo de la pared)
+            const destX = vertices[1].x;
+            const destY = vertices[1].y - height;
+            const destWidth = Math.abs(vertices[2].x - vertices[1].x);
+            const destHeight = height;
+
+            // Medidas originales de la textura
+            const srcWidth = this.textures.paredDerecha.naturalWidth;
+            const srcHeight = this.textures.paredDerecha.naturalHeight;
+
+            // Dibujar la textura adaptada al muro (escala y recorte)
+                    // Calcular vectores de transformación
+                    const dx = vertices[2].x - vertices[1].x;
+                    const dy = vertices[2].y - vertices[1].y;
+                    ctx.setTransform(
+                        dx / this.textures.paredDerecha.naturalWidth,
+                        dy / this.textures.paredDerecha.naturalWidth,
+                        0,
+                        height / this.textures.paredDerecha.naturalHeight,
+                        vertices[1].x,
+                        vertices[1].y - height
+                    );
+                    ctx.drawImage(this.textures.paredDerecha, 0, 0);
+            ctx.restore();
+        } else {
             ctx.fillStyle = this.config.colors.wallSide;
             ctx.beginPath();
-            ctx.moveTo(vertices[0].x, vertices[0].y); // Top
-            ctx.lineTo(vertices[0].x, vertices[0].y - height); // Top top
-            ctx.lineTo(vertices[1].x, vertices[1].y - height); // Right top
-            ctx.lineTo(vertices[1].x, vertices[1].y); // Right
+            ctx.moveTo(vertices[1].x, vertices[1].y);
+            ctx.lineTo(vertices[1].x, vertices[1].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
             ctx.closePath();
             ctx.fill();
+        }
 
-            // Cara superior (top)
-            ctx.fillStyle = this.config.colors.wallTop;
+            // Cara superior (top) - negro provisional
+            ctx.fillStyle = '#000000';
+            //ctx.globalAlpha = 0.4
             ctx.beginPath();
-            ctx.moveTo(vertices[0].x, vertices[0].y - height); // Top
-            ctx.lineTo(vertices[1].x, vertices[1].y - height); // Right
-            ctx.lineTo(vertices[2].x, vertices[2].y - height); // Bottom
-            ctx.lineTo(vertices[3].x, vertices[3].y - height); // Left
+            ctx.moveTo(vertices[0].x, vertices[0].y - height);
+            ctx.lineTo(vertices[1].x, vertices[1].y - height);
+            ctx.lineTo(vertices[2].x, vertices[2].y - height);
+            ctx.lineTo(vertices[3].x, vertices[3].y - height);
             ctx.closePath();
             ctx.fill();
-
-            // Glow neon en la parte superior
-            if (this.config.enableGlow) {
-                ctx.save();
-                ctx.shadowBlur = this.config.glowIntensity;
-                ctx.shadowColor = this.config.colors.wallGlow;
-                ctx.strokeStyle = this.config.colors.wallGlow;
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.restore();
-            }
 
             // Indicador de muro destructible
             if (isDestructible) {
@@ -379,7 +622,6 @@
                 ctx.globalAlpha = 1.0;
             }
         }
-
         /**
          * Dibuja un arbusto (cover)
          * @private

@@ -1421,6 +1421,52 @@
             this._renderSpawnZones(ctx, cameraX, cameraY);
         }
 
+        renderFloorsOnly(ctx, cameraX = 0, cameraY = 0) {
+            if (!this.initialized || !this.isometricRenderer) return;
+            const camera = { x: cameraX, y: cameraY };
+            this.isometricRenderer.renderFloorsOnly(ctx, this.grid, camera, this.tileSize);
+        }
+
+        renderWallsOnly(ctx, cameraX = 0, cameraY = 0) {
+            if (!this.initialized || !this.isometricRenderer) return;
+            const camera = { x: cameraX, y: cameraY };
+            this.isometricRenderer.renderWallsOnly(ctx, this.grid, camera, this.tileSize);
+        }
+
+        // Obtiene objetos estáticos (muros y arbustos) con su profundidad para depth sorting
+        getStaticObjectsForDepthSorting() {
+            if (!this.initialized || !this.grid) return [];
+            const objects = [];
+            const mapHeight = this.grid.length;
+            const mapWidth = this.grid[0] ? this.grid[0].length : 0;
+
+            for (let y = 0; y < mapHeight; y++) {
+                for (let x = 0; x < mapWidth; x++) {
+                    const tileType = this.grid[y][x];
+                    // Muros (2,3) y Arbustos (4)
+                    if (tileType === 2 || tileType === 3 || tileType === 4) {
+                        const worldY = (y + 0.5) * this.tileSize; // Centro del tile
+                        objects.push({
+                            type: tileType === 4 ? 'bush' : 'wall',
+                            tileType: tileType,
+                            tileX: x,
+                            tileY: y,
+                            worldY: worldY,
+                            depth: worldY
+                        });
+                    }
+                }
+            }
+            return objects;
+        }
+
+        // Renderiza un objeto estático individual (muro o arbusto)
+        renderStaticObject(ctx, obj, cameraX, cameraY) {
+            if (!this.isometricRenderer) return;
+            const camera = { x: cameraX, y: cameraY };
+            this.isometricRenderer.renderSingleStaticObject(ctx, this.grid, obj.tileX, obj.tileY, obj.tileType, camera, this.tileSize);
+        }
+
         _renderFloorTile(ctx, x, y, tileType, tileX, tileY) {
             const size = this.tileSize;
 
