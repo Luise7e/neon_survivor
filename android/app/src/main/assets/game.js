@@ -2627,25 +2627,25 @@ function render() {
         const cameraY = window.gameMapSystem.camera.y;
 
         // ============================================
-
-        // DEPTH SORTING ISOMÉTRICO
+        // RENDERIZADO ISOMÉTRICO CON DEPTH SORTING
+        // ============================================
+        // IsometricTileRenderer maneja automáticamente el depth sorting
+        // de tiles (suelos y muros) en orden correcto.
+        // Solo necesitamos renderizar entidades entre el mapa.
         // ============================================
 
-        // Renderizar mapa completo primero (suelos y fondo)
-        console.log("DIAGNÓSTICO FASE 2: renderer isométrico", window.gameMapSystem.isometricRenderer);
-        if (!window.gameMapSystem.isometricRenderer) {
-            console.error("ERROR: El renderer isométrico no está disponible");
-        }
-        console.log("DIAGNÓSTICO FASE 3: llamando a gameMapSystem.render");
+        // Renderizar mapa completo (IsometricTileRenderer hace depth sorting interno)
         window.gameMapSystem.render(ctx, cameraX, cameraY);
 
-        // Crear lista de entidades con profundidad para depth sorting
+        // DEPTH SORTING DE ENTIDADES
+        // Crear lista de entidades ordenadas por profundidad (Y)
         const drawables = [];
 
         // Añadir jugador
         drawables.push({
             type: 'player',
-            depth: player.y + player.radius, // Profundidad basada en Y
+            depth: player.y + player.radius,
+            y: player.y,
             data: player
         });
 
@@ -2654,7 +2654,19 @@ function render() {
             drawables.push({
                 type: 'enemy',
                 depth: enemy.y + enemy.radius,
+                y: enemy.y,
                 data: enemy,
+                id: index
+            });
+        });
+
+        // Añadir pickups (también necesitan depth sorting)
+        abilityPickups.forEach((pickup, index) => {
+            drawables.push({
+                type: 'pickup',
+                depth: pickup.y + pickup.radius,
+                y: pickup.y,
+                data: pickup,
                 id: index
             });
         });
@@ -2662,27 +2674,27 @@ function render() {
         // ORDENAR POR PROFUNDIDAD (menor Y = más atrás = renderizar primero)
         drawables.sort((a, b) => a.depth - b.depth);
 
-        // RENDERIZAR ENTIDADES EN ORDEN
+        // Renderizar entidades en orden (entidades detrás de muros se dibujan primero)
         drawables.forEach(drawable => {
             if (drawable.type === 'player') {
-                // Renderizar jugador isométrico
                 if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderPlayerIsometric === 'function') {
                     IsometricEntityRenderer.renderPlayerIsometric(ctx, drawable.data, cameraX, cameraY);
                 } else {
-                    // Fallback 2D
                     renderPlayer2D(ctx, drawable.data, cameraX, cameraY);
                 }
             } else if (drawable.type === 'enemy') {
-                // Renderizar enemigo isométrico
                 if (typeof IsometricEntityRenderer !== 'undefined' && typeof IsometricEntityRenderer.renderEnemyIsometric === 'function') {
                     IsometricEntityRenderer.renderEnemyIsometric(ctx, drawable.data, cameraX, cameraY);
                 } else {
-                    // Fallback 2D
                     renderEnemy2D(ctx, drawable.data, cameraX, cameraY);
                 }
+            } else if (drawable.type === 'pickup') {
+                // Los pickups ya se renderizan más adelante, skip aquí
+                // (o integrarlos aquí si queremos que los muros los oculten también)
             }
         });
     }
+
 // Función para renderizar un enemigo en 2D (fallback)
 function renderEnemy2D(ctx, enemy, cameraX, cameraY) {
     ctx.save();

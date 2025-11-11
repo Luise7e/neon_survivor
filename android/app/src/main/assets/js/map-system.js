@@ -86,25 +86,6 @@
         }
 
         /**
-         * Cambiar ángulo de cámara para efecto 2.5D
-         * @param {number} angle - Ángulo en grados (0-90)
-         */
-        setCameraAngle(angle) {
-            if (this.renderer3D) {
-                this.renderer3D.setCameraAngle(angle);
-            }
-        }
-
-        /**
-         * Cambiar orientación de cámara (rotación)
-         * @param {number} orientation - Orientación en grados (0-360)
-         */
-        setCameraOrientation(orientation) {
-            if (this.renderer3D) {
-                this.renderer3D.setCameraOrientation(orientation);
-            }
-        }
-        /**
          * Pathfinding A* entre dos puntos tile
          * Devuelve array de tiles [{x, y}, ...] desde start hasta goal evitando paredes
          */
@@ -224,9 +205,6 @@
             } else {
                 console.warn('⚠️ IsometricTileRenderer no disponible - window.IsometricTileRenderer es:', typeof window.IsometricTileRenderer);
             }
-
-            // Mantener referencia al renderizador 3D por compatibilidad (deprecated)
-            this.renderer3D = this.isometricRenderer;
 
             console.log('✅ MapSystem constructor completado - isometricRenderer:', !!this.isometricRenderer);
         }
@@ -1426,51 +1404,15 @@
             // Render decorations
             this._renderDecorations(ctx, cameraX, cameraY);
 
-            // ============================================
-            // RENDERIZADO DE MUROS CON DEPTH SORTING
-            // Los muros se renderizan de atrás hacia adelante (por coordenada Y)
-            // para que el jugador pueda pasar "detrás" de los muros
-            // ============================================
+            // Render walls (simple 2D fallback, no depth sorting)
+            for (let y = startTileY; y < endTileY; y++) {
+                for (let x = startTileX; x < endTileX; x++) {
+                    const tileType = this.grid[y][x];
+                    const screenX = x * this.tileSize - cameraX;
+                    const screenY = y * this.tileSize - cameraY;
 
-            if (this.renderer3D && this.renderer3D.config.depthSorting) {
-                // Recolectar todos los tiles de muro visibles
-                const wallTiles = [];
-
-                for (let y = startTileY; y < endTileY; y++) {
-                    for (let x = startTileX; x < endTileX; x++) {
-                        const tileType = this.grid[y][x];
-
-                        if (tileType === TILE_TYPES.WALL || tileType === TILE_TYPES.WALL_DESTRUCTIBLE) {
-                            wallTiles.push({
-                                x: x,
-                                y: y,
-                                screenX: x * this.tileSize - cameraX,
-                                screenY: y * this.tileSize - cameraY,
-                                tileType: tileType
-                            });
-                        }
-                    }
-                }
-
-                // Ordenar por coordenada Y (de menor a mayor = de atrás hacia adelante)
-                // Esto permite que objetos con mayor Y se dibujen encima
-                wallTiles.sort((a, b) => a.y - b.y);
-
-                // Renderizar muros en orden de profundidad
-                for (const tile of wallTiles) {
-                    this._renderWallTile(ctx, tile.screenX, tile.screenY, tile.tileType, tile.x, tile.y);
-                }
-            } else {
-                // Renderizado normal sin depth sorting (2D plano)
-                for (let y = startTileY; y < endTileY; y++) {
-                    for (let x = startTileX; x < endTileX; x++) {
-                        const tileType = this.grid[y][x];
-                        const screenX = x * this.tileSize - cameraX;
-                        const screenY = y * this.tileSize - cameraY;
-
-                        if (tileType === TILE_TYPES.WALL || tileType === TILE_TYPES.WALL_DESTRUCTIBLE) {
-                            this._renderWallTile(ctx, screenX, screenY, tileType, x, y);
-                        }
+                    if (tileType === TILE_TYPES.WALL || tileType === TILE_TYPES.WALL_DESTRUCTIBLE) {
+                        this._renderWallTile(ctx, screenX, screenY, tileType, x, y);
                     }
                 }
             }
@@ -1550,18 +1492,7 @@
                 W: this.grid[tileY]?.[tileX - 1] === TILE_TYPES.WALL
             };
 
-            // ============================================
-            // USAR RENDERIZADOR 2.5D SI ESTÁ DISPONIBLE
-            // ============================================
-            if (this.renderer3D) {
-                this.renderer3D.renderWallTile(ctx, x, y, size, tileX, tileY, neighbors);
-                return;
-            }
-
-            // ============================================
-            // FALLBACK: RENDERIZADO 2D PLANO (sin efecto 3D)
-            // Se mantiene para compatibilidad si el módulo 3D no está cargado
-            // ============================================
+            // RENDERIZADO 2D PLANO FALLBACK (para cuando no hay IsometricTileRenderer)
             ctx.save();
 
             // Base oscura
